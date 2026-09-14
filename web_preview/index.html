@@ -1,0 +1,2232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SynapKor - Professional Barista VR Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      /* Clean Pro SaaS Palette (Linear / Stripe / Coinbase style) */
+      --primary: #0052FF;
+      --primary-hover: #0045D8;
+      --bg-page: #F1F5F9;
+      --bg-app: #F8FAFC;
+      --bg-dark: #0F172A;
+      --surface-white: #FFFFFF;
+      --surface-slate: #1E293B;
+      --border-light: #E2E8F0;
+      --border-dark: #334155;
+      --border-focus: #0052FF;
+      
+      --text-primary: #0F172A;
+      --text-secondary: #64748B;
+      --text-tertiary: #94A3B8;
+      --text-on-dark: #F8FAFC;
+      --text-muted-dark: #94A3B8;
+
+      --emerald: #10B981;
+      --emerald-bg: #ECFDF5;
+      --emerald-border: #A7F3D0;
+      --emerald-text: #047857;
+
+      --amber: #F59E0B;
+      --amber-bg: #FFFBEB;
+      --amber-border: #FDE68A;
+      --amber-text: #B45309;
+
+      --rose: #EF4444;
+      --rose-bg: #FEF2F2;
+      --rose-border: #FECACA;
+      --rose-text: #B91C1C;
+
+      --blue-bg: #EFF6FF;
+      --blue-border: #BFDBFE;
+      --blue-text: #1D4ED8;
+
+      /* Natural, crisp micro-shadows */
+      --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+      --shadow-card: 0 4px 12px 0 rgba(15, 23, 42, 0.05), 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+      --shadow-modal: 0 20px 35px -5px rgba(15, 23, 42, 0.18), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+    
+    body {
+      background-color: var(--bg-page);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Premium SaaS Mobile Device Frame */
+    .app-container {
+      width: 100vw;
+      height: 100vh;
+      max-width: 440px;
+      max-height: 920px;
+      background: var(--bg-app);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-modal);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    @media (max-width: 480px) {
+      .app-container { border-radius: 0; max-height: 100vh; border: none; box-shadow: none; }
+    }
+
+    /* Screen Management */
+    .screen {
+      width: 100%;
+      height: 100%;
+      display: none !important;
+      flex-direction: column;
+      position: relative;
+      overflow-y: auto;
+      background: var(--bg-app);
+    }
+    .screen.active { display: flex !important; }
+
+    /* Clean Pro Top Bar */
+    .top-bar {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface-white);
+      border-bottom: 1px solid var(--border-light);
+      z-index: 30;
+    }
+    .logo {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-primary);
+    }
+    .logo-brand {
+      display: inline-flex;
+      align-items: center;
+      letter-spacing: 0.2px;
+      color: var(--text-primary);
+    }
+    .logo-eye-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      margin: 0 1.5px;
+    }
+    .logo-eye-svg {
+      width: 17px;
+      height: 17px;
+      stroke: var(--primary);
+    }
+    .vr-badge {
+      background: var(--bg-dark);
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .xp-badge {
+      background: var(--emerald-bg);
+      border: 1px solid var(--emerald-border);
+      color: var(--emerald-text);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Home Hero Card */
+    .hero-banner {
+      margin: 16px;
+      background: var(--surface-white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+    }
+    .hero-badge {
+      width: fit-content;
+      margin-bottom: 12px;
+      background: var(--blue-bg);
+      border: 1px solid var(--blue-border);
+      color: var(--blue-text);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hero-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.4px;
+      margin-bottom: 6px;
+    }
+    .hero-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    /* Clean Pro Buttons */
+    .btn-action {
+      width: 100%;
+      height: 48px;
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: -0.1px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0, 82, 255, 0.2);
+      transition: background-color 0.15s ease, transform 0.1s ease;
+    }
+    .btn-action:hover {
+      background: var(--primary-hover);
+    }
+    .btn-action:active {
+      transform: scale(0.99);
+    }
+
+    .btn-secondary {
+      width: 100%;
+      height: 46px;
+      background: var(--surface-white);
+      color: var(--text-primary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-secondary:hover {
+      background: #F8FAFC;
+      border-color: #CBD5E1;
+    }
+
+    /* Feature Grid (Home) */
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 0 16px;
+      margin-bottom: 16px;
+    }
+    .feature-card {
+      background: var(--surface-white);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+    .feature-icon {
+      font-size: 18px;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+    .feature-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    .feature-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* ================= 3D FPS SIMULATOR VIEWPORT ================= */
+    #gameScreen {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+      background: var(--bg-dark);
+    }
+
+    .fps-viewport-wrap {
+      flex: 1;
+      height: 72%;
+      min-height: 440px;
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      background: #0B1120;
+    }
+    .fps-viewport-wrap:active { cursor: grabbing; }
+    #threeCanvas { width: 100%; height: 100%; display: block; }
+
+    /* Top VR Status Overlay */
+    .vr-status-bar {
+      position: absolute;
+      top: 14px; left: 14px; right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 20;
+    }
+    .vr-status-pill {
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid var(--border-dark);
+      backdrop-filter: blur(8px);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-on-dark);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .timer-pill {
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid var(--border-dark);
+      backdrop-filter: blur(8px);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--amber);
+    }
+    .btn-exit-vr {
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid var(--border-dark);
+      color: var(--text-on-dark);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: background 0.15s;
+    }
+    .btn-exit-vr:hover { background: #334155; }
+
+    /* Controls Help Badge */
+    .controls-help-badge {
+      position: absolute;
+      top: 54px;
+      left: 14px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid var(--border-dark);
+      backdrop-filter: blur(8px);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted-dark);
+      pointer-events: none;
+      z-index: 22;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    /* Clean Pro Crosshair */
+    .crosshair {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px; height: 20px;
+      pointer-events: none;
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.15s ease-out;
+    }
+    .crosshair.hovered {
+      transform: translate(-50%, -50%) scale(1.3);
+    }
+    .crosshair::before, .crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 1px;
+      transition: background 0.15s;
+    }
+    .crosshair::before { width: 2px; height: 12px; }
+    .crosshair::after { width: 12px; height: 2px; }
+    .crosshair.hovered::before, .crosshair.hovered::after {
+      background: var(--primary);
+    }
+    .crosshair-dot {
+      width: 3px; height: 3px;
+      background: #FFFFFF;
+      border-radius: 50%;
+    }
+
+    /* Clean Tooltip */
+    .fps-hover-tooltip {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid var(--primary);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #FFFFFF;
+      pointer-events: none;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      z-index: 25;
+      box-shadow: 0 4px 12px rgba(0, 82, 255, 0.25);
+    }
+
+    /* Virtual Mobile D-Pad */
+    .virtual-dpad {
+      position: absolute;
+      bottom: 16px;
+      left: 14px;
+      width: 96px;
+      height: 96px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--border-dark);
+      border-radius: 50%;
+      backdrop-filter: blur(8px);
+      z-index: 25;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px;
+      touch-action: none;
+    }
+    .dpad-btn {
+      width: 26px;
+      height: 26px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    .dpad-btn:active {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+    .dpad-mid {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    /* Action Progress Bar */
+    .action-progress-wrap {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 190px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      box-shadow: var(--shadow-modal);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 28;
+    }
+    .action-progress-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-on-dark);
+    }
+    .action-progress-track {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .action-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--primary);
+      border-radius: 3px;
+      transition: width 0.05s linear;
+    }
+
+    /* Combo Text Popup */
+    .combo-popup {
+      position: absolute;
+      top: 35%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      font-size: 14px;
+      font-weight: 800;
+      color: #FFFFFF;
+      background: var(--bg-dark);
+      border: 1px solid var(--emerald);
+      border-radius: 20px;
+      padding: 6px 14px;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 29;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .combo-popup.active {
+      opacity: 1;
+      transform: translate(-50%, -80%) scale(1.05);
+    }
+
+    /* Clean Pro Bottom HUD (28%) */
+    .fps-hud-bottom {
+      height: 28%;
+      min-height: 185px;
+      background: var(--bg-dark);
+      border-top: 1px solid var(--border-dark);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      z-index: 20;
+    }
+
+    /* Step Pipeline Progress */
+    .steps-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .step-pill {
+      flex: 1;
+      padding: 6px 2px;
+      text-align: center;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-dark);
+      color: var(--text-muted-dark);
+      transition: all 0.2s ease;
+    }
+    .step-pill.done {
+      background: var(--emerald-bg);
+      border-color: var(--emerald-border);
+      color: var(--emerald-text);
+    }
+    .step-pill.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFFFFF;
+    }
+
+    /* Dialog Option Cards (Quests 2 & 3) */
+    .dialog-option {
+      background: var(--surface-slate);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-on-dark);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .dialog-option:hover {
+      border-color: var(--primary);
+      background: #273549;
+    }
+    .dialog-tag {
+      width: 22px; height: 22px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFFFFF;
+    }
+
+    /* Customer Speech Bubble */
+    .speech-bubble {
+      background: #1E293B;
+      border: 1px solid #475569;
+      border-left: 3px solid var(--rose);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--text-on-dark);
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    /* EPIC VICTORY MODAL OVERLAY */
+    .victory-modal-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(6px);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      text-align: center;
+      z-index: 40;
+      animation: fadeInModal 0.3s ease-out forwards;
+    }
+    @keyframes fadeInModal {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .victory-card {
+      background: var(--surface-white);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-modal);
+      border-radius: var(--radius-lg);
+      padding: 24px 20px;
+      width: 100%;
+      max-width: 360px;
+      color: var(--text-primary);
+    }
+
+    /* ================= RESULT SCREEN (PRO SAAS REPORT) ================= */
+    .report-card {
+      background: var(--surface-white);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 18px 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .score-circle-clean {
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      border: 4px solid var(--emerald);
+      background: var(--emerald-bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 12px auto;
+    }
+    .score-number {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--emerald-text);
+      line-height: 1;
+    }
+    .score-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--emerald-text);
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    .stat-table {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background: #F8FAFC;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+    }
+    .stat-label {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .stat-val {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ================= SCREEN 1: HOME ================= -->
+  <div id="homeScreen" class="screen active">
+    <div class="top-bar">
+      <div class="logo">
+        <span class="logo-brand">SYNAPK<span class="logo-eye-wrap"><svg class="logo-eye-svg" viewBox="0 0 24 24" fill="none"><path d="M1 12C3.2 6.8 7.2 3.8 12 3.8C16.8 3.8 20.8 6.8 23 12C20.8 17.2 16.8 20.2 12 20.2C7.2 20.2 3.2 17.2 1 12Z" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="4.5" fill="#FFFFFF" stroke="var(--primary)" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="var(--primary)"/></svg></span>R</span>
+        <span class="vr-badge">VR 3D</span>
+      </div>
+      <div class="xp-badge">⚡ 2800 XP</div>
+    </div>
+
+    <div class="hero-banner">
+      <div class="hero-badge">
+        <span>🎮</span> 3D FPS Simulation Engine
+      </div>
+      <h2 class="hero-title">Barista Pro VR Edition</h2>
+      <p class="hero-subtitle">
+        Интерактивный симулятор работы бариста: свободное перемещение за стойкой (WASD), точная моторика помола, темперовки, экстракции и стресс-тест коммуникации.
+      </p>
+      <button class="btn-action" onclick="startBaristaVR()">
+        <span>▶</span> Запустить симуляцию
+      </button>
+    </div>
+
+    <div style="padding: 0 16px; margin-bottom: 8px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+        Управление в симуляторе
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🕹️</div>
+        <div class="feature-title">WASD / Д-Пад</div>
+        <div class="feature-desc">Свободный шаг вдоль барной стойки бариста</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👀</div>
+        <div class="feature-title">Обзор + [E]</div>
+        <div class="feature-desc">Вращение камеры и действие по прицелу</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 2: 3D FPS SIMULATOR ================= -->
+  <div id="gameScreen" class="screen">
+    <!-- TOP STATUS OVERLAY -->
+    <div class="vr-status-bar">
+      <div class="vr-status-pill">
+        <span style="display:inline-block; width:7px; height:7px; background:var(--emerald); border-radius:50%;"></span>
+        <span id="vrQuestTitle">КВЕСТ 1: ICED OAT LATTE</span>
+      </div>
+      <div class="timer-pill" id="vrTimer">00:00</div>
+      <button class="btn-exit-vr" onclick="exitToHome()">✕</button>
+    </div>
+
+    <!-- 3D FIRST-PERSON VIEWPORT -->
+    <div class="fps-viewport-wrap" id="viewportWrap">
+      <div class="controls-help-badge">
+        <span>⌨️ [W][A][S][D] Перемещение</span>
+        <span>🖱️ Мышь / Свайп: Обзор</span>
+        <span>👉 [E] / Клик: Действие</span>
+      </div>
+
+      <div class="crosshair" id="mainCrosshair">
+        <div class="crosshair-dot"></div>
+      </div>
+
+      <div id="hoverTooltip" class="fps-hover-tooltip">
+        <span id="tooltipIcon">👉</span>
+        <span id="tooltipText">Нажмите [E] для взаимодействия</span>
+      </div>
+
+      <!-- Action Progress Bar Overlay -->
+      <div id="actionProgress" class="action-progress-wrap">
+        <span id="actionProgressTitle" class="action-progress-title">ПРОЛИВ ЭСПРЕССО...</span>
+        <div class="action-progress-track">
+          <div id="actionProgressFill" class="action-progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Combo Text Effect Popup -->
+      <div id="comboPopup" class="combo-popup">✨ Идеальная экстракция +150 XP</div>
+
+      <!-- EPIC VICTORY MODAL OVERLAY -->
+      <div id="victoryModal" class="victory-modal-overlay">
+        <div class="victory-card">
+          <div style="font-size: 36px; margin-bottom: 8px;">🏆</div>
+          <h2 style="font-size: 17px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
+            Симуляция успешно пройдена!
+          </h2>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5;">
+            Вы приготовили напиток по стандарту, разрешили конфликт с гостем и рассчитали недельный бюджет сырья.
+          </p>
+          <button class="btn-action" onclick="showAIReportScreen()">
+            Посмотреть аналитику ИИ
+          </button>
+        </div>
+      </div>
+
+      <!-- Virtual D-Pad for Mobile Movement -->
+      <div class="virtual-dpad" id="virtualDpad">
+        <button class="dpad-btn" onmousedown="setMoveKey('KeyW', true)" onmouseup="setMoveKey('KeyW', false)" ontouchstart="setMoveKey('KeyW', true)" ontouchend="setMoveKey('KeyW', false)">▲</button>
+        <div class="dpad-mid">
+          <button class="dpad-btn" onmousedown="setMoveKey('KeyA', true)" onmouseup="setMoveKey('KeyA', false)" ontouchstart="setMoveKey('KeyA', true)" ontouchend="setMoveKey('KeyA', false)">◀</button>
+          <button class="dpad-btn" style="background:var(--primary); border-color:var(--primary);" onclick="triggerCenterInteraction()">E</button>
+          <button class="dpad-btn" onmousedown="setMoveKey('KeyD', true)" onmouseup="setMoveKey('KeyD', false)" ontouchstart="setMoveKey('KeyD', true)" ontouchend="setMoveKey('KeyD', false)">▶</button>
+        </div>
+        <button class="dpad-btn" onmousedown="setMoveKey('KeyS', true)" onmouseup="setMoveKey('KeyS', false)" ontouchstart="setMoveKey('KeyS', true)" ontouchend="setMoveKey('KeyS', false)">▼</button>
+      </div>
+
+      <div id="threeCanvas"></div>
+    </div>
+
+    <!-- BOTTOM FPS HUD (28%) -->
+    <div class="fps-hud-bottom" id="hudBottom">
+      <!-- Injected dynamically via JS -->
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 3: AI RESULTS DASHBOARD ================= -->
+  <div id="resultScreen" class="screen" style="padding: 16px;">
+    <div class="top-bar" style="background: transparent; border: none; padding: 0 0 12px;">
+      <div class="logo">
+        <span class="logo-brand">SYNAPK<span class="logo-eye-wrap"><svg class="logo-eye-svg" viewBox="0 0 24 24" fill="none"><path d="M1 12C3.2 6.8 7.2 3.8 12 3.8C16.8 3.8 20.8 6.8 23 12C20.8 17.2 16.8 20.2 12 20.2C7.2 20.2 3.2 17.2 1 12Z" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="4.5" fill="#FFFFFF" stroke="var(--primary)" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="var(--primary)"/></svg></span>R</span>
+        <span class="vr-badge" style="background:var(--primary);">AI REPORT</span>
+      </div>
+      <div class="xp-badge" id="resTotalXp">+950 XP</div>
+    </div>
+
+    <div class="report-card" style="text-align: center;">
+      <div style="display:inline-block; padding:3px 10px; background:var(--emerald-bg); border:1px solid var(--emerald-border); border-radius:20px; font-size:11px; font-weight:700; color:var(--emerald-text); margin-bottom:8px;">
+        ВЕРДИКТ ИИ: РЕКОМЕНДОВАН
+      </div>
+      <h2 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;" id="resPraiseTitle">
+        Отличный результат симуляции
+      </h2>
+
+      <div class="score-circle-clean">
+        <div class="score-number" id="resFitScore">0%</div>
+        <div class="score-label">JOB FIT SCORE</div>
+      </div>
+      <h3 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;" id="resVerdictGrade">Senior Barista / Shift Supervisor</h3>
+      <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;" id="resVerdictDesc">Исключительная моторика рук, соблюдение техкарты и грамотная деэскалация конфликта.</p>
+    </div>
+
+    <div class="report-card">
+      <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px;">
+        Метрики эффективности
+      </div>
+      
+      <div class="stat-table">
+        <div class="stat-row">
+          <span class="stat-label">Точность технологии (Hard Skills)</span>
+          <span class="stat-val" style="color: var(--primary);" id="statHard">98%</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Плавность моторики</span>
+          <span class="stat-val" style="color: var(--emerald-text);" id="statHands">Отличная (96%)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Стрессоустойчивость с гостем</span>
+          <span class="stat-val" style="color: var(--primary);" id="statSoft">100%</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Время полного цикла</span>
+          <span class="stat-val" id="statTime">42 сек</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="report-card" style="margin-bottom: 14px;">
+      <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">💡 Ключевые компетенции:</div>
+      <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+        • Соблюдение давления экстракции 9 бар и правильный помол<br>
+        • Быстрая замена напитка гостю с предложением комплимента<br>
+        • Точный расчет закупки без перерасхода бюджета
+      </div>
+    </div>
+
+    <button class="btn-action" onclick="startBaristaVR()" style="margin-bottom: 8px;">
+      🔄 Повторить симуляцию
+    </button>
+    <button class="btn-secondary" onclick="exitToHome()">
+      🏠 В главное меню
+    </button>
+  </div>
+
+</div>
+
+</div>
+
+<!-- THREE.JS 3D CINEMATIC GRAPHICS & FPS CONTROLLER -->
+<script>
+  // ================= WEBAUDIO PROCEDURAL SOUND SYNTHESIS =================
+  let audioCtx = null;
+  function getAudioContext() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playTone(freq, type, duration, gainVal = 0.1) {
+    try {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(gainVal, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch(e){}
+  }
+
+  function playNoise(duration, filterFreq, gainVal = 0.1) {
+    try {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') ctx.resume();
+      const bufferSize = ctx.sampleRate * duration;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(filterFreq, ctx.currentTime);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(gainVal, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      noise.start();
+    } catch(e){}
+  }
+
+  function playGrinderSound() {
+    playTone(110, 'sawtooth', 1.2, 0.18);
+    playNoise(1.2, 800, 0.12);
+  }
+
+  function playTamperThud() {
+    playTone(60, 'sine', 0.35, 0.3);
+    playTone(120, 'triangle', 0.2, 0.2);
+  }
+
+  function playEspressoFlowSound() {
+    playNoise(2.2, 1200, 0.14);
+    playTone(280, 'sine', 2.0, 0.08);
+  }
+
+  function playSteamSound() {
+    playNoise(2.0, 2400, 0.18);
+    playTone(450, 'sawtooth', 1.8, 0.06);
+  }
+
+  function playIceDropSound() {
+    playTone(880, 'sine', 0.15, 0.15);
+    setTimeout(() => playTone(1100, 'sine', 0.2, 0.12), 80);
+    setTimeout(() => playTone(1320, 'sine', 0.25, 0.1), 160);
+  }
+
+  function playSuccessChime() {
+    playTone(523.25, 'sine', 0.25, 0.15);
+    setTimeout(() => playTone(659.25, 'sine', 0.25, 0.15), 100);
+    setTimeout(() => playTone(783.99, 'sine', 0.35, 0.18), 200);
+    setTimeout(() => playTone(1046.5, 'sine', 0.5, 0.2), 300);
+  }
+
+  function playVictoryFanfare() {
+    playTone(523.25, 'sine', 0.25, 0.2);
+    setTimeout(() => playTone(659.25, 'sine', 0.25, 0.2), 120);
+    setTimeout(() => playTone(783.99, 'sine', 0.3, 0.2), 240);
+    setTimeout(() => playTone(1046.5, 'sine', 0.6, 0.25), 360);
+    setTimeout(() => playTone(1318.5, 'sine', 0.8, 0.3), 500);
+  }
+
+  // ================= GAME TELEMETRY & STATE =================
+  const state = {
+    quest: 1,
+    step: 0,
+    timer: 0,
+    timerInterval: null,
+    misclicks: 0,
+    conflictChoice: '',
+    budgetChoice: '',
+    stepsConfig: [
+      { id: 'portafilter', name: 'Взять Холдер', hint: 'Наведите прицел и нажмите [E] / Клик', popup: 'HOLDER GRABBED!' },
+      { id: 'grinder', name: 'Смолоть кофе', hint: 'Наведите на кофемолку и нажмите [E]', popup: 'FRESH GRIND 18g! ☕' },
+      { id: 'tamper', name: 'Затемперовать', hint: 'Наведите на темпер и нажмите [E]', popup: 'PERFECT 20kg TAMP! 🔨' },
+      { id: 'espressoMachine', name: 'Сварить эспрессо', hint: 'Наведите на кофемашину и нажмите [E]', popup: 'GOLDEN CREMA! +150 XP ✨' },
+      { id: 'milkPitcher', name: 'Взбить овсяное молоко', hint: 'Наведите на питчер и нажмите [E]', popup: 'SILKY MICROFOAM! 🥛' },
+      { id: 'glassCup', name: 'Собрать Iced Latte', hint: 'Наведите на стакан и нажмите [E]', popup: 'ICED OAT LATTE READY! 🏆' }
+    ]
+  };
+
+  // ================= 3D CINEMATIC GRAPHICS ENGINE =================
+  let scene, camera, renderer, raycaster;
+  let interactiveObjects = [];
+  let handsGroup, rightHand;
+  let portafilterObj, grinderObj, tamperObj, machineObj, pitcherObj, cupObj, customerObj;
+  let espressoStreamParticles, steamParticles, iceCubesGroup;
+  let cupLiquidMesh;
+
+  const player = {
+    pos: new THREE.Vector3(0, 1.65, 0.95),
+    yaw: 0,
+    pitch: -0.28,
+    speed: 2.2,
+    keys: { KeyW: false, KeyS: false, KeyA: false, KeyD: false },
+    minX: -1.35, maxX: 1.35,
+    minZ: 0.55,  maxZ: 1.35,
+    minYaw: -Math.PI * 0.38, maxYaw: Math.PI * 0.38,
+    minPitch: -Math.PI * 0.30, maxPitch: Math.PI * 0.22
+  };
+
+  function setMoveKey(code, val) {
+    if (player.keys.hasOwnProperty(code)) player.keys[code] = val;
+  }
+
+  function initThreeFPS() {
+    const container = document.getElementById('threeCanvas');
+    if (!container || renderer) return;
+
+    const width = container.clientWidth || 400;
+    const height = container.clientHeight || 460;
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0F172A);
+    scene.fog = new THREE.FogExp2(0x0F172A, 0.04);
+
+    camera = new THREE.PerspectiveCamera(72, width / height, 0.1, 50);
+    camera.position.copy(player.pos);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    
+    // CLEAN STUDIO COLOR GRADING & ACES TONEMAPPING
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    container.innerHTML = '';
+    container.appendChild(renderer.domElement);
+
+    raycaster = new THREE.Raycaster();
+
+    // CLEAN STUDIO AMBIENT & DIRECTIONAL LIGHTING (Pro SaaS Standard)
+    const ambientLight = new THREE.AmbientLight(0xE2E8F0, 1.8);
+    scene.add(ambientLight);
+
+    // Warm Barista Counter Spotlight
+    const warmCounterSpot = new THREE.SpotLight(0xFFFFFF, 3.8, 14, Math.PI / 3.4, 0.35, 1.0);
+    warmCounterSpot.position.set(0, 3.6, 1.2);
+    warmCounterSpot.castShadow = true;
+    warmCounterSpot.shadow.mapSize.width = 1024;
+    warmCounterSpot.shadow.mapSize.height = 1024;
+    scene.add(warmCounterSpot);
+
+    // Soft Studio Fill Light
+    const fillLight = new THREE.DirectionalLight(0xF1F5F9, 1.2);
+    fillLight.position.set(2, 3.5, 2);
+    scene.add(fillLight);
+
+    build3DEnvironment();
+    build3DFPSHands();
+    setupFPSControls(container);
+
+    let clock = new THREE.Clock();
+    let shakeIntensity = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = Math.min(clock.getDelta(), 0.1);
+      const time = clock.getElapsedTime();
+
+      // Movement & Bounds
+      let moveX = 0, moveZ = 0;
+      if (player.keys.KeyW) moveZ -= 1;
+      if (player.keys.KeyS) moveZ += 1;
+      if (player.keys.KeyA) moveX -= 1;
+      if (player.keys.KeyD) moveX += 1;
+
+      if (moveX !== 0 || moveZ !== 0) {
+        const moveLen = Math.hypot(moveX, moveZ);
+        moveX /= moveLen;
+        moveZ /= moveLen;
+
+        const sinYaw = Math.sin(player.yaw);
+        const cosYaw = Math.cos(player.yaw);
+
+        player.pos.x += (moveX * cosYaw + moveZ * sinYaw) * player.speed * delta;
+        player.pos.z += (moveZ * cosYaw - moveX * sinYaw) * player.speed * delta;
+
+        player.pos.x = THREE.MathUtils.clamp(player.pos.x, player.minX, player.maxX);
+        player.pos.z = THREE.MathUtils.clamp(player.pos.z, player.minZ, player.maxZ);
+      }
+
+      camera.position.copy(player.pos);
+
+      if (shakeIntensity > 0) {
+        camera.position.x += (Math.random() - 0.5) * shakeIntensity;
+        camera.position.y += (Math.random() - 0.5) * shakeIntensity;
+        shakeIntensity *= 0.88;
+        if (shakeIntensity < 0.001) shakeIntensity = 0;
+      }
+
+      const targetLook = new THREE.Vector3(
+        player.pos.x + Math.sin(player.yaw) * Math.cos(player.pitch),
+        player.pos.y + Math.sin(player.pitch),
+        player.pos.z - Math.cos(player.yaw) * Math.cos(player.pitch)
+      );
+      camera.lookAt(targetLook);
+
+      // FPS Hands attached to Camera
+      if (handsGroup) {
+        handsGroup.position.copy(camera.position);
+        handsGroup.rotation.set(camera.rotation.x, camera.rotation.y, camera.rotation.z);
+        if (!handsGroup.userData.animating) {
+          handsGroup.position.y += Math.sin(time * 2.2) * 0.006;
+        }
+      }
+
+      checkCenterRaycast();
+
+      if (customerObj && customerObj.visible) {
+        customerObj.position.y = 1.3 + Math.sin(time * 3.2) * 0.012;
+        customerObj.rotation.y = Math.sin(time * 1.8) * 0.05;
+      }
+
+      if (espressoStreamParticles && espressoStreamParticles.visible) {
+        const p = espressoStreamParticles.geometry.attributes.position.array;
+        for (let i = 1; i < p.length; i += 3) {
+          p[i] -= delta * 1.8;
+          if (p[i] < 1.21) p[i] = 1.37;
+        }
+        espressoStreamParticles.geometry.attributes.position.needsUpdate = true;
+      }
+
+      if (steamParticles && steamParticles.visible) {
+        const sp = steamParticles.geometry.attributes.position.array;
+        for (let i = 1; i < sp.length; i += 3) {
+          sp[i] += delta * 0.45;
+          if (sp[i] > 1.55) sp[i] = 1.30;
+        }
+        steamParticles.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Dynamic Pulsing Target Beacon Ring
+      const beacon = scene.getObjectByName('targetBeaconRing');
+      if (beacon) {
+        if (state.quest === 1) {
+          beacon.visible = true;
+          const pulse = 1.0 + Math.sin(time * 5.0) * 0.18;
+          beacon.scale.set(pulse, pulse, pulse);
+
+          switch(state.step) {
+            case 0: beacon.position.set(portafilterObj.position.x, 1.165, portafilterObj.position.z); break;
+            case 1: beacon.position.set(grinderObj.position.x, 1.165, grinderObj.position.z); break;
+            case 2: beacon.position.set(tamperObj.position.x, 1.165, tamperObj.position.z); break;
+            case 3: beacon.position.set(-0.70, 1.165, -0.17); break;
+            case 4: beacon.position.set(pitcherObj.position.x, 1.165, pitcherObj.position.z); break;
+            case 5: beacon.position.set(cupObj.position.x, 1.165, cupObj.position.z); break;
+          }
+        } else {
+          beacon.visible = false;
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.triggerCameraShake = function(intensity = 0.035) {
+      shakeIntensity = intensity;
+    };
+  }
+
+  function build3DEnvironment() {
+    interactiveObjects = [];
+
+    // 1. Back Wall & Menu Board
+    const wallGeo = new THREE.PlaneGeometry(10, 6);
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.85 });
+    const wall = new THREE.Mesh(wallGeo, wallMat);
+    wall.position.set(0, 2.5, -2.5);
+    scene.add(wall);
+
+    const menuGeo = new THREE.PlaneGeometry(2.4, 1.2);
+    const menuMat = new THREE.MeshStandardMaterial({ color: 0x1A1A24, roughness: 0.5 });
+    const menuBoard = new THREE.Mesh(menuGeo, menuMat);
+    menuBoard.position.set(0, 2.4, -2.48);
+    scene.add(menuBoard);
+
+    const signGeo = new THREE.BoxGeometry(1.6, 0.08, 0.04);
+    const signMat = new THREE.MeshStandardMaterial({ color: 0x00FFB3, emissive: 0x00FFB3, emissiveIntensity: 1.3 });
+    const neonSign = new THREE.Mesh(signGeo, signMat);
+    neonSign.position.set(0, 3.1, -2.46);
+    scene.add(neonSign);
+
+    const shelfGeo = new THREE.BoxGeometry(1.4, 0.04, 0.3);
+    const shelfMat = new THREE.MeshStandardMaterial({ color: 0x3E2723, roughness: 0.7 });
+    const shelf = new THREE.Mesh(shelfGeo, shelfMat);
+    shelf.position.set(-1.4, 1.9, -1.8);
+    scene.add(shelf);
+
+    const syrupColors = [0xFFA502, 0xFF4757, 0x2ED573];
+    syrupColors.forEach((color, i) => {
+      const bottle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 0.25, 16),
+        new THREE.MeshStandardMaterial({ color: color, transparent: true, opacity: 0.85, roughness: 0.1, metalness: 0.1 })
+      );
+      bottle.position.set(-1.8 + i * 0.18, 2.05, -1.8);
+      scene.add(bottle);
+    });
+
+    // 2. Bar Counter Top
+    const counterGeo = new THREE.BoxGeometry(3.6, 1.1, 1.6);
+    const counterMat = new THREE.MeshStandardMaterial({ color: 0x1A1828, roughness: 0.25, metalness: 0.2 });
+    const counter = new THREE.Mesh(counterGeo, counterMat);
+    counter.position.set(0, 0.55, -0.4);
+    counter.receiveShadow = true;
+    scene.add(counter);
+
+    const topGeo = new THREE.BoxGeometry(3.7, 0.06, 1.7);
+    const topMat = new THREE.MeshStandardMaterial({ color: 0x242238, roughness: 0.15, metalness: 0.4 });
+    const counterTop = new THREE.Mesh(topGeo, topMat);
+    counterTop.position.set(0, 1.12, -0.4);
+    counterTop.receiveShadow = true;
+    scene.add(counterTop);
+
+    // 3. Authentic Commercial Dual-Group Espresso Machine (La Marzocco / Victoria Arduino Style)
+    machineObj = new THREE.Group();
+    machineObj.name = 'espressoMachine';
+
+    // Main Stainless Steel Chassis
+    const bodyMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.96, 0.58, 0.58),
+      new THREE.MeshStandardMaterial({ color: 0xE8E8EE, metalness: 0.95, roughness: 0.12 })
+    );
+    bodyMesh.position.set(0, 0.32, 0);
+    bodyMesh.castShadow = true;
+    machineObj.add(bodyMesh);
+
+    // Front Control Panel (Matte Black / Brushed Steel)
+    const panelMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.92, 0.18, 0.04),
+      new THREE.MeshStandardMaterial({ color: 0x1A1A26, roughness: 0.4, metalness: 0.5 })
+    );
+    panelMesh.position.set(0, 0.45, 0.30);
+    machineObj.add(panelMesh);
+
+    // Pressure Gauge Dials (Boiler & Pump)
+    for (let i = -1; i <= 1; i += 2) {
+      const gauge = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.035, 0.035, 0.02, 16),
+        new THREE.MeshStandardMaterial({ color: 0xFFFFFF, metalness: 0.9, roughness: 0.1, emissive: 0x00FFB3, emissiveIntensity: 0.2 })
+      );
+      gauge.rotation.x = Math.PI / 2;
+      gauge.position.set(i * 0.38, 0.45, 0.32);
+      machineObj.add(gauge);
+    }
+
+    // Dual Chrome Group Heads (Left & Right)
+    for (let i = -1; i <= 1; i += 2) {
+      const groupHead = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.075, 0.075, 0.14, 24),
+        new THREE.MeshStandardMaterial({ color: 0xFFFFFF, metalness: 0.98, roughness: 0.05 })
+      );
+      groupHead.position.set(i * 0.20, 0.28, 0.28);
+      machineObj.add(groupHead);
+
+      // Group head chrome collar
+      const collar = new THREE.Mesh(
+        new THREE.TorusGeometry(0.08, 0.015, 12, 24),
+        new THREE.MeshStandardMaterial({ color: 0xEEEEEE, metalness: 0.98, roughness: 0.05 })
+      );
+      collar.rotation.x = Math.PI / 2;
+      collar.position.set(i * 0.20, 0.35, 0.28);
+      machineObj.add(collar);
+    }
+
+    // Left Steam Wand
+    const leftWand = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.012, 0.30, 16),
+      new THREE.MeshStandardMaterial({ color: 0xFFFFFF, metalness: 0.98, roughness: 0.08 })
+    );
+    leftWand.position.set(-0.46, 0.28, 0.24);
+    leftWand.rotation.z = 0.35;
+    leftWand.rotation.x = 0.2;
+    machineObj.add(leftWand);
+
+    // Right Steam Wand (Articulated towards Milk Steaming Station)
+    const rightWand = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.012, 0.32, 16),
+      new THREE.MeshStandardMaterial({ color: 0xFFFFFF, metalness: 0.98, roughness: 0.08 })
+    );
+    rightWand.position.set(0.46, 0.26, 0.26);
+    rightWand.rotation.z = -0.38;
+    rightWand.rotation.x = 0.25;
+    machineObj.add(rightWand);
+
+    // Metal Drip Tray Grid
+    const dripTray = new THREE.Mesh(
+      new THREE.BoxGeometry(0.92, 0.04, 0.28),
+      new THREE.MeshStandardMaterial({ color: 0xCCCCCC, metalness: 0.9, roughness: 0.3 })
+    );
+    dripTray.position.set(0, 0.04, 0.24);
+    machineObj.add(dripTray);
+
+    // Cup Warmer Rack on Top + Stacked Cups
+    const rack = new THREE.Mesh(
+      new THREE.BoxGeometry(0.88, 0.02, 0.48),
+      new THREE.MeshStandardMaterial({ color: 0xAAAAAA, metalness: 0.8, roughness: 0.4 })
+    );
+    rack.position.set(0, 0.62, 0);
+    machineObj.add(rack);
+
+    // Ceramic Cups on Top
+    for (let c = 0; c < 3; c++) {
+      const ceramicCup = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.025, 0.06, 16),
+        new THREE.MeshStandardMaterial({ color: c % 2 === 0 ? 0xFFFFFF : 0x00FFB3, roughness: 0.2 })
+      );
+      ceramicCup.position.set(-0.25 + c * 0.22, 0.66, -0.05);
+      machineObj.add(ceramicCup);
+    }
+
+    machineObj.position.set(-0.50, 1.15, -0.45);
+    scene.add(machineObj);
+    interactiveObjects.push(machineObj);
+
+    // 4. Portafilter / Holder
+    portafilterObj = new THREE.Group();
+    portafilterObj.name = 'portafilter';
+    const basket = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.065, 0.052, 0.08, 24),
+      new THREE.MeshStandardMaterial({ color: 0xEEEEEE, metalness: 0.98, roughness: 0.08 })
+    );
+    const handle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.018, 0.022, 0.24, 16),
+      new THREE.MeshStandardMaterial({ color: 0x1A1A1A, roughness: 0.4 })
+    );
+    handle.rotation.x = Math.PI / 2;
+    handle.position.set(0, 0, 0.14);
+    portafilterObj.add(basket);
+    portafilterObj.add(handle);
+    portafilterObj.position.set(-0.35, 1.18, 0.02);
+    scene.add(portafilterObj);
+    interactiveObjects.push(portafilterObj);
+
+    // 5. Commercial On-Demand Grinder (Left)
+    grinderObj = new THREE.Group();
+    grinderObj.name = 'grinder';
+    const grinderBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.26, 0.52, 0.26),
+      new THREE.MeshStandardMaterial({ color: 0x181822, roughness: 0.3, metalness: 0.7 })
+    );
+    grinderBody.position.y = 0.26;
+    
+    // Transparent Bean Hopper
+    const hopper = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.13, 0.06, 0.26, 20),
+      new THREE.MeshStandardMaterial({ color: 0x8899AA, transparent: true, opacity: 0.8, roughness: 0.05 })
+    );
+    hopper.position.y = 0.65;
+
+    // Roasted Coffee Beans inside Hopper
+    const beansCore = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.10, 0.04, 0.18, 16),
+      new THREE.MeshStandardMaterial({ color: 0x3E271E, roughness: 0.9 })
+    );
+    beansCore.position.y = 0.62;
+
+    // Dosing Spout & Fork
+    const spout = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.08, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0xDDDDDD, metalness: 0.9 })
+    );
+    spout.position.set(0, 0.24, 0.15);
+
+    grinderObj.add(grinderBody);
+    grinderObj.add(hopper);
+    grinderObj.add(beansCore);
+    grinderObj.add(spout);
+    grinderObj.position.set(-1.18, 1.15, -0.42);
+    scene.add(grinderObj);
+    interactiveObjects.push(grinderObj);
+
+    // 6. Heavy Stainless Steel Tamper & Silicone Mat
+    tamperObj = new THREE.Group();
+    tamperObj.name = 'tamper';
+    
+    // Silicone Mat
+    const mat = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.015, 0.18),
+      new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 })
+    );
+    mat.position.set(0, 0, 0);
+
+    const tamperBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.058, 0.058, 0.035, 24),
+      new THREE.MeshStandardMaterial({ color: 0xFFFFFF, metalness: 0.98, roughness: 0.08 })
+    );
+    tamperBase.position.y = 0.025;
+
+    const tamperGrip = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.022, 0.036, 0.095, 20),
+      new THREE.MeshStandardMaterial({ color: 0x6D4C41, roughness: 0.35 })
+    );
+    tamperGrip.position.y = 0.08;
+
+    tamperObj.add(mat);
+    tamperObj.add(tamperBase);
+    tamperObj.add(tamperGrip);
+    tamperObj.position.set(-0.35, 1.16, 0.02);
+    scene.add(tamperObj);
+    interactiveObjects.push(tamperObj);
+
+    // 7. PROMINENT STAINLESS STEEL MILK PITCHER & OAT MILK CARTON (Front-Right Station)
+    pitcherObj = new THREE.Group();
+    pitcherObj.name = 'milkPitcher';
+
+    // Pitcher Body with Classic Tapered Pouring Spout
+    const pitcherMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.068, 0.078, 0.16, 28, 1, true),
+      new THREE.MeshPhysicalMaterial({
+        color: 0xF5F5FA,
+        metalness: 0.98,
+        roughness: 0.08,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+        side: THREE.DoubleSide
+      })
+    );
+    pitcherMesh.position.y = 0.08;
+    pitcherObj.add(pitcherMesh);
+
+    // Pitcher Bottom
+    const pitcherBottom = new THREE.Mesh(
+      new THREE.CircleGeometry(0.078, 28),
+      new THREE.MeshStandardMaterial({ color: 0xDDDDDD, metalness: 0.9, side: THREE.DoubleSide })
+    );
+    pitcherBottom.rotation.x = Math.PI / 2;
+    pitcherObj.add(pitcherBottom);
+
+    // Pitcher Handle
+    const pitcherHandle = new THREE.Mesh(
+      new THREE.TorusGeometry(0.045, 0.009, 12, 24, Math.PI),
+      new THREE.MeshStandardMaterial({ color: 0xEEEEEE, metalness: 0.95, roughness: 0.1 })
+    );
+    pitcherHandle.rotation.y = Math.PI / 2;
+    pitcherHandle.position.set(0, 0.08, -0.075);
+    pitcherObj.add(pitcherHandle);
+
+    // Oat Milk Carton sitting right next to Pitcher
+    const oatMilkCarton = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.22, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0x3867D6, roughness: 0.3 })
+    );
+    oatMilkCarton.position.set(0.12, 0.11, 0.02);
+    pitcherObj.add(oatMilkCarton);
+
+    // Oat Milk Cap
+    const oatCap = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015, 0.015, 0.02, 12),
+      new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.2 })
+    );
+    oatCap.position.set(0.12, 0.23, 0.02);
+    pitcherObj.add(oatCap);
+
+    // Place Pitcher PROMINENTLY in front of the counter
+    pitcherObj.position.set(0.22, 1.16, -0.05);
+    scene.add(pitcherObj);
+    interactiveObjects.push(pitcherObj);
+
+    // Active Target Pulsing Beacon Ring (Follows current step)
+    const ringGeo = new THREE.RingGeometry(0.09, 0.13, 32);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x0052FF,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.85
+    });
+    const targetBeaconRing = new THREE.Mesh(ringGeo, ringMat);
+    targetBeaconRing.name = 'targetBeaconRing';
+    targetBeaconRing.rotation.x = Math.PI / 2;
+    targetBeaconRing.position.set(-0.35, 1.165, 0.02);
+    scene.add(targetBeaconRing);
+
+    // 8. Physical Glass Cup with Liquid Layering (On Espresso Drip Tray)
+    cupObj = new THREE.Group();
+    cupObj.name = 'glassCup';
+    const glassMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.065, 0.048, 0.19, 28),
+      new THREE.MeshPhysicalMaterial({
+        color: 0xFFFFFF,
+        transparent: true,
+        opacity: 0.55,
+        roughness: 0.04,
+        metalness: 0.05,
+        transmission: 0.92,
+        ior: 1.52
+      })
+    );
+    glassMesh.position.y = 0.095;
+    cupObj.add(glassMesh);
+
+    cupLiquidMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.046, 0.02, 24),
+      new THREE.MeshStandardMaterial({ color: 0x3E271E, roughness: 0.2 })
+    );
+    cupLiquidMesh.position.y = 0.02;
+    cupLiquidMesh.visible = false;
+    cupObj.add(cupLiquidMesh);
+
+    iceCubesGroup = new THREE.Group();
+    for (let i = 0; i < 4; i++) {
+      const ice = new THREE.Mesh(
+        new THREE.BoxGeometry(0.035, 0.035, 0.035),
+        new THREE.MeshPhysicalMaterial({ color: 0xCCFFFF, transparent: true, opacity: 0.75, roughness: 0.08 })
+      );
+      ice.position.set((Math.random() - 0.5) * 0.04, 0.04 + i * 0.03, (Math.random() - 0.5) * 0.04);
+      ice.rotation.set(Math.random(), Math.random(), Math.random());
+      iceCubesGroup.add(ice);
+    }
+    iceCubesGroup.visible = false;
+    cupObj.add(iceCubesGroup);
+
+    cupObj.position.set(-0.70, 1.21, -0.17);
+    scene.add(cupObj);
+    interactiveObjects.push(cupObj);
+
+    // 9. Customer Avatar
+    customerObj = new THREE.Group();
+    customerObj.name = 'customerAvatar';
+    
+    const headMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 24, 24),
+      new THREE.MeshStandardMaterial({ color: 0xFFCBA4, roughness: 0.6 })
+    );
+    headMesh.position.y = 0.45;
+    const torsoMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.28, 0.65, 20),
+      new THREE.MeshStandardMaterial({ color: 0x34495E, roughness: 0.7 })
+    );
+    customerObj.add(headMesh);
+    customerObj.add(torsoMesh);
+    customerObj.position.set(0, 1.3, -1.6);
+    customerObj.visible = false;
+    scene.add(customerObj);
+
+    createParticleEffects();
+  }
+
+  function createParticleEffects() {
+    const streamGeo = new THREE.BufferGeometry();
+    const count = 50;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = -0.70 + (Math.random() - 0.5) * 0.015;
+      positions[i * 3 + 1] = 1.21 + Math.random() * 0.16;
+      positions[i * 3 + 2] = -0.17 + (Math.random() - 0.5) * 0.015;
+    }
+    streamGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const streamMat = new THREE.PointsMaterial({ color: 0x4A2511, size: 0.024, transparent: true, opacity: 0.95 });
+    espressoStreamParticles = new THREE.Points(streamGeo, streamMat);
+    espressoStreamParticles.visible = false;
+    scene.add(espressoStreamParticles);
+
+    const steamGeo = new THREE.BufferGeometry();
+    const sCount = 80;
+    const sPos = new Float32Array(sCount * 3);
+    for (let i = 0; i < sCount; i++) {
+      sPos[i * 3] = -0.04 + (Math.random() - 0.5) * 0.06;
+      sPos[i * 3 + 1] = 1.30 + Math.random() * 0.22;
+      sPos[i * 3 + 2] = -0.19 + (Math.random() - 0.5) * 0.06;
+    }
+    steamGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+    const steamMat = new THREE.PointsMaterial({ color: 0xFFFFFF, size: 0.045, transparent: true, opacity: 0.65 });
+    steamParticles = new THREE.Points(steamGeo, steamMat);
+    steamParticles.visible = false;
+    scene.add(steamParticles);
+  }
+
+  function build3DFPSHands() {
+    handsGroup = new THREE.Group();
+
+    rightHand = new THREE.Group();
+    const palm = new THREE.Mesh(
+      new THREE.BoxGeometry(0.09, 0.04, 0.14),
+      new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.5, metalness: 0.2 })
+    );
+    const fingers = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.03, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0x0052FF, roughness: 0.3, emissive: 0x002277, emissiveIntensity: 0.4 })
+    );
+    fingers.position.set(0, 0, -0.09);
+    rightHand.add(palm);
+    rightHand.add(fingers);
+
+    const arm = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.075, 0.45, 16),
+      new THREE.MeshStandardMaterial({ color: 0x0F172A, roughness: 0.8 })
+    );
+    arm.rotation.x = Math.PI / 3;
+    arm.position.set(0, -0.15, 0.25);
+    rightHand.add(arm);
+
+    rightHand.position.set(0.32, -0.37, -0.55);
+    handsGroup.add(rightHand);
+    scene.add(handsGroup);
+  }
+
+  // ================= FPS INPUT CONTROLS & LOOK =================
+  let hoveredObject = null;
+  let isDragging = false;
+  let previousMouseX = 0;
+  let previousMouseY = 0;
+  let totalDragDistance = 0;
+  let isActionInProgress = false;
+  let controlsInitialized = false;
+
+  function setupFPSControls(container) {
+    if (controlsInitialized) return;
+    controlsInitialized = true;
+
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      if (player.keys.hasOwnProperty(e.code)) player.keys[e.code] = true;
+      if (e.code === 'KeyE' || e.code === 'Space') {
+        e.preventDefault();
+        triggerCenterInteraction();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (player.keys.hasOwnProperty(e.code)) player.keys[e.code] = false;
+    });
+
+    container.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      previousMouseX = e.clientX;
+      previousMouseY = e.clientY;
+      totalDragDistance = 0;
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    container.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const deltaX = e.clientX - previousMouseX;
+        const deltaY = e.clientY - previousMouseY;
+        previousMouseX = e.clientX;
+        previousMouseY = e.clientY;
+        totalDragDistance += Math.abs(deltaX) + Math.abs(deltaY);
+
+        const lookSens = 0.0035;
+        player.yaw -= deltaX * lookSens;
+        player.pitch -= deltaY * lookSens;
+
+        player.yaw = THREE.MathUtils.clamp(player.yaw, player.minYaw, player.maxYaw);
+        player.pitch = THREE.MathUtils.clamp(player.pitch, player.minPitch, player.maxPitch);
+      }
+    });
+
+    container.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        isDragging = true;
+        previousMouseX = e.touches[0].clientX;
+        previousMouseY = e.touches[0].clientY;
+        totalDragDistance = 0;
+      }
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches.length === 1) {
+        const deltaX = e.touches[0].clientX - previousMouseX;
+        const deltaY = e.touches[0].clientY - previousMouseY;
+        previousMouseX = e.touches[0].clientX;
+        previousMouseY = e.touches[0].clientY;
+        totalDragDistance += Math.abs(deltaX) + Math.abs(deltaY);
+
+        const touchSens = 0.004;
+        player.yaw -= deltaX * touchSens;
+        player.pitch -= deltaY * touchSens;
+
+        player.yaw = THREE.MathUtils.clamp(player.yaw, player.minYaw, player.maxYaw);
+        player.pitch = THREE.MathUtils.clamp(player.pitch, player.minPitch, player.maxPitch);
+      }
+    }, { passive: true });
+
+    container.addEventListener('touchend', () => {
+      isDragging = false;
+    });
+
+    container.addEventListener('click', () => {
+      // Discard camera drag release as intentional click
+      if (totalDragDistance > 10) return;
+      triggerCenterInteraction();
+    });
+  }
+
+  function checkCenterRaycast() {
+    if (!camera) return;
+
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    const intersects = raycaster.intersectObjects(interactiveObjects, true);
+
+    const tip = document.getElementById('hoverTooltip');
+    const tipText = document.getElementById('tooltipText');
+    const crosshair = document.getElementById('mainCrosshair');
+
+    if (intersects.length > 0 && intersects[0].distance < 2.5) {
+      let topObj = intersects[0].object;
+      while (topObj.parent && topObj.parent !== scene && !interactiveObjects.includes(topObj)) {
+        topObj = topObj.parent;
+      }
+
+      if (hoveredObject !== topObj) {
+        if (hoveredObject) setMeshGlow(hoveredObject, false);
+        hoveredObject = topObj;
+        setMeshGlow(hoveredObject, true);
+      }
+
+      crosshair.classList.add('hovered');
+      tip.style.display = 'flex';
+      tipText.innerText = getObjectActionHint(topObj.name);
+    } else {
+      if (hoveredObject) setMeshGlow(hoveredObject, false);
+      hoveredObject = null;
+      crosshair.classList.remove('hovered');
+      tip.style.display = 'none';
+    }
+  }
+
+  function triggerCenterInteraction() {
+    if (isActionInProgress) return;
+    if (hoveredObject) {
+      handleFPSObjectClick(hoveredObject.name);
+    } else {
+      state.misclicks++;
+    }
+  }
+
+  function setMeshGlow(objGroup, enabled) {
+    objGroup.traverse((child) => {
+      if (child.isMesh && child.material) {
+        if (enabled) {
+          child.userData.origEmissive = child.material.emissive ? child.material.emissive.getHex() : 0x000000;
+          if (child.material.emissive) child.material.emissive.setHex(0x0052FF);
+        } else {
+          if (child.material.emissive && child.userData.origEmissive !== undefined) {
+            child.material.emissive.setHex(child.userData.origEmissive);
+          }
+        }
+      }
+    });
+  }
+
+  function getObjectActionHint(name) {
+    switch(name) {
+      case 'portafilter': return 'Холдер: [E] Взять в руку';
+      case 'grinder': return 'Кофемолка: [E] Смолоть 18г зерна';
+      case 'tamper': return 'Темпер: [E] Спрессовать (20кг)';
+      case 'espressoMachine': return 'Кофемашина: [E] Включить пролив';
+      case 'milkPitcher': return 'Питчер: [E] Взбить овсяное молоко';
+      case 'glassCup': return 'Стакан: [E] Собрать Iced Latte';
+      default: return '[E] Взаимодействовать';
+    }
+  }
+
+  function animateHandPunch(onComplete) {
+    if (!handsGroup) return;
+    handsGroup.userData.animating = true;
+    let progress = 0;
+
+    function step() {
+      progress += 0.1;
+      if (progress <= 0.5) {
+        rightHand.position.z = -0.55 - progress * 0.4;
+      } else if (progress <= 1.0) {
+        rightHand.position.z = -0.75 + (progress - 0.5) * 0.4;
+      } else {
+        rightHand.position.z = -0.55;
+        handsGroup.userData.animating = false;
+        if (onComplete) onComplete();
+        return;
+      }
+      requestAnimationFrame(step);
+    }
+    step();
+  }
+
+  function showActionProgressBar(title, durationMs, onFinished) {
+    const wrap = document.getElementById('actionProgress');
+    const titleEl = document.getElementById('actionProgressTitle');
+    const fillEl = document.getElementById('actionProgressFill');
+    titleEl.innerText = title;
+    wrap.style.display = 'flex';
+    fillEl.style.width = '0%';
+
+    let start = Date.now();
+    let intv = setInterval(() => {
+      let elapsed = Date.now() - start;
+      let pct = Math.min((elapsed / durationMs) * 100, 100);
+      fillEl.style.width = pct + '%';
+      if (pct >= 100) {
+        clearInterval(intv);
+        setTimeout(() => {
+          wrap.style.display = 'none';
+          if (onFinished) onFinished();
+        }, 150);
+      }
+    }, 30);
+  }
+
+  function showComboPopup(text) {
+    const el = document.getElementById('comboPopup');
+    el.innerText = text;
+    el.classList.add('active');
+    setTimeout(() => { el.classList.remove('active'); }, 1200);
+  }
+
+  // ================= QUEST 1: HARD SKILLS PIPELINE =================
+  function handleFPSObjectClick(name) {
+    if (isActionInProgress) return;
+    if (state.quest === 1) {
+      const currentTarget = state.stepsConfig[state.step];
+      if (currentTarget && name === currentTarget.id) {
+        isActionInProgress = true;
+        executeStepAction(state.step, () => {
+          setTimeout(() => {
+            isActionInProgress = false;
+          }, 300);
+        });
+      } else {
+        state.misclicks++;
+        playTone(160, 'sawtooth', 0.25, 0.12);
+      }
+    }
+  }
+
+  function executeStepAction(stepIdx, onComplete) {
+    const config = state.stepsConfig[stepIdx];
+
+    switch(stepIdx) {
+      case 0: // Portafilter -> Grinder Fork
+        playTone(520, 'sine', 0.15, 0.1);
+        animateHandPunch(() => {
+          portafilterObj.position.set(-1.18, 1.25, -0.27);
+          showComboPopup(config.popup);
+          advanceStep();
+          if (onComplete) onComplete();
+        });
+        break;
+
+      case 1: // Grinder -> Tamping Mat
+        playGrinderSound();
+        showActionProgressBar('ПОМОЛ ЗЕРНА (18 грамм)...', 1400, () => {
+          playSuccessChime();
+          portafilterObj.position.set(-0.35, 1.18, 0.02);
+          showComboPopup(config.popup);
+          advanceStep();
+          if (onComplete) onComplete();
+        });
+        break;
+
+      case 2: // Tamper -> Lock into Left Group Head
+        animateHandPunch(() => {
+          playTamperThud();
+          if (window.triggerCameraShake) window.triggerCameraShake(0.04);
+          tamperObj.position.y += 0.08;
+          setTimeout(() => {
+            tamperObj.position.y -= 0.08;
+            portafilterObj.position.set(-0.70, 1.38, -0.17);
+            showComboPopup(config.popup);
+            advanceStep();
+            if (onComplete) onComplete();
+          }, 400);
+        });
+        break;
+
+      case 3: // Espresso Extraction into Cup
+        playEspressoFlowSound();
+        espressoStreamParticles.visible = true;
+        cupLiquidMesh.visible = true;
+        cupLiquidMesh.scale.set(1, 1.5, 1);
+        cupLiquidMesh.material.color.setHex(0x3E271E);
+
+        showActionProgressBar('ЭКСТРАКЦИЯ ЭСПРЕССО (9 БАР)...', 2000, () => {
+          espressoStreamParticles.visible = false;
+          playSuccessChime();
+          showComboPopup(config.popup);
+          advanceStep();
+          if (onComplete) onComplete();
+        });
+        break;
+
+      case 4: // Steaming Milk under Right Wand -> Pour into Cup
+        playSteamSound();
+        pitcherObj.position.set(-0.04, 1.28, -0.19);
+        steamParticles.visible = true;
+
+        showActionProgressBar('ВЗБИВАНИЕ ОВСЯНОГО МОЛОКА...', 1800, () => {
+          steamParticles.visible = false;
+          playSuccessChime();
+          
+          // Animate silky milk pouring over cup
+          pitcherObj.position.set(-0.60, 1.32, -0.15);
+          pitcherObj.rotation.z = -0.35;
+          cupLiquidMesh.scale.set(1, 3.8, 1);
+          cupLiquidMesh.material.color.setHex(0xD7CCC8);
+          
+          setTimeout(() => {
+            pitcherObj.rotation.z = 0;
+            pitcherObj.position.set(0.22, 1.16, -0.05);
+            showComboPopup(config.popup);
+            advanceStep();
+            if (onComplete) onComplete();
+          }, 700);
+        });
+        break;
+
+      case 5: // Assemble Final Iced Latte & Present to Customer
+        playIceDropSound();
+        iceCubesGroup.visible = true;
+        animateHandPunch(() => {
+          cupLiquidMesh.scale.set(1, 4.8, 1);
+          cupObj.position.set(0.0, 1.16, 0.15);
+          showComboPopup(config.popup);
+          renderQuestSuccess();
+          if (onComplete) onComplete();
+        });
+        break;
+    }
+  }
+
+  function advanceStep() {
+    state.step++;
+    renderHUD();
+  }
+
+  function renderQuestSuccess() {
+    renderHUDComplete();
+    setTimeout(() => { startQuest2Conflict(); }, 1400);
+  }
+
+  // ================= QUEST 2: SOFT SKILLS =================
+  function startQuest2Conflict() {
+    state.quest = 2;
+    document.getElementById('vrQuestTitle').innerText = 'КВЕСТ 2: КОНФЛИКТ С ГОСТЕМ';
+    if (customerObj) customerObj.visible = true;
+
+    player.pos.set(0, 1.65, 0.75);
+    player.yaw = 0;
+    player.pitch = 0.05;
+
+    playTone(280, 'sawtooth', 0.4, 0.12);
+
+    const hud = document.getElementById('hudBottom');
+    hud.innerHTML = `
+      <div class="speech-bubble" id="typewriterBox">
+        😡 <strong>Клиент (в упор):</strong> <span id="typewriterText"></span>
+      </div>
+      <div>
+        <div class="dialog-option" onclick="handleConflictAnswer('A')">
+          <div class="dialog-tag" style="background:rgba(255,71,87,0.2); color:var(--neon-red); border:1px solid var(--neon-red);">A</div>
+          <div>«Вы сами так заказали, проверяйте чек перед оплатой»</div>
+        </div>
+        <div class="dialog-option" onclick="handleConflictAnswer('B')">
+          <div class="dialog-tag" style="background:rgba(0,255,179,0.2); color:var(--neon-cyan); border:1px solid var(--neon-cyan);">B</div>
+          <div>«Простите за ошибку! Я переделаю за 1 минуту и угощу вас фирменным десертом»</div>
+        </div>
+        <div class="dialog-option" onclick="handleConflictAnswer('C')">
+          <div class="dialog-tag" style="background:rgba(255,184,0,0.2); color:var(--neon-gold); border:1px solid var(--neon-gold);">C</div>
+          <div>«Подождите, я позову управляющего смены»</div>
+        </div>
+      </div>
+    `;
+
+    const fullText = "«Я трижды повторил: БЕЗ САХАРА! Вы испортили мой заказ, я требую жалобную книгу!»";
+    let charIdx = 0;
+    const txtSpan = document.getElementById('typewriterText');
+    let typeIntv = setInterval(() => {
+      if (txtSpan) {
+        txtSpan.innerText += fullText[charIdx];
+        charIdx++;
+        if (charIdx >= fullText.length) clearInterval(typeIntv);
+      } else {
+        clearInterval(typeIntv);
+      }
+    }, 25);
+  }
+
+  function handleConflictAnswer(opt) {
+    state.conflictChoice = opt;
+    playSuccessChime();
+    if (customerObj) customerObj.visible = false;
+    startQuest3Management();
+  }
+
+  // ================= QUEST 3: MANAGEMENT =================
+  function startQuest3Management() {
+    state.quest = 3;
+    document.getElementById('vrQuestTitle').innerText = 'КВЕСТ 3: КАССА И ЗАКУПКА';
+
+    const hud = document.getElementById('hudBottom');
+    hud.innerHTML = `
+      <div style="font-family:'Orbitron'; font-size:11px; color:var(--neon-gold); font-weight:700; margin-bottom:4px;">
+        💼 3D POS ТЕРМИНАЛ: Закупка зерна на неделю
+      </div>
+      <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">
+        Бюджет кофейни: 120 000 ₸. Расход: 35 кг/неделю. Выберите оптимальный заказ:
+      </p>
+      <div>
+        <div class="dialog-option" onclick="handleBudgetAnswer('low')">
+          <div class="dialog-tag" style="border:1px solid var(--border-glow);">1</div>
+          <div><strong>45 000 ₸ (15 кг)</strong> — Экономия (высокий риск дефицита)</div>
+        </div>
+        <div class="dialog-option" onclick="handleBudgetAnswer('optimal')">
+          <div class="dialog-tag" style="border:1px solid var(--neon-cyan); color:var(--neon-cyan);">2</div>
+          <div><strong>90 000 ₸ (35 кг)</strong> — Оптимально (100% покрытие + 30 000 ₸ резерв)</div>
+        </div>
+        <div class="dialog-option" onclick="handleBudgetAnswer('high')">
+          <div class="dialog-tag" style="border:1px solid var(--neon-pink); color:var(--neon-pink);">3</div>
+          <div><strong>135 000 ₸ (55 кг)</strong> — Перерасход бюджета на 15 000 ₸</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function handleBudgetAnswer(opt) {
+    state.budgetChoice = opt;
+    triggerEpicVictory();
+  }
+
+  // ================= EPIC VICTORY TRIGGER =================
+  function triggerEpicVictory() {
+    clearInterval(state.timerInterval);
+    playVictoryFanfare();
+
+    // Lock camera into cinematic angle
+    player.pos.set(0.18, 1.45, 0.2);
+    player.yaw = -0.2;
+    player.pitch = -0.35;
+
+    // Show Victory Overlay Modal
+    const victoryModal = document.getElementById('victoryModal');
+    if (victoryModal) victoryModal.style.display = 'flex';
+  }
+
+  function showAIReportScreen() {
+    let score = 84;
+    if (state.misclicks === 0) score += 10;
+    else if (state.misclicks <= 2) score += 5;
+
+    if (state.conflictChoice === 'B') score += 8;
+    if (state.budgetChoice === 'optimal') score += 5;
+    score = Math.min(score, 99);
+
+    document.getElementById('statHard').innerText = (100 - state.misclicks * 2) + '%';
+    document.getElementById('statTime').innerText = state.timer + ' сек';
+
+    showScreen('resultScreen');
+
+    // Smooth counter animation for Fit Score
+    let cur = 0;
+    const scoreEl = document.getElementById('resFitScore');
+    const scoreIntv = setInterval(() => {
+      cur += 2;
+      if (cur >= score) {
+        cur = score;
+        clearInterval(scoreIntv);
+      }
+      if (scoreEl) scoreEl.innerText = cur + '%';
+    }, 20);
+
+    const telemetryPayload = {
+      view_mode: "First-Person 3D VR",
+      fps_metrics: {
+        step_accuracy_percent: 100 - state.misclicks * 2,
+        hand_shakiness_detected: state.misclicks > 2,
+        total_preparation_time_sec: state.timer
+      },
+      soft_skills: {
+        conflict_resolution_choice: state.conflictChoice === 'B' ? 'Apologized & Remade Fast' : 'Defensive',
+        eye_contact_held_sec: 4.5
+      },
+      management: {
+        inventory_calc_accuracy: state.budgetChoice === 'optimal' ? 100 : 60
+      }
+    };
+
+    if (window.FlutterChannel && window.FlutterChannel.postMessage) {
+      window.FlutterChannel.postMessage(JSON.stringify(telemetryPayload));
+    }
+  }
+
+  // ================= UI HELPERS =================
+  function renderHUD() {
+    const hud = document.getElementById('hudBottom');
+    hud.innerHTML = `
+      <div class="steps-bar">
+        ${state.stepsConfig.map((s, idx) => `
+          <div class="step-pill ${idx < state.step ? 'done' : (idx === state.step ? 'active' : '')}">
+            ${idx < state.step ? '✓' : idx + 1}. ${s.name.split(' ')[0]}
+          </div>
+        `).join('')}
+      </div>
+      <div style="background:var(--surface-card); border:1px solid var(--border-glow); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:9px; color:var(--text-muted); font-family:'Orbitron';">ТЕКУЩАЯ ЦЕЛЬ</div>
+          <div style="font-size:13px; font-weight:700; color:var(--neon-cyan);">${state.stepsConfig[state.step] ? state.stepsConfig[state.step].name : 'Готово'}</div>
+        </div>
+        <div style="font-size:11px; color:#AAA;">${state.stepsConfig[state.step] ? state.stepsConfig[state.step].hint : ''}</div>
+      </div>
+    `;
+  }
+
+  function renderHUDComplete() {
+    const hud = document.getElementById('hudBottom');
+    hud.innerHTML = `
+      <div style="background:rgba(0,255,179,0.15); border:1px solid var(--neon-cyan); border-radius:14px; padding:12px; text-align:center;">
+        <h3 style="font-family:'Orbitron'; color:var(--neon-cyan); font-size:13px;">✨ ICED OAT LATTE УСПЕШНО СВАРЕН!</h3>
+        <p style="font-size:11px; color:#EEE;">100% соблюдение рецептуры и идеальная последовательность моторики.</p>
+      </div>
+    `;
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const scr = document.getElementById(id);
+    if (scr) scr.classList.add('active');
+  }
+
+  function startBaristaVR() {
+    isActionInProgress = false;
+    state.quest = 1;
+    state.step = 0;
+    state.timer = 0;
+    state.misclicks = 0;
+
+    player.pos.set(0, 1.65, 0.95);
+    player.yaw = 0;
+    player.pitch = -0.28;
+
+    if (portafilterObj) {
+      portafilterObj.position.set(-0.35, 1.18, 0.02);
+      portafilterObj.rotation.set(0, 0, 0);
+    }
+    if (tamperObj) {
+      tamperObj.position.set(-0.35, 1.16, 0.02);
+    }
+    if (pitcherObj) {
+      pitcherObj.position.set(0.22, 1.16, -0.05);
+      pitcherObj.rotation.set(0, 0, 0);
+    }
+    if (cupObj) {
+      cupObj.position.set(-0.70, 1.21, -0.17);
+    }
+    if (cupLiquidMesh) {
+      cupLiquidMesh.visible = false;
+      cupLiquidMesh.scale.set(1, 0.1, 1);
+    }
+    if (iceCubesGroup) {
+      iceCubesGroup.visible = false;
+    }
+    if (customerObj) {
+      customerObj.visible = false;
+    }
+    if (espressoStreamParticles) {
+      espressoStreamParticles.visible = false;
+    }
+    if (steamParticles) {
+      steamParticles.visible = false;
+    }
+
+    const victoryModal = document.getElementById('victoryModal');
+    if (victoryModal) victoryModal.style.display = 'none';
+
+    showScreen('gameScreen');
+    setTimeout(() => {
+      initThreeFPS();
+      renderHUD();
+    }, 100);
+
+    clearInterval(state.timerInterval);
+    state.timerInterval = setInterval(() => {
+      state.timer++;
+      const m = String(Math.floor(state.timer / 60)).padStart(2, '0');
+      const s = String(state.timer % 60).padStart(2, '0');
+      document.getElementById('vrTimer').innerText = `${m}:${s}`;
+    }, 1000);
+  }
+
+  function exitToHome() {
+    clearInterval(state.timerInterval);
+    showScreen('homeScreen');
+  }
+</script>
+
+</body>
+</html>
