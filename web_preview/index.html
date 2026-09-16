@@ -13,7 +13,7 @@
       /* Clean Pro SaaS Palette (Linear / Stripe / Coinbase style) */
       --primary: #0052FF;
       --primary-hover: #0045D8;
-      --bg-page: #F1F5F9;
+      --bg-page: #0B1120;
       --bg-app: #F8FAFC;
       --bg-dark: #0F172A;
       --surface-white: #FFFFFF;
@@ -50,7 +50,7 @@
       /* Natural, crisp micro-shadows */
       --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
       --shadow-card: 0 4px 12px 0 rgba(15, 23, 42, 0.05), 0 1px 2px 0 rgba(15, 23, 42, 0.03);
-      --shadow-modal: 0 20px 35px -5px rgba(15, 23, 42, 0.18), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+      --shadow-modal: 0 20px 35px -5px rgba(15, 23, 42, 0.25), 0 8px 10px -6px rgba(15, 23, 42, 0.12);
 
       --radius-sm: 8px;
       --radius-md: 12px;
@@ -60,36 +60,65 @@
 
     * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
     
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
       background-color: var(--bg-page);
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       color: var(--text-primary);
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      overflow: hidden;
       -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease;
     }
 
-    /* Premium SaaS Mobile Device Frame */
+    /* Native Adaptive App Container */
     .app-container {
       width: 100vw;
       height: 100vh;
-      max-width: 440px;
-      max-height: 920px;
+      height: 100dvh;
       background: var(--bg-app);
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--border-light);
-      box-shadow: var(--shadow-modal);
       position: relative;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      transition: max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.35s ease, box-shadow 0.35s ease;
     }
 
-    @media (max-width: 480px) {
-      .app-container { border-radius: 0; max-height: 100vh; border: none; box-shadow: none; }
+    /* Desktop Widescreen Mode (Default for PC) */
+    .app-container.mode-desktop {
+      max-width: 100vw;
+      max-height: 100vh;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    /* Mobile Emulation Frame Mode (on Desktop) */
+    .app-container.mode-mobile-frame {
+      max-width: 420px;
+      max-height: 890px;
+      border-radius: 38px;
+      border: 8px solid #1E293B;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Native Smartphone Auto-Adaptation */
+    @media (max-width: 768px) {
+      .app-container,
+      .app-container.mode-mobile-frame,
+      .app-container.mode-desktop {
+        max-width: 100vw !important;
+        max-height: 100dvh !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+      .device-switcher { display: none !important; }
     }
 
     /* Screen Management */
@@ -106,13 +135,14 @@
 
     /* Clean Pro Top Bar */
     .top-bar {
-      padding: 14px 18px;
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: var(--surface-white);
       border-bottom: 1px solid var(--border-light);
       z-index: 30;
+      flex-shrink: 0;
     }
     .logo {
       font-size: 16px;
@@ -120,7 +150,7 @@
       letter-spacing: -0.3px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       color: var(--text-primary);
     }
     .logo-brand {
@@ -150,26 +180,72 @@
       border-radius: 6px;
       letter-spacing: 0.5px;
     }
+
+    /* Top Bar Controls & Device Switcher */
+    .top-bar-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .device-switcher {
+      display: flex;
+      background: #F1F5F9;
+      padding: 3px;
+      border-radius: 10px;
+      border: 1px solid var(--border-light);
+      gap: 2px;
+    }
+    .device-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .device-btn:hover {
+      color: var(--text-primary);
+    }
+    .device-btn.active {
+      background: var(--surface-white);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
     .xp-badge {
       background: var(--emerald-bg);
       border: 1px solid var(--emerald-border);
       color: var(--emerald-text);
       font-size: 12px;
       font-weight: 700;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 20px;
       display: flex;
       align-items: center;
       gap: 5px;
+      white-space: nowrap;
     }
 
-    /* Home Hero Card */
+    /* Home Layout & Content Wrap */
+    .home-content-wrap {
+      max-width: 1080px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
     .hero-banner {
-      margin: 16px;
       background: var(--surface-white);
       border-radius: var(--radius-lg);
       border: 1px solid var(--border-light);
-      padding: 20px;
+      padding: 24px 28px;
       box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
@@ -189,49 +265,58 @@
       gap: 6px;
     }
     .hero-title {
-      font-size: 20px;
+      font-size: clamp(20px, 3vw, 28px);
       font-weight: 800;
       color: var(--text-primary);
-      letter-spacing: -0.4px;
-      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
     }
     .hero-subtitle {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--text-secondary);
-      line-height: 1.5;
-      margin-bottom: 18px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      max-width: 720px;
+    }
+
+    .hero-actions-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
     /* Clean Pro Buttons */
     .btn-action {
-      width: 100%;
       height: 48px;
+      padding: 0 24px;
       background: var(--primary);
       color: #FFFFFF;
       border: none;
       border-radius: var(--radius-md);
       font-family: inherit;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 14px;
       letter-spacing: -0.1px;
-      display: flex;
+      display: inline-flex;
       justify-content: center;
       align-items: center;
       gap: 8px;
       cursor: pointer;
-      box-shadow: 0 1px 2px rgba(0, 82, 255, 0.2);
-      transition: background-color 0.15s ease, transform 0.1s ease;
+      box-shadow: 0 2px 4px rgba(0, 82, 255, 0.25);
+      transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
     }
     .btn-action:hover {
       background: var(--primary-hover);
+      box-shadow: 0 4px 12px rgba(0, 82, 255, 0.35);
     }
     .btn-action:active {
-      transform: scale(0.99);
+      transform: scale(0.98);
     }
 
     .btn-secondary {
-      width: 100%;
       height: 46px;
+      padding: 0 20px;
       background: var(--surface-white);
       color: var(--text-primary);
       border: 1px solid var(--border-light);
@@ -239,7 +324,7 @@
       font-family: inherit;
       font-weight: 600;
       font-size: 13px;
-      display: flex;
+      display: inline-flex;
       justify-content: center;
       align-items: center;
       gap: 8px;
@@ -254,33 +339,33 @@
     /* Feature Grid (Home) */
     .features-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      padding: 0 16px;
-      margin-bottom: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
     }
     .feature-card {
       background: var(--surface-white);
       border: 1px solid var(--border-light);
       border-radius: var(--radius-md);
-      padding: 14px;
+      padding: 18px;
       box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
     .feature-icon {
-      font-size: 18px;
-      margin-bottom: 8px;
+      font-size: 20px;
+      margin-bottom: 4px;
       display: inline-block;
     }
     .feature-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
       color: var(--text-primary);
-      margin-bottom: 2px;
     }
     .feature-desc {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-secondary);
-      line-height: 1.4;
+      line-height: 1.5;
     }
 
     /* ================= 3D FPS SIMULATOR VIEWPORT ================= */
@@ -288,14 +373,17 @@
       display: flex;
       flex-direction: column;
       height: 100%;
+      width: 100%;
       position: relative;
       background: var(--bg-dark);
+      overflow: hidden;
     }
 
     .fps-viewport-wrap {
       flex: 1;
-      height: 72%;
-      min-height: 440px;
+      width: 100%;
+      height: 100%;
+      min-height: 380px;
       position: relative;
       overflow: hidden;
       cursor: grab;
@@ -307,71 +395,125 @@
     /* Top VR Status Overlay */
     .vr-status-bar {
       position: absolute;
-      top: 14px; left: 14px; right: 14px;
+      top: 14px; left: 16px; right: 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       pointer-events: none;
       z-index: 20;
     }
+    .vr-status-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     .vr-status-pill {
       background: rgba(15, 23, 42, 0.88);
       border: 1px solid var(--border-dark);
       backdrop-filter: blur(8px);
-      padding: 6px 12px;
+      padding: 6px 14px;
       border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 700;
       color: var(--text-on-dark);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
     .timer-pill {
       background: rgba(15, 23, 42, 0.88);
       border: 1px solid var(--border-dark);
       backdrop-filter: blur(8px);
-      padding: 6px 12px;
+      padding: 6px 14px;
       border-radius: 20px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
       color: var(--amber);
+    }
+    .vr-status-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
     }
     .btn-exit-vr {
       background: rgba(15, 23, 42, 0.88);
       border: 1px solid var(--border-dark);
       color: var(--text-on-dark);
-      width: 30px;
-      height: 30px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
       cursor: pointer;
       pointer-events: auto;
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.1s;
     }
-    .btn-exit-vr:hover { background: #334155; }
+    .btn-exit-vr:hover { background: #334155; transform: scale(1.05); }
 
     /* Controls Help Badge */
     .controls-help-badge {
       position: absolute;
-      top: 54px;
-      left: 14px;
+      top: 60px;
+      left: 16px;
       background: rgba(15, 23, 42, 0.88);
       border: 1px solid var(--border-dark);
       backdrop-filter: blur(8px);
-      padding: 6px 10px;
+      padding: 8px 12px;
       border-radius: var(--radius-sm);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 500;
       color: var(--text-muted-dark);
       pointer-events: none;
       z-index: 22;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
+    }
+
+    /* Pointer Lock Notification Badge */
+    .pointer-lock-badge {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(16, 185, 129, 0.92);
+      border: 1px solid var(--emerald-border);
+      color: #FFFFFF;
+      padding: 5px 16px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      z-index: 30;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      pointer-events: none;
+    }
+
+    /* Desktop Aim / Click Hint */
+    .desktop-aim-hint {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-dark);
+      backdrop-filter: blur(8px);
+      color: var(--text-muted-dark);
+      font-size: 11px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 22;
+      pointer-events: none;
+    }
+    @media (max-width: 768px) {
+      .desktop-aim-hint { display: none !important; }
     }
 
     /* Clean Pro Crosshair */
@@ -379,7 +521,7 @@
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      width: 20px; height: 20px;
+      width: 24px; height: 24px;
       pointer-events: none;
       z-index: 20;
       display: flex;
@@ -388,7 +530,7 @@
       transition: transform 0.15s ease-out;
     }
     .crosshair.hovered {
-      transform: translate(-50%, -50%) scale(1.3);
+      transform: translate(-50%, -50%) scale(1.35);
     }
     .crosshair::before, .crosshair::after {
       content: '';
@@ -397,13 +539,13 @@
       border-radius: 1px;
       transition: background 0.15s;
     }
-    .crosshair::before { width: 2px; height: 12px; }
-    .crosshair::after { width: 12px; height: 2px; }
+    .crosshair::before { width: 2px; height: 14px; }
+    .crosshair::after { width: 14px; height: 2px; }
     .crosshair.hovered::before, .crosshair.hovered::after {
       background: var(--primary);
     }
     .crosshair-dot {
-      width: 3px; height: 3px;
+      width: 4px; height: 4px;
       background: #FFFFFF;
       border-radius: 50%;
     }
@@ -411,66 +553,108 @@
     /* Clean Tooltip */
     .fps-hover-tooltip {
       position: absolute;
-      bottom: 20px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(15, 23, 42, 0.94);
       border: 1px solid var(--primary);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 24px;
+      font-size: 12px;
+      font-weight: 700;
       color: #FFFFFF;
       pointer-events: none;
       display: none;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       z-index: 25;
-      box-shadow: 0 4px 12px rgba(0, 82, 255, 0.25);
+      box-shadow: 0 4px 16px rgba(0, 82, 255, 0.35);
     }
 
-    /* Virtual Mobile D-Pad */
+    /* Virtual Mobile D-Pad (Enlarged & Ergonomic) */
     .virtual-dpad {
       position: absolute;
-      bottom: 16px;
-      left: 14px;
-      width: 96px;
-      height: 96px;
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid var(--border-dark);
+      bottom: 22px;
+      left: 20px;
+      width: 148px;
+      height: 148px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 2px solid var(--border-dark);
       border-radius: 50%;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(12px);
       z-index: 25;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
-      padding: 6px;
+      padding: 10px;
       touch-action: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 0 16px rgba(255, 255, 255, 0.03);
     }
     .dpad-btn {
-      width: 26px;
-      height: 26px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 6px;
+      width: 42px;
+      height: 42px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 12px;
       color: #FFFFFF;
-      font-size: 10px;
-      font-weight: bold;
+      font-size: 16px;
+      font-weight: 800;
       display: flex;
       justify-content: center;
       align-items: center;
       cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.1s ease, transform 0.08s ease, border-color 0.1s ease;
     }
-    .dpad-btn:active {
-      background: var(--primary);
-      border-color: var(--primary);
+    .dpad-btn:active, .dpad-btn.active {
+      background: var(--primary) !important;
+      border-color: var(--primary) !important;
+      transform: scale(0.92);
+      box-shadow: 0 0 12px rgba(0, 82, 255, 0.6);
     }
     .dpad-mid {
       display: flex;
       width: 100%;
       justify-content: space-between;
+      align-items: center;
     }
+
+    /* Mobile Quick Action Button */
+    .mobile-action-trigger {
+      position: absolute;
+      bottom: 22px;
+      right: 22px;
+      width: 66px;
+      height: 66px;
+      background: var(--primary);
+      border: 3px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      color: #FFFFFF;
+      font-size: 20px;
+      font-weight: 800;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 8px 24px rgba(0, 82, 255, 0.5);
+      z-index: 26;
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.08s ease, background-color 0.1s ease;
+    }
+    .mobile-action-trigger:active {
+      transform: scale(0.90);
+      background: var(--primary-hover);
+    }
+    @media (max-width: 768px) {
+      .mobile-action-trigger { display: flex; }
+      .virtual-dpad { display: flex; }
+    }
+    .app-container.mode-mobile-frame .mobile-action-trigger { display: flex; }
+    .app-container.mode-mobile-frame .virtual-dpad { display: flex; }
 
     /* Action Progress Bar */
     .action-progress-wrap {
@@ -478,26 +662,26 @@
       top: 42%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 190px;
+      width: 220px;
       background: var(--bg-dark);
       border: 1px solid var(--border-dark);
       border-radius: var(--radius-md);
-      padding: 10px 14px;
+      padding: 12px 16px;
       box-shadow: var(--shadow-modal);
       display: none;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       z-index: 28;
     }
     .action-progress-title {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--text-on-dark);
     }
     .action-progress-track {
       width: 100%;
-      height: 5px;
+      height: 6px;
       background: rgba(255, 255, 255, 0.12);
       border-radius: 3px;
       overflow: hidden;
@@ -516,17 +700,17 @@
       top: 35%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.8);
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 800;
       color: #FFFFFF;
       background: var(--bg-dark);
       border: 1px solid var(--emerald);
-      border-radius: 20px;
-      padding: 6px 14px;
+      border-radius: 24px;
+      padding: 8px 18px;
       pointer-events: none;
       opacity: 0;
       z-index: 29;
-      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
       transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .combo-popup.active {
@@ -534,36 +718,44 @@
       transform: translate(-50%, -80%) scale(1.05);
     }
 
-    /* Clean Pro Bottom HUD (28%) */
+    /* Clean Pro Bottom HUD Dock */
     .fps-hud-bottom {
-      height: 28%;
-      min-height: 185px;
       background: var(--bg-dark);
       border-top: 1px solid var(--border-dark);
-      padding: 12px 16px;
+      padding: 12px 20px;
+      z-index: 20;
+      flex-shrink: 0;
+      width: 100%;
+    }
+    .hud-dock-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      width: 100%;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      z-index: 20;
+      gap: 8px;
     }
 
     /* Step Pipeline Progress */
     .steps-bar {
       display: flex;
-      gap: 6px;
-      margin-bottom: 8px;
+      gap: 8px;
+      width: 100%;
     }
     .step-pill {
       flex: 1;
-      padding: 6px 2px;
+      padding: 8px 4px;
       text-align: center;
       border-radius: var(--radius-sm);
-      font-size: 10px;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--border-dark);
       color: var(--text-muted-dark);
       transition: all 0.2s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .step-pill.done {
       background: var(--emerald-bg);
@@ -581,43 +773,45 @@
       background: var(--surface-slate);
       border: 1px solid var(--border-dark);
       border-radius: var(--radius-sm);
-      padding: 10px 12px;
-      margin-bottom: 6px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 12px;
+      gap: 12px;
+      font-size: 13px;
       color: var(--text-on-dark);
-      transition: background 0.15s ease, border-color 0.15s ease;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
     }
     .dialog-option:hover {
       border-color: var(--primary);
       background: #273549;
+      transform: translateY(-1px);
     }
     .dialog-tag {
-      width: 22px; height: 22px;
+      width: 24px; height: 24px;
       border-radius: 6px;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       background: rgba(255, 255, 255, 0.1);
       color: #FFFFFF;
+      flex-shrink: 0;
     }
 
     /* Customer Speech Bubble */
     .speech-bubble {
       background: #1E293B;
       border: 1px solid #475569;
-      border-left: 3px solid var(--rose);
+      border-left: 4px solid var(--rose);
       border-radius: var(--radius-sm);
-      padding: 10px 12px;
-      font-size: 12px;
+      padding: 12px 16px;
+      font-size: 13px;
       color: var(--text-on-dark);
-      line-height: 1.4;
-      margin-bottom: 8px;
+      line-height: 1.5;
+      margin-bottom: 10px;
     }
 
     /* EPIC VICTORY MODAL OVERLAY */
@@ -625,7 +819,7 @@
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(6px);
+      backdrop-filter: blur(8px);
       display: none;
       flex-direction: column;
       justify-content: center;
@@ -636,7 +830,7 @@
       animation: fadeInModal 0.3s ease-out forwards;
     }
     @keyframes fadeInModal {
-      from { opacity: 0; transform: scale(0.96); }
+      from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
     }
     .victory-card {
@@ -644,61 +838,81 @@
       border: 1px solid var(--border-light);
       box-shadow: var(--shadow-modal);
       border-radius: var(--radius-lg);
-      padding: 24px 20px;
+      padding: 28px 24px;
       width: 100%;
-      max-width: 360px;
+      max-width: 420px;
       color: var(--text-primary);
     }
 
     /* ================= RESULT SCREEN (PRO SAAS REPORT) ================= */
+    .result-content-wrap {
+      max-width: 1040px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .result-grid-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 768px) {
+      .result-grid-layout {
+        grid-template-columns: 360px 1fr;
+        align-items: start;
+      }
+    }
+
     .report-card {
       background: var(--surface-white);
       border: 1px solid var(--border-light);
       border-radius: var(--radius-lg);
-      padding: 18px 16px;
-      margin-bottom: 12px;
+      padding: 22px 20px;
       box-shadow: var(--shadow-sm);
     }
     .score-circle-clean {
-      width: 110px; height: 110px;
+      width: 124px; height: 124px;
       border-radius: 50%;
-      border: 4px solid var(--emerald);
+      border: 5px solid var(--emerald);
       background: var(--emerald-bg);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      margin: 12px auto;
+      margin: 16px auto;
     }
     .score-number {
-      font-size: 32px;
+      font-size: 36px;
       font-weight: 800;
       color: var(--emerald-text);
       line-height: 1;
     }
     .score-label {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       color: var(--emerald-text);
       letter-spacing: 0.5px;
-      margin-top: 4px;
+      margin-top: 5px;
     }
 
     .stat-table {
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
     .stat-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 10px;
+      padding: 10px 14px;
       background: #F8FAFC;
       border: 1px solid var(--border-light);
       border-radius: var(--radius-sm);
-      font-size: 12px;
+      font-size: 13px;
     }
     .stat-label {
       color: var(--text-secondary);
@@ -712,7 +926,7 @@
 </head>
 <body>
 
-<div class="app-container">
+<div class="app-container mode-desktop" id="appContainer">
 
   <!-- ================= SCREEN 1: HOME ================= -->
   <div id="homeScreen" class="screen active">
@@ -721,38 +935,72 @@
         <span class="logo-brand">SYNAPK<span class="logo-eye-wrap"><svg class="logo-eye-svg" viewBox="0 0 24 24" fill="none"><path d="M1 12C3.2 6.8 7.2 3.8 12 3.8C16.8 3.8 20.8 6.8 23 12C20.8 17.2 16.8 20.2 12 20.2C7.2 20.2 3.2 17.2 1 12Z" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="4.5" fill="#FFFFFF" stroke="var(--primary)" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="var(--primary)"/></svg></span>R</span>
         <span class="vr-badge">VR 3D</span>
       </div>
-      <div class="xp-badge">⚡ 2800 XP</div>
-    </div>
 
-    <div class="hero-banner">
-      <div class="hero-badge">
-        <span>🎮</span> 3D FPS Simulation Engine
-      </div>
-      <h2 class="hero-title">Barista Pro VR Edition</h2>
-      <p class="hero-subtitle">
-        Интерактивный симулятор работы бариста: свободное перемещение за стойкой (WASD), точная моторика помола, темперовки, экстракции и стресс-тест коммуникации.
-      </p>
-      <button class="btn-action" onclick="startBaristaVR()">
-        <span>▶</span> Запустить симуляцию
-      </button>
-    </div>
-
-    <div style="padding: 0 16px; margin-bottom: 8px;">
-      <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-        Управление в симуляторе
+      <div class="top-bar-controls">
+        <div class="device-switcher" id="deviceSwitcher">
+          <button class="device-btn active" id="btnModeDesktop" onclick="setDeviceMode('desktop')" title="Режим ПК (Широкий экран)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>ПК</span>
+          </button>
+          <button class="device-btn" id="btnModeMobile" onclick="setDeviceMode('mobile-frame')" title="Режим Смартфон (Мобильный вид)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            <span>Телефон</span>
+          </button>
+          <button class="device-btn" id="btnFullscreen" onclick="toggleFullScreen()" title="На весь экран (F)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            <span>Экран</span>
+          </button>
+        </div>
+        <div class="xp-badge">⚡ 2800 XP</div>
       </div>
     </div>
 
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">🕹️</div>
-        <div class="feature-title">WASD / Д-Пад</div>
-        <div class="feature-desc">Свободный шаг вдоль барной стойки бариста</div>
+    <div class="home-content-wrap">
+      <div class="hero-banner">
+        <div class="hero-badge">
+          <span>🎮</span> 3D FPS Simulation Engine • Responsive WebGL
+        </div>
+        <h2 class="hero-title">Barista Pro VR Edition</h2>
+        <p class="hero-subtitle">
+          Интерактивный симулятор профессии бариста: свободное перемещение за стойкой (WASD / D-Pad), точная моторика помола, темперовки, экстракции и стресс-тест коммуникации с гостем.
+        </p>
+        <div class="hero-actions-row">
+          <button class="btn-action" onclick="startBaristaVR()">
+            <span>▶</span> Начать симуляцию
+          </button>
+          <button class="btn-secondary" onclick="toggleFullScreen()">
+            <span>⛶</span> Развернуть на весь экран
+          </button>
+        </div>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">👀</div>
-        <div class="feature-title">Обзор + [E]</div>
-        <div class="feature-desc">Вращение камеры и действие по прицелу</div>
+
+      <div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+          Управление и особенности симулятора
+        </div>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🕹️</div>
+          <div class="feature-title">WASD / Д-Пад</div>
+          <div class="feature-desc">Свободное перемещение оператора вдоль барной стойки</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🖱️</div>
+          <div class="feature-title">Обзор мыши / Свайп</div>
+          <div class="feature-desc">Плавный FPS обзор 3D сцены от первого лица</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👉</div>
+          <div class="feature-title">[E] / Клик / Тап</div>
+          <div class="feature-desc">Физическое взаимодействие с инвентарем и кнопками</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <div class="feature-title">ИИ-телеметрия</div>
+          <div class="feature-desc">Анализ точности движений, тремора и расчет Job Fit Score</div>
+        </div>
       </div>
     </div>
   </div>
@@ -761,12 +1009,22 @@
   <div id="gameScreen" class="screen">
     <!-- TOP STATUS OVERLAY -->
     <div class="vr-status-bar">
-      <div class="vr-status-pill">
-        <span style="display:inline-block; width:7px; height:7px; background:var(--emerald); border-radius:50%;"></span>
-        <span id="vrQuestTitle">КВЕСТ 1: ICED OAT LATTE</span>
+      <div class="vr-status-left">
+        <div class="vr-status-pill">
+          <span style="display:inline-block; width:8px; height:8px; background:var(--emerald); border-radius:50%;"></span>
+          <span id="vrQuestTitle">КВЕСТ 1: ICED OAT LATTE</span>
+        </div>
+        <div class="timer-pill" id="vrTimer">00:00</div>
       </div>
-      <div class="timer-pill" id="vrTimer">00:00</div>
-      <button class="btn-exit-vr" onclick="exitToHome()">✕</button>
+
+      <div class="vr-status-right">
+        <div class="device-switcher" style="background: rgba(15, 23, 42, 0.88); border-color: var(--border-dark);">
+          <button class="device-btn" id="gameBtnModeDesktop" onclick="setDeviceMode('desktop')" style="color:#FFF;">ПК</button>
+          <button class="device-btn" id="gameBtnModeMobile" onclick="setDeviceMode('mobile-frame')" style="color:#FFF;">Телефон</button>
+          <button class="device-btn" onclick="toggleFullScreen()" style="color:#FFF;">⛶</button>
+        </div>
+        <button class="btn-exit-vr" onclick="exitToHome()" title="Выйти в меню">✕</button>
+      </div>
     </div>
 
     <!-- 3D FIRST-PERSON VIEWPORT -->
@@ -775,6 +1033,14 @@
         <span>⌨️ [W][A][S][D] Перемещение</span>
         <span>🖱️ Мышь / Свайп: Обзор</span>
         <span>👉 [E] / Клик: Действие</span>
+      </div>
+
+      <div class="pointer-lock-badge" id="pointerLockBadge">
+        <span>🟢</span> Курсор мыши зафиксирован (FPS). Нажмите [ESC] для освобождения
+      </div>
+
+      <div class="desktop-aim-hint" id="desktopAimHint">
+        <span>💡</span> Кликните по сцене для захвата мыши
       </div>
 
       <div class="crosshair" id="mainCrosshair">
@@ -800,109 +1066,126 @@
       <!-- EPIC VICTORY MODAL OVERLAY -->
       <div id="victoryModal" class="victory-modal-overlay">
         <div class="victory-card">
-          <div style="font-size: 36px; margin-bottom: 8px;">🏆</div>
-          <h2 style="font-size: 17px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
+          <div style="font-size: 40px; margin-bottom: 10px;">🏆</div>
+          <h2 style="font-size: 19px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
             Симуляция успешно пройдена!
           </h2>
-          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5;">
-            Вы приготовили напиток по стандарту, разрешили конфликт с гостем и рассчитали недельный бюджет сырья.
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
+            Вы приготовили напиток по стандарту, грамотно разрешили конфликт с гостем и рассчитали бюджет сырья.
           </p>
-          <button class="btn-action" onclick="showAIReportScreen()">
-            Посмотреть аналитику ИИ
+          <button class="btn-action" onclick="showAIReportScreen()" style="width: 100%;">
+            Посмотреть аналитический отчет ИИ
           </button>
         </div>
       </div>
 
       <!-- Virtual D-Pad for Mobile Movement -->
       <div class="virtual-dpad" id="virtualDpad">
-        <button class="dpad-btn" onmousedown="setMoveKey('KeyW', true)" onmouseup="setMoveKey('KeyW', false)" ontouchstart="setMoveKey('KeyW', true)" ontouchend="setMoveKey('KeyW', false)">▲</button>
+        <button class="dpad-btn" data-dir="w" onmousedown="setMoveKey('KeyW', true)" onmouseup="setMoveKey('KeyW', false)">▲</button>
         <div class="dpad-mid">
-          <button class="dpad-btn" onmousedown="setMoveKey('KeyA', true)" onmouseup="setMoveKey('KeyA', false)" ontouchstart="setMoveKey('KeyA', true)" ontouchend="setMoveKey('KeyA', false)">◀</button>
-          <button class="dpad-btn" style="background:var(--primary); border-color:var(--primary);" onclick="triggerCenterInteraction()">E</button>
-          <button class="dpad-btn" onmousedown="setMoveKey('KeyD', true)" onmouseup="setMoveKey('KeyD', false)" ontouchstart="setMoveKey('KeyD', true)" ontouchend="setMoveKey('KeyD', false)">▶</button>
+          <button class="dpad-btn" data-dir="a" onmousedown="setMoveKey('KeyA', true)" onmouseup="setMoveKey('KeyA', false)">◀</button>
+          <button class="dpad-btn dpad-action-center" style="background:var(--primary); border-color:var(--primary);" onclick="triggerCenterInteraction()">E</button>
+          <button class="dpad-btn" data-dir="d" onmousedown="setMoveKey('KeyD', true)" onmouseup="setMoveKey('KeyD', false)">▶</button>
         </div>
-        <button class="dpad-btn" onmousedown="setMoveKey('KeyS', true)" onmouseup="setMoveKey('KeyS', false)" ontouchstart="setMoveKey('KeyS', true)" ontouchend="setMoveKey('KeyS', false)">▼</button>
+        <button class="dpad-btn" data-dir="s" onmousedown="setMoveKey('KeyS', true)" onmouseup="setMoveKey('KeyS', false)">▼</button>
       </div>
+
+      <!-- Mobile Quick Action Button -->
+      <button class="mobile-action-trigger" id="mobileActionTrigger" onclick="triggerCenterInteraction()" title="Действие [E]">
+        E
+      </button>
 
       <div id="threeCanvas"></div>
     </div>
 
-    <!-- BOTTOM FPS HUD (28%) -->
+    <!-- BOTTOM FPS HUD DOCK -->
     <div class="fps-hud-bottom" id="hudBottom">
-      <!-- Injected dynamically via JS -->
+      <div class="hud-dock-inner" id="hudDockInner">
+        <!-- Injected dynamically via JS -->
+      </div>
     </div>
   </div>
 
   <!-- ================= SCREEN 3: AI RESULTS DASHBOARD ================= -->
-  <div id="resultScreen" class="screen" style="padding: 16px;">
-    <div class="top-bar" style="background: transparent; border: none; padding: 0 0 12px;">
+  <div id="resultScreen" class="screen">
+    <div class="top-bar">
       <div class="logo">
         <span class="logo-brand">SYNAPK<span class="logo-eye-wrap"><svg class="logo-eye-svg" viewBox="0 0 24 24" fill="none"><path d="M1 12C3.2 6.8 7.2 3.8 12 3.8C16.8 3.8 20.8 6.8 23 12C20.8 17.2 16.8 20.2 12 20.2C7.2 20.2 3.2 17.2 1 12Z" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="4.5" fill="#FFFFFF" stroke="var(--primary)" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="var(--primary)"/></svg></span>R</span>
         <span class="vr-badge" style="background:var(--primary);">AI REPORT</span>
       </div>
-      <div class="xp-badge" id="resTotalXp">+950 XP</div>
-    </div>
-
-    <div class="report-card" style="text-align: center;">
-      <div style="display:inline-block; padding:3px 10px; background:var(--emerald-bg); border:1px solid var(--emerald-border); border-radius:20px; font-size:11px; font-weight:700; color:var(--emerald-text); margin-bottom:8px;">
-        ВЕРДИКТ ИИ: РЕКОМЕНДОВАН
-      </div>
-      <h2 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;" id="resPraiseTitle">
-        Отличный результат симуляции
-      </h2>
-
-      <div class="score-circle-clean">
-        <div class="score-number" id="resFitScore">0%</div>
-        <div class="score-label">JOB FIT SCORE</div>
-      </div>
-      <h3 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;" id="resVerdictGrade">Senior Barista / Shift Supervisor</h3>
-      <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;" id="resVerdictDesc">Исключительная моторика рук, соблюдение техкарты и грамотная деэскалация конфликта.</p>
-    </div>
-
-    <div class="report-card">
-      <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px;">
-        Метрики эффективности
-      </div>
-      
-      <div class="stat-table">
-        <div class="stat-row">
-          <span class="stat-label">Точность технологии (Hard Skills)</span>
-          <span class="stat-val" style="color: var(--primary);" id="statHard">98%</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Плавность моторики</span>
-          <span class="stat-val" style="color: var(--emerald-text);" id="statHands">Отличная (96%)</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Стрессоустойчивость с гостем</span>
-          <span class="stat-val" style="color: var(--primary);" id="statSoft">100%</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Время полного цикла</span>
-          <span class="stat-val" id="statTime">42 сек</span>
-        </div>
+      <div class="top-bar-controls">
+        <div class="xp-badge" id="resTotalXp">⚡ +950 XP</div>
       </div>
     </div>
 
-    <!-- Recommendations -->
-    <div class="report-card" style="margin-bottom: 14px;">
-      <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">💡 Ключевые компетенции:</div>
-      <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
-        • Соблюдение давления экстракции 9 бар и правильный помол<br>
-        • Быстрая замена напитка гостю с предложением комплимента<br>
-        • Точный расчет закупки без перерасхода бюджета
+    <div class="result-content-wrap">
+      <div class="result-grid-layout">
+        <!-- Left Column: Fit Score Card & Actions -->
+        <div class="report-card" style="text-align: center;">
+          <div style="display:inline-block; padding:4px 12px; background:var(--emerald-bg); border:1px solid var(--emerald-border); border-radius:20px; font-size:11px; font-weight:700; color:var(--emerald-text); margin-bottom:12px;">
+            ВЕРДИКТ ИИ: РЕКОМЕНДОВАН
+          </div>
+          <h2 style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;" id="resPraiseTitle">
+            Отличный результат симуляции
+          </h2>
+
+          <div class="score-circle-clean">
+            <div class="score-number" id="resFitScore">0%</div>
+            <div class="score-label">JOB FIT SCORE</div>
+          </div>
+          <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;" id="resVerdictGrade">Senior Barista / Shift Supervisor</h3>
+          <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 18px;" id="resVerdictDesc">Исключительная моторика рук, строгое соблюдение техкарты и грамотная деэскалация конфликта с клиентом.</p>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn-action" onclick="startBaristaVR()" style="width:100%;">
+              🔄 Повторить симуляцию
+            </button>
+            <button class="btn-secondary" onclick="exitToHome()" style="width:100%;">
+              🏠 В главное меню
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Metrics & Competencies -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="report-card">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+              Метрики эффективности и телеметрии
+            </div>
+            
+            <div class="stat-table">
+              <div class="stat-row">
+                <span class="stat-label">Точность технологии (Hard Skills)</span>
+                <span class="stat-val" style="color: var(--primary);" id="statHard">98%</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Плавность моторики и тремор</span>
+                <span class="stat-val" style="color: var(--emerald-text);" id="statHands">Отличная (96%)</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Стрессоустойчивость и эмпатия (Soft Skills)</span>
+                <span class="stat-val" style="color: var(--primary);" id="statSoft">100%</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Время полного цикла приготовления</span>
+                <span class="stat-val" id="statTime">42 сек</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recommendations -->
+          <div class="report-card">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">💡 Ключевые подтвержденные компетенции:</div>
+            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+              • Соблюдение рабочего давления 9 бар и правильный расчет граммовки (18г)<br>
+              • Быстрая деэскалация конфликтной ситуации с предложением комплимента<br>
+              • Точный расчет закупки сырья на 35 кг без дефицита и перерасхода бюджета
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <button class="btn-action" onclick="startBaristaVR()" style="margin-bottom: 8px;">
-      🔄 Повторить симуляцию
-    </button>
-    <button class="btn-secondary" onclick="exitToHome()">
-      🏠 В главное меню
-    </button>
   </div>
-
-</div>
 
 </div>
 
@@ -1027,14 +1310,23 @@
 
   const player = {
     pos: new THREE.Vector3(0, 1.65, 0.95),
+    velocity: new THREE.Vector3(0, 0, 0),
     yaw: 0,
-    pitch: -0.28,
-    speed: 2.2,
-    keys: { KeyW: false, KeyS: false, KeyA: false, KeyD: false },
-    minX: -1.35, maxX: 1.35,
-    minZ: 0.55,  maxZ: 1.35,
-    minYaw: -Math.PI * 0.38, maxYaw: Math.PI * 0.38,
-    minPitch: -Math.PI * 0.30, maxPitch: Math.PI * 0.22
+    pitch: -0.22,
+    speed: 3.2,
+    sprintSpeed: 5.0,
+    keys: { KeyW: false, KeyS: false, KeyA: false, KeyD: false, Shift: false },
+    // Arena boundaries behind barista counter
+    minX: -2.2, maxX: 2.2,
+    minZ: 0.15, maxZ: 2.4,
+    // Standard FPS vertical pitch clamp (-87 to +87 degrees)
+    minPitch: -Math.PI * 0.48,
+    maxPitch: Math.PI * 0.48,
+    // Head bobbing & breathing sway
+    headBobTimer: 0,
+    baseEyeHeight: 1.65,
+    swayX: 0,
+    swayY: 0
   };
 
   function setMoveKey(code, val) {
@@ -1045,15 +1337,16 @@
     const container = document.getElementById('threeCanvas');
     if (!container || renderer) return;
 
-    const width = container.clientWidth || 400;
-    const height = container.clientHeight || 460;
+    const wrap = document.getElementById('viewportWrap');
+    const width = wrap ? wrap.clientWidth : (container.clientWidth || 400);
+    const height = wrap ? wrap.clientHeight : (container.clientHeight || 460);
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0F172A);
     scene.fog = new THREE.FogExp2(0x0F172A, 0.04);
 
-    camera = new THREE.PerspectiveCamera(72, width / height, 0.1, 50);
-    camera.position.copy(player.pos);
+    camera = new THREE.PerspectiveCamera(72, width / height, 0.05, 50);
+    camera.position.set(player.pos.x, player.baseEyeHeight, player.pos.z);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
@@ -1097,32 +1390,73 @@
 
     function animate() {
       requestAnimationFrame(animate);
-      const delta = Math.min(clock.getDelta(), 0.1);
+      const delta = Math.min(clock.getDelta(), 0.08);
       const time = clock.getElapsedTime();
 
-      // Movement & Bounds
-      let moveX = 0, moveZ = 0;
-      if (player.keys.KeyW) moveZ -= 1;
-      if (player.keys.KeyS) moveZ += 1;
-      if (player.keys.KeyA) moveX -= 1;
-      if (player.keys.KeyD) moveX += 1;
+      // ================= STANDARD FPS WASD VECTOR MOVEMENT =================
+      let inputForward = 0;
+      let inputStrafe = 0;
+      if (player.keys.KeyW) inputForward += 1;
+      if (player.keys.KeyS) inputForward -= 1;
+      if (player.keys.KeyD) inputStrafe += 1;
+      if (player.keys.KeyA) inputStrafe -= 1;
 
-      if (moveX !== 0 || moveZ !== 0) {
-        const moveLen = Math.hypot(moveX, moveZ);
-        moveX /= moveLen;
-        moveZ /= moveLen;
+      const inputLength = Math.hypot(inputForward, inputStrafe);
+      const currentMaxSpeed = player.keys.Shift ? player.sprintSpeed : player.speed;
 
+      let targetVelX = 0;
+      let targetVelZ = 0;
+
+      if (inputLength > 0.001) {
+        const normF = inputForward / inputLength;
+        const normS = inputStrafe / inputLength;
+
+        // Instantaneous forward/right vectors based on real-time camera yaw:
+        // Forward Vector in XZ plane: (sin(yaw), -cos(yaw))
+        // Right Vector in XZ plane: (cos(yaw), sin(yaw))
         const sinYaw = Math.sin(player.yaw);
         const cosYaw = Math.cos(player.yaw);
 
-        player.pos.x += (moveX * cosYaw + moveZ * sinYaw) * player.speed * delta;
-        player.pos.z += (moveZ * cosYaw - moveX * sinYaw) * player.speed * delta;
-
-        player.pos.x = THREE.MathUtils.clamp(player.pos.x, player.minX, player.maxX);
-        player.pos.z = THREE.MathUtils.clamp(player.pos.z, player.minZ, player.maxZ);
+        targetVelX = (sinYaw * normF + cosYaw * normS) * currentMaxSpeed;
+        targetVelZ = (-cosYaw * normF + sinYaw * normS) * currentMaxSpeed;
       }
 
-      camera.position.copy(player.pos);
+      // Snappy, silky-smooth standard FPS responsiveness (instant reaction + micro-easing)
+      const accelFactor = Math.min(delta * 24.0, 1.0);
+      player.velocity.x = THREE.MathUtils.lerp(player.velocity.x, targetVelX, accelFactor);
+      player.velocity.z = THREE.MathUtils.lerp(player.velocity.z, targetVelZ, accelFactor);
+
+      player.pos.x += player.velocity.x * delta;
+      player.pos.z += player.velocity.z * delta;
+
+      // Bar Counter Collision: slide smoothly along counter without stopping strafe
+      if (player.pos.z < 0.22 && player.pos.x > -1.65 && player.pos.x < 1.65) {
+        player.pos.z = 0.22;
+        if (player.velocity.z < 0) player.velocity.z = 0;
+      }
+
+      // Arena boundary limits
+      player.pos.x = THREE.MathUtils.clamp(player.pos.x, player.minX, player.maxX);
+      player.pos.z = THREE.MathUtils.clamp(player.pos.z, player.minZ, player.maxZ);
+
+      // ================= NATURAL HEAD BOBBING & CAMERA HEIGHT =================
+      const currentSpeed = Math.hypot(player.velocity.x, player.velocity.z);
+      const isMoving = currentSpeed > 0.08;
+
+      if (isMoving) {
+        player.headBobTimer += delta * (currentSpeed * 3.8);
+      } else {
+        player.headBobTimer += delta * 1.5;
+      }
+
+      const bobY = isMoving ? Math.sin(player.headBobTimer * 2.0) * 0.016 : Math.sin(player.headBobTimer) * 0.003;
+      const bobX = isMoving ? Math.cos(player.headBobTimer) * 0.008 : 0;
+
+      camera.position.set(
+        player.pos.x + bobX,
+        player.baseEyeHeight + bobY,
+        player.pos.z
+      );
 
       if (shakeIntensity > 0) {
         camera.position.x += (Math.random() - 0.5) * shakeIntensity;
@@ -1131,19 +1465,33 @@
         if (shakeIntensity < 0.001) shakeIntensity = 0;
       }
 
+      // ================= STANDARD FPS EULER LOOK TARGET =================
+      const cosPitch = Math.cos(player.pitch);
+      const dirX = Math.sin(player.yaw) * cosPitch;
+      const dirY = Math.sin(player.pitch);
+      const dirZ = -Math.cos(player.yaw) * cosPitch;
+
       const targetLook = new THREE.Vector3(
-        player.pos.x + Math.sin(player.yaw) * Math.cos(player.pitch),
-        player.pos.y + Math.sin(player.pitch),
-        player.pos.z - Math.cos(player.yaw) * Math.cos(player.pitch)
+        camera.position.x + dirX,
+        camera.position.y + dirY,
+        camera.position.z + dirZ
       );
       camera.lookAt(targetLook);
 
-      // FPS Hands attached to Camera
+      // ================= VIEWMODEL FPS HANDS WITH INERTIA SWAY =================
+      player.swayX = THREE.MathUtils.lerp(player.swayX, 0, delta * 9);
+      player.swayY = THREE.MathUtils.lerp(player.swayY, 0, delta * 9);
+
       if (handsGroup) {
         handsGroup.position.copy(camera.position);
-        handsGroup.rotation.set(camera.rotation.x, camera.rotation.y, camera.rotation.z);
+        handsGroup.rotation.set(
+          camera.rotation.x + player.swayY * 0.06,
+          camera.rotation.y + player.swayX * 0.06,
+          camera.rotation.z
+        );
         if (!handsGroup.userData.animating) {
-          handsGroup.position.y += Math.sin(time * 2.2) * 0.006;
+          handsGroup.position.y += Math.sin(time * 2.2) * 0.004;
+          handsGroup.position.x += Math.cos(time * 1.1) * 0.002;
         }
       }
 
@@ -1655,24 +2003,96 @@
   let isActionInProgress = false;
   let controlsInitialized = false;
 
+  // Multi-Touch Identifiers (Simultaneous Move & Look)
+  let cameraTouchId = null;
+  let cameraTouchPrevX = 0;
+  let cameraTouchPrevY = 0;
+  let dpadTouchId = null;
+
   function setupFPSControls(container) {
     if (controlsInitialized) return;
     controlsInitialized = true;
 
-    window.addEventListener('keydown', (e) => {
-      if (e.repeat) return;
-      if (player.keys.hasOwnProperty(e.code)) player.keys[e.code] = true;
-      if (e.code === 'KeyE' || e.code === 'Space') {
-        e.preventDefault();
+    const viewportWrap = document.getElementById('viewportWrap') || container;
+
+    // Desktop Pointer Lock on click
+    viewportWrap.addEventListener('click', (e) => {
+      if (window.innerWidth > 768 && !document.pointerLockElement) {
+        try {
+          const req = viewportWrap.requestPointerLock || viewportWrap.mozRequestPointerLock || viewportWrap.webkitRequestPointerLock;
+          if (req) req.call(viewportWrap);
+        } catch(err){}
+      }
+      if (totalDragDistance <= 12) {
         triggerCenterInteraction();
       }
     });
 
-    window.addEventListener('keyup', (e) => {
-      if (player.keys.hasOwnProperty(e.code)) player.keys[e.code] = false;
+    function onPointerLockChange() {
+      const isLocked = (document.pointerLockElement === viewportWrap || document.mozPointerLockElement === viewportWrap || document.webkitPointerLockElement === viewportWrap);
+      const badge = document.getElementById('pointerLockBadge');
+      const hint = document.getElementById('desktopAimHint');
+      if (badge) badge.style.display = isLocked ? 'flex' : 'none';
+      if (hint) hint.style.display = isLocked ? 'none' : 'flex';
+    }
+
+    document.addEventListener('pointerlockchange', onPointerLockChange);
+    document.addEventListener('mozpointerlockchange', onPointerLockChange);
+    document.addEventListener('webkitpointerlockchange', onPointerLockChange);
+
+    // Mouse movement when pointer locked
+    document.addEventListener('mousemove', (e) => {
+      const isLocked = (document.pointerLockElement === viewportWrap || document.mozPointerLockElement === viewportWrap || document.webkitPointerLockElement === viewportWrap);
+      if (isLocked) {
+        const movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
+        const movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
+        const lookSens = 0.0022;
+
+        player.yaw += movementX * lookSens;
+        player.pitch -= movementY * lookSens;
+        player.pitch = THREE.MathUtils.clamp(player.pitch, player.minPitch, player.maxPitch);
+
+        player.swayX = THREE.MathUtils.clamp(player.swayX - movementX * 0.004, -0.35, 0.35);
+        player.swayY = THREE.MathUtils.clamp(player.swayY - movementY * 0.004, -0.35, 0.35);
+      }
     });
 
-    container.addEventListener('mousedown', (e) => {
+    // Keyboard support (WASD + Arrow Keys + Shift Sprint + E/Space Interact)
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') player.keys.KeyW = true;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') player.keys.KeyS = true;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') player.keys.KeyA = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') player.keys.KeyD = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') player.keys.Shift = true;
+
+      if (e.code === 'KeyE' || e.code === 'Space') {
+        e.preventDefault();
+        triggerCenterInteraction();
+      }
+      if (e.code === 'KeyF') {
+        toggleFullScreen();
+      }
+      if (e.code === 'KeyM') {
+        const app = document.getElementById('appContainer');
+        if (app) {
+          const isDesktop = app.classList.contains('mode-desktop');
+          setDeviceMode(isDesktop ? 'mobile-frame' : 'desktop');
+        }
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') player.keys.KeyW = false;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') player.keys.KeyS = false;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') player.keys.KeyA = false;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') player.keys.KeyD = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') player.keys.Shift = false;
+    });
+
+    // Mouse drag fallback on PC (when pointer lock is not active)
+    viewportWrap.addEventListener('mousedown', (e) => {
+      if (e.target && (e.target.closest('#virtualDpad') || e.target.closest('#mobileActionTrigger') || e.target.closest('.vr-status-bar'))) return;
       isDragging = true;
       previousMouseX = e.clientX;
       previousMouseY = e.clientY;
@@ -1683,8 +2103,9 @@
       isDragging = false;
     });
 
-    container.addEventListener('mousemove', (e) => {
-      if (isDragging) {
+    window.addEventListener('mousemove', (e) => {
+      const isLocked = (document.pointerLockElement === viewportWrap || document.mozPointerLockElement === viewportWrap || document.webkitPointerLockElement === viewportWrap);
+      if (isDragging && !isLocked) {
         const deltaX = e.clientX - previousMouseX;
         const deltaY = e.clientY - previousMouseY;
         previousMouseX = e.clientX;
@@ -1692,49 +2113,121 @@
         totalDragDistance += Math.abs(deltaX) + Math.abs(deltaY);
 
         const lookSens = 0.0035;
-        player.yaw -= deltaX * lookSens;
+        player.yaw += deltaX * lookSens;
         player.pitch -= deltaY * lookSens;
-
-        player.yaw = THREE.MathUtils.clamp(player.yaw, player.minYaw, player.maxYaw);
         player.pitch = THREE.MathUtils.clamp(player.pitch, player.minPitch, player.maxPitch);
+
+        player.swayX = THREE.MathUtils.clamp(player.swayX - deltaX * 0.004, -0.35, 0.35);
+        player.swayY = THREE.MathUtils.clamp(player.swayY - deltaY * 0.004, -0.35, 0.35);
       }
     });
 
-    container.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        isDragging = true;
-        previousMouseX = e.touches[0].clientX;
-        previousMouseY = e.touches[0].clientY;
-        totalDragDistance = 0;
+    // ================= MULTI-TOUCH ENGINE (SIMULTANEOUS MOVE & LOOK) =================
+    const dpadEl = document.getElementById('virtualDpad');
+
+    function updateDpadFromTouch(touch) {
+      if (!dpadEl) return;
+      const rect = dpadEl.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = touch.clientX - centerX;
+      const dy = touch.clientY - centerY;
+      const deadZone = 12;
+
+      player.keys.KeyW = dy < -deadZone;
+      player.keys.KeyS = dy > deadZone;
+      player.keys.KeyA = dx < -deadZone;
+      player.keys.KeyD = dx > deadZone;
+
+      const btnW = dpadEl.querySelector('[data-dir="w"]');
+      const btnS = dpadEl.querySelector('[data-dir="s"]');
+      const btnA = dpadEl.querySelector('[data-dir="a"]');
+      const btnD = dpadEl.querySelector('[data-dir="d"]');
+      if (btnW) btnW.classList.toggle('active', player.keys.KeyW);
+      if (btnS) btnS.classList.toggle('active', player.keys.KeyS);
+      if (btnA) btnA.classList.toggle('active', player.keys.KeyA);
+      if (btnD) btnD.classList.toggle('active', player.keys.KeyD);
+    }
+
+    function clearDpadVisuals() {
+      if (!dpadEl) return;
+      dpadEl.querySelectorAll('.dpad-btn').forEach(b => {
+        if (!b.classList.contains('dpad-action-center')) b.classList.remove('active');
+      });
+    }
+
+    viewportWrap.addEventListener('touchstart', (e) => {
+      const vRect = viewportWrap.getBoundingClientRect();
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        const target = document.elementFromPoint(t.clientX, t.clientY);
+
+        if (target && target.closest('#mobileActionTrigger')) {
+          triggerCenterInteraction();
+        } else if (target && target.closest('#virtualDpad')) {
+          dpadTouchId = t.identifier;
+          updateDpadFromTouch(t);
+        } else if (t.clientX < vRect.left + vRect.width * 0.40 && t.clientY > vRect.top + vRect.height * 0.35) {
+          // Left touch area as joystick
+          dpadTouchId = t.identifier;
+          updateDpadFromTouch(t);
+        } else {
+          // Camera Look Touch (Right side or general look)
+          if (cameraTouchId === null) {
+            cameraTouchId = t.identifier;
+            cameraTouchPrevX = t.clientX;
+            cameraTouchPrevY = t.clientY;
+          }
+        }
       }
-    }, { passive: true });
+    }, { passive: false });
 
-    container.addEventListener('touchmove', (e) => {
-      if (isDragging && e.touches.length === 1) {
-        const deltaX = e.touches[0].clientX - previousMouseX;
-        const deltaY = e.touches[0].clientY - previousMouseY;
-        previousMouseX = e.touches[0].clientX;
-        previousMouseY = e.touches[0].clientY;
-        totalDragDistance += Math.abs(deltaX) + Math.abs(deltaY);
+    viewportWrap.addEventListener('touchmove', (e) => {
+      if (e.cancelable) e.preventDefault();
 
-        const touchSens = 0.004;
-        player.yaw -= deltaX * touchSens;
-        player.pitch -= deltaY * touchSens;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
 
-        player.yaw = THREE.MathUtils.clamp(player.yaw, player.minYaw, player.maxYaw);
-        player.pitch = THREE.MathUtils.clamp(player.pitch, player.minPitch, player.maxPitch);
+        if (t.identifier === dpadTouchId) {
+          updateDpadFromTouch(t);
+        } else if (t.identifier === cameraTouchId) {
+          const deltaX = t.clientX - cameraTouchPrevX;
+          const deltaY = t.clientY - cameraTouchPrevY;
+          cameraTouchPrevX = t.clientX;
+          cameraTouchPrevY = t.clientY;
+
+          const touchSens = 0.0042;
+          player.yaw += deltaX * touchSens;
+          player.pitch -= deltaY * touchSens;
+          player.pitch = THREE.MathUtils.clamp(player.pitch, player.minPitch, player.maxPitch);
+
+          player.swayX = THREE.MathUtils.clamp(player.swayX - deltaX * 0.003, -0.3, 0.3);
+          player.swayY = THREE.MathUtils.clamp(player.swayY - deltaY * 0.003, -0.3, 0.3);
+        }
       }
-    }, { passive: true });
+    }, { passive: false });
 
-    container.addEventListener('touchend', () => {
-      isDragging = false;
-    });
+    function onTouchEnd(e) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
 
-    container.addEventListener('click', () => {
-      // Discard camera drag release as intentional click
-      if (totalDragDistance > 10) return;
-      triggerCenterInteraction();
-    });
+        if (t.identifier === dpadTouchId) {
+          dpadTouchId = null;
+          player.keys.KeyW = false;
+          player.keys.KeyS = false;
+          player.keys.KeyA = false;
+          player.keys.KeyD = false;
+          clearDpadVisuals();
+        }
+
+        if (t.identifier === cameraTouchId) {
+          cameraTouchId = null;
+        }
+      }
+    }
+
+    viewportWrap.addEventListener('touchend', onTouchEnd, { passive: true });
+    viewportWrap.addEventListener('touchcancel', onTouchEnd, { passive: true });
   }
 
   function checkCenterRaycast() {
@@ -1999,22 +2492,22 @@
 
     playTone(280, 'sawtooth', 0.4, 0.12);
 
-    const hud = document.getElementById('hudBottom');
+    const hud = document.getElementById('hudDockInner') || document.getElementById('hudBottom');
     hud.innerHTML = `
       <div class="speech-bubble" id="typewriterBox">
         😡 <strong>Клиент (в упор):</strong> <span id="typewriterText"></span>
       </div>
       <div>
         <div class="dialog-option" onclick="handleConflictAnswer('A')">
-          <div class="dialog-tag" style="background:rgba(255,71,87,0.2); color:var(--neon-red); border:1px solid var(--neon-red);">A</div>
+          <div class="dialog-tag" style="background:var(--rose-bg); color:var(--rose); border:1px solid var(--rose-border);">A</div>
           <div>«Вы сами так заказали, проверяйте чек перед оплатой»</div>
         </div>
         <div class="dialog-option" onclick="handleConflictAnswer('B')">
-          <div class="dialog-tag" style="background:rgba(0,255,179,0.2); color:var(--neon-cyan); border:1px solid var(--neon-cyan);">B</div>
+          <div class="dialog-tag" style="background:var(--emerald-bg); color:var(--emerald); border:1px solid var(--emerald-border);">B</div>
           <div>«Простите за ошибку! Я переделаю за 1 минуту и угощу вас фирменным десертом»</div>
         </div>
         <div class="dialog-option" onclick="handleConflictAnswer('C')">
-          <div class="dialog-tag" style="background:rgba(255,184,0,0.2); color:var(--neon-gold); border:1px solid var(--neon-gold);">C</div>
+          <div class="dialog-tag" style="background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-border);">C</div>
           <div>«Подождите, я позову управляющего смены»</div>
         </div>
       </div>
@@ -2046,25 +2539,25 @@
     state.quest = 3;
     document.getElementById('vrQuestTitle').innerText = 'КВЕСТ 3: КАССА И ЗАКУПКА';
 
-    const hud = document.getElementById('hudBottom');
+    const hud = document.getElementById('hudDockInner') || document.getElementById('hudBottom');
     hud.innerHTML = `
-      <div style="font-family:'Orbitron'; font-size:11px; color:var(--neon-gold); font-weight:700; margin-bottom:4px;">
+      <div style="font-size:12px; color:var(--amber); font-weight:700; margin-bottom:4px;">
         💼 3D POS ТЕРМИНАЛ: Закупка зерна на неделю
       </div>
-      <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">
+      <p style="font-size:12px; color:var(--text-muted-dark); margin-bottom:10px;">
         Бюджет кофейни: 120 000 ₸. Расход: 35 кг/неделю. Выберите оптимальный заказ:
       </p>
       <div>
         <div class="dialog-option" onclick="handleBudgetAnswer('low')">
-          <div class="dialog-tag" style="border:1px solid var(--border-glow);">1</div>
+          <div class="dialog-tag" style="border:1px solid var(--border-dark);">1</div>
           <div><strong>45 000 ₸ (15 кг)</strong> — Экономия (высокий риск дефицита)</div>
         </div>
         <div class="dialog-option" onclick="handleBudgetAnswer('optimal')">
-          <div class="dialog-tag" style="border:1px solid var(--neon-cyan); color:var(--neon-cyan);">2</div>
+          <div class="dialog-tag" style="border:1px solid var(--emerald); color:var(--emerald);">2</div>
           <div><strong>90 000 ₸ (35 кг)</strong> — Оптимально (100% покрытие + 30 000 ₸ резерв)</div>
         </div>
         <div class="dialog-option" onclick="handleBudgetAnswer('high')">
-          <div class="dialog-tag" style="border:1px solid var(--neon-pink); color:var(--neon-pink);">3</div>
+          <div class="dialog-tag" style="border:1px solid var(--rose); color:var(--rose);">3</div>
           <div><strong>135 000 ₸ (55 кг)</strong> — Перерасход бюджета на 15 000 ₸</div>
         </div>
       </div>
@@ -2140,39 +2633,87 @@
 
   // ================= UI HELPERS =================
   function renderHUD() {
-    const hud = document.getElementById('hudBottom');
+    const hud = document.getElementById('hudDockInner') || document.getElementById('hudBottom');
+    if (!hud) return;
     hud.innerHTML = `
       <div class="steps-bar">
         ${state.stepsConfig.map((s, idx) => `
           <div class="step-pill ${idx < state.step ? 'done' : (idx === state.step ? 'active' : '')}">
-            ${idx < state.step ? '✓' : idx + 1}. ${s.name.split(' ')[0]}
+            ${idx < state.step ? '✓ ' : (idx + 1) + '. '}${s.name.split(' ')[0]}
           </div>
         `).join('')}
       </div>
-      <div style="background:var(--surface-card); border:1px solid var(--border-glow); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="background:var(--surface-slate); border:1px solid var(--border-dark); border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <div style="font-size:9px; color:var(--text-muted); font-family:'Orbitron';">ТЕКУЩАЯ ЦЕЛЬ</div>
-          <div style="font-size:13px; font-weight:700; color:var(--neon-cyan);">${state.stepsConfig[state.step] ? state.stepsConfig[state.step].name : 'Готово'}</div>
+          <div style="font-size:10px; font-weight:700; color:var(--text-muted-dark); text-transform:uppercase; letter-spacing:0.5px;">ТЕКУЩАЯ ЦЕЛЬ</div>
+          <div style="font-size:13px; font-weight:700; color:var(--text-on-dark);">${state.stepsConfig[state.step] ? state.stepsConfig[state.step].name : 'Готово'}</div>
         </div>
-        <div style="font-size:11px; color:#AAA;">${state.stepsConfig[state.step] ? state.stepsConfig[state.step].hint : ''}</div>
+        <div style="font-size:12px; color:var(--text-muted-dark); font-weight:500;">${state.stepsConfig[state.step] ? state.stepsConfig[state.step].hint : ''}</div>
       </div>
     `;
   }
 
   function renderHUDComplete() {
-    const hud = document.getElementById('hudBottom');
+    const hud = document.getElementById('hudDockInner') || document.getElementById('hudBottom');
+    if (!hud) return;
     hud.innerHTML = `
-      <div style="background:rgba(0,255,179,0.15); border:1px solid var(--neon-cyan); border-radius:14px; padding:12px; text-align:center;">
-        <h3 style="font-family:'Orbitron'; color:var(--neon-cyan); font-size:13px;">✨ ICED OAT LATTE УСПЕШНО СВАРЕН!</h3>
-        <p style="font-size:11px; color:#EEE;">100% соблюдение рецептуры и идеальная последовательность моторики.</p>
+      <div style="background:rgba(16,185,129,0.15); border:1px solid var(--emerald); border-radius:12px; padding:14px; text-align:center;">
+        <h3 style="color:var(--emerald); font-size:14px; font-weight:800;">✨ ICED OAT LATTE УСПЕШНО СВАРЕН!</h3>
+        <p style="font-size:12px; color:#E2E8F0; margin-top:4px;">100% соблюдение рецептуры и идеальная последовательность моторики.</p>
       </div>
     `;
+  }
+
+  function handleWindowResize() {
+    const viewport = document.getElementById('viewportWrap');
+    if (!viewport || !renderer || !camera) return;
+    const w = viewport.clientWidth;
+    const h = viewport.clientHeight;
+    if (w <= 0 || h <= 0) return;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  }
+  window.addEventListener('resize', handleWindowResize);
+  window.addEventListener('orientationchange', () => setTimeout(handleWindowResize, 150));
+  document.addEventListener('fullscreenchange', () => setTimeout(handleWindowResize, 150));
+
+  function setDeviceMode(mode) {
+    const container = document.getElementById('appContainer');
+    if (!container) return;
+
+    if (mode === 'mobile-frame') {
+      container.classList.remove('mode-desktop');
+      container.classList.add('mode-mobile-frame');
+    } else {
+      container.classList.remove('mode-mobile-frame');
+      container.classList.add('mode-desktop');
+    }
+
+    const isDesk = mode === 'desktop';
+    document.getElementById('btnModeDesktop')?.classList.toggle('active', isDesk);
+    document.getElementById('btnModeMobile')?.classList.toggle('active', !isDesk);
+    document.getElementById('gameBtnModeDesktop')?.classList.toggle('active', isDesk);
+    document.getElementById('gameBtnModeMobile')?.classList.toggle('active', !isDesk);
+
+    setTimeout(handleWindowResize, 100);
+  }
+
+  function toggleFullScreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(()=>{});
+    } else {
+      document.exitFullscreen?.().catch(()=>{});
+    }
+    setTimeout(handleWindowResize, 200);
   }
 
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const scr = document.getElementById(id);
     if (scr) scr.classList.add('active');
+    setTimeout(handleWindowResize, 50);
   }
 
   function startBaristaVR() {
@@ -2227,6 +2768,7 @@
     setTimeout(() => {
       initThreeFPS();
       renderHUD();
+      handleWindowResize();
     }, 100);
 
     clearInterval(state.timerInterval);
@@ -2242,6 +2784,13 @@
     clearInterval(state.timerInterval);
     showScreen('homeScreen');
   }
+
+  // Initial responsive check on load
+  window.addEventListener('DOMContentLoaded', () => {
+    if (window.innerWidth <= 768) {
+      setDeviceMode('desktop');
+    }
+  });
 </script>
 
 </body>
