@@ -46,7 +46,8 @@ export function validateReport(body) {
         .filter(e => e.action)
     : [];
 
-  return { ok: true, report: { module, score: Math.round(score), metrics: cleanMetrics, events: cleanEvents } };
+  const lang = body.lang === 'kk' ? 'kk' : 'ru';
+  return { ok: true, report: { module, score: Math.round(score), metrics: cleanMetrics, events: cleanEvents, lang } };
 }
 
 // ---------- Validation survey (frontend/js/survey.js) ----------

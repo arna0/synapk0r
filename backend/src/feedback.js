@@ -91,7 +91,7 @@ export async function generateFeedback(report, { logger = console } = {}) {
       system: SYSTEM_PROMPT,
       messages: [{
         role: 'user',
-        content: `${MODULE_CONTEXT[report.module]}\n\n<session_data>\n${sessionData}\n</session_data>`
+        content: `${MODULE_CONTEXT[report.module]}${report.lang === 'kk' ? '\n\nНапиши весь разбор на казахском языке (қазақ тілінде).' : ''}\n\n<session_data>\n${sessionData}\n</session_data>`
       }]
     });
 

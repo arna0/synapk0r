@@ -21,6 +21,11 @@
         <span class="logo-brand">SYNAPK<span class="logo-eye-wrap"><svg class="logo-eye-svg" viewBox="0 0 24 24" fill="none"><path d="M1 12C3.2 6.8 7.2 3.8 12 3.8C16.8 3.8 20.8 6.8 23 12C20.8 17.2 16.8 20.2 12 20.2C7.2 20.2 3.2 17.2 1 12Z" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="4.5" fill="#FFFFFF" stroke="var(--primary)" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="var(--primary)"/></svg></span>R</span>
       </div>
 
+      <div class="nav-right">
+      <div class="lang-switch" role="group" aria-label="Язык интерфейса">
+        <button type="button" class="lang-btn active" data-lang="ru" onclick="setLanguage('ru')">Рус</button>
+        <button type="button" class="lang-btn" data-lang="kk" onclick="setLanguage('kk')">Қаз</button>
+      </div>
       <div class="device-switcher" id="deviceSwitcher">
         <button class="device-btn active" id="btnModeDesktop" onclick="setDeviceMode('desktop')" title="Режим ПК">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -33,6 +38,7 @@
         <button class="device-btn" id="btnFullscreen" onclick="toggleFullScreen()" title="На весь экран (F)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
         </button>
+      </div>
       </div>
     </header>
 
@@ -576,6 +582,7 @@
 <script src="js/report.js"></script>
 <script src="js/survey.js"></script>
 <script src="js/career.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/scenario.js"></script>
 <script src="js/it.js"></script>
 <script src="js/doctor.js"></script>

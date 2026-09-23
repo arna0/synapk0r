@@ -190,7 +190,7 @@ async function requestAiFeedback(report) {
     const res = await fetch(`${apiBase}/api/report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(report)
+      body: JSON.stringify({ ...report, lang: typeof getLanguage === 'function' ? getLanguage() : 'ru' })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
