@@ -171,6 +171,7 @@ function escapeHtml(text) {
 }
 
 async function requestAiFeedback(report) {
+  if (typeof showSurvey === 'function') showSurvey(report);
   const card = document.getElementById('aiFeedbackCard');
   const body = document.getElementById('aiFeedbackBody');
   const source = document.getElementById('aiFeedbackSource');

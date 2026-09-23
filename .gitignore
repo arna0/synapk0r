@@ -26,3 +26,4 @@ backend/.env
 mobile/.dart_tool/
 mobile/build/
 mobile/assets/sim/
+backend/data/

@@ -48,3 +48,41 @@ export function validateReport(body) {
 
   return { ok: true, report: { module, score: Math.round(score), metrics: cleanMetrics, events: cleanEvents } };
 }
+
+// ---------- Validation survey (frontend/js/survey.js) ----------
+const SURVEY_FIELDS = {
+  role: ['8–9 класс', '10–11 класс', 'Колледж', 'Вуз', 'Работаю'],
+  before: ['1', '2', '3', '4', '5'],
+  clarity: ['1', '2', '3', '4', '5'],
+  guide: ['Да', 'Частично', 'Нет'],
+  no_help: ['Да', 'Нет'],
+  learned: ['Да', 'Нет'],
+  report_match: ['1', '2', '3', '4', '5'],
+  more: ['Да', 'Нет', 'Не знаю']
+};
+
+/** Returns { ok: true, survey } with only known fields and allowed values, or { ok: false, error }. */
+export function validateSurvey(body) {
+  if (!body || typeof body !== 'object') return { ok: false, error: 'Body must be a JSON object' };
+  if (!MODULES.includes(body.module)) return { ok: false, error: `module must be one of: ${MODULES.join(', ')}` };
+  const answers = body.answers;
+  if (!answers || typeof answers !== 'object') return { ok: false, error: 'answers must be an object' };
+  const clean = {};
+  for (const [key, allowed] of Object.entries(SURVEY_FIELDS)) {
+    if (!allowed.includes(answers[key])) return { ok: false, error: `answers.${key} is missing or invalid` };
+    clean[key] = answers[key];
+  }
+  const num = v => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+  return {
+    ok: true,
+    survey: {
+      at: new Date().toISOString(),
+      module: body.module,
+      score: num(body.score),
+      time_sec: num(body.time_sec),
+      errors: num(body.errors),
+      answers: clean,
+      comment: typeof body.comment === 'string' ? body.comment.slice(0, 300) : ''
+    }
+  };
+}

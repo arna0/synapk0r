@@ -4,6 +4,10 @@ import assert from 'node:assert/strict';
 // Tests run without an API key: the backend must fall back to rule-based feedback.
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.ANTHROPIC_AUTH_TOKEN;
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+process.env.SURVEY_FILE = join(mkdtempSync(join(tmpdir(), 'synapkor-')), 'survey.jsonl');
 
 const { createApp } = await import('../src/server.js');
 const { validateReport } = await import('../src/validate.js');
@@ -99,4 +103,22 @@ test('web client is served from the same origin', async () => {
   const res = await fetch(`${base}/`);
   assert.equal(res.status, 200);
   assert.match(await res.text(), /js\/report\.js/);
+});
+
+test('survey answers are stored and summarized', async () => {
+  const answers = { role: '10–11 класс', before: '2', clarity: '5', guide: 'Да', no_help: 'Да', learned: 'Да', report_match: '4', more: 'Да' };
+  const res = await fetch(`${base}/api/survey`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ module: 'doctor', score: 90, time_sec: 120, errors: 0, answers, comment: 'ok' })
+  });
+  assert.equal(res.status, 201);
+  const bad = await fetch(`${base}/api/survey`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ module: 'doctor', answers: { ...answers, before: '9' } })
+  });
+  assert.equal(bad.status, 400);
+  const sum = await (await fetch(`${base}/api/survey/summary`)).json();
+  assert.equal(sum.n, 1);
+  assert.equal(sum.h1_before_le3, 1);
+  assert.deepEqual(sum.by_module, { doctor: 1 });
 });

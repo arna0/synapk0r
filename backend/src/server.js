@@ -3,12 +3,14 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateReport } from './validate.js';
+import { mkdirSync, appendFileSync, readFileSync, existsSync } from 'node:fs';
+import { validateReport, validateSurvey } from './validate.js';
 import { aiConfigured, generateFeedback } from './feedback.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FRONTEND_DIR = path.resolve(here, '../../frontend');
 const PORT = Number(process.env.PORT) || 8787;
+const SURVEY_FILE = process.env.SURVEY_FILE || path.resolve(here, '../data/survey.jsonl');
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '*').split(',').map(s => s.trim());
 
 // Simple per-IP limit so a public demo can't burn the API budget
@@ -54,6 +56,35 @@ export function createApp() {
     } catch (err) {
       next(err);
     }
+  });
+
+  // Validation survey: answers are appended to data/survey.jsonl (one JSON per line)
+  app.post('/api/survey', (req, res) => {
+    if (rateLimited(req.ip)) return res.status(429).json({ error: 'Too many requests, try again in a minute' });
+    const result = validateSurvey(req.body);
+    if (!result.ok) return res.status(400).json({ error: result.error });
+    mkdirSync(path.dirname(SURVEY_FILE), { recursive: true });
+    appendFileSync(SURVEY_FILE, JSON.stringify(result.survey) + '\n');
+    res.status(201).json({ ok: true });
+  });
+
+  // Aggregated counts only (no comments or raw rows) for the team and the pitch
+  app.get('/api/survey/summary', (req, res) => {
+    const rows = existsSync(SURVEY_FILE)
+      ? readFileSync(SURVEY_FILE, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l))
+      : [];
+    const n = rows.length;
+    const count = (k, v) => rows.filter(r => (Array.isArray(v) ? v.includes(r.answers[k]) : r.answers[k] === v)).length;
+    const byModule = {};
+    rows.forEach(r => { byModule[r.module] = (byModule[r.module] || 0) + 1; });
+    res.json({
+      n,
+      by_module: byModule,
+      h1_before_le3: count('before', ['1', '2', '3']),
+      h2_no_help: count('no_help', 'Да'),
+      h3_learned: count('learned', 'Да'),
+      want_more: count('more', 'Да')
+    });
   });
 
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
