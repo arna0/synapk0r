@@ -48,6 +48,8 @@ class _ThreeDFpsViewportState extends State<ThreeDFpsViewport> with SingleTicker
         ..setNavigationDelegate(
           NavigationDelegate(
             onPageFinished: (String url) {
+              // The bundled page opens on its own home menu; jump straight into the barista module
+              _webViewController?.runJavaScript('if (window.startBaristaVR) startBaristaVR();');
               if (mounted) setState(() => _isLoading = false);
             },
             onWebResourceError: (error) {
@@ -56,12 +58,12 @@ class _ThreeDFpsViewportState extends State<ThreeDFpsViewport> with SingleTicker
           ),
         );
 
-      // Load localhost or direct HTML string
-      controller.loadRequest(Uri.parse('http://localhost:8080'));
+      // Simulator page is bundled with the app (see pubspec.yaml assets)
+      controller.loadFlutterAsset('web_preview/index.html');
       _webViewController = controller;
     } catch (_) {
-      // WebView not supported on current platform
-      if (mounted) setState(() => _isLoading = false);
+      // WebView not supported on current platform (called from initState, so no setState)
+      _isLoading = false;
     }
   }
 

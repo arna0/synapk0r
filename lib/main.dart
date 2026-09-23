@@ -30,7 +30,10 @@ class BaristaVRApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<AiAnalysisService>(
-          create: (_) => AiAnalysisService(),
+          // Optional LLM report: flutter run --dart-define=GEMINI_API_KEY=...
+          create: (_) => AiAnalysisService(
+            apiKey: const String.fromEnvironment('GEMINI_API_KEY'),
+          ),
         ),
         ChangeNotifierProvider<GameProvider>(
           create: (context) => GameProvider(

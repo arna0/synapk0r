@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SynapKor - Professional Barista VR Simulator</title>
+  <title>SynapKor — 3D-симулятор профессий</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -583,7 +583,7 @@
       border-radius: 50%;
       backdrop-filter: blur(12px);
       z-index: 25;
-      display: flex;
+      display: none; /* shown on phones / phone-frame mode */
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
@@ -922,6 +922,743 @@
       color: var(--text-primary);
       font-weight: 700;
     }
+
+    /* ================= SYNAPKOR SAFETY & MAINTENANCE ENGINEER MODULE ================= */
+    :root {
+      --safety-orange: #FF7700;
+      --safety-yellow: #FFB703;
+      --safety-red: #EF4444;
+      --safety-green: #10B981;
+      --safety-cyan: #06B6D4;
+      --safety-dark: #0B0F19;
+      --safety-panel: #111827;
+      --safety-border: #374151;
+    }
+
+    .profession-grid-select {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .prof-select-card {
+      background: var(--surface-white);
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .prof-select-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-modal);
+    }
+    .prof-select-card.active-card {
+      border-color: #F59E0B;
+      background: linear-gradient(180deg, #FFFDF7 0%, #FFFFFF 100%);
+      box-shadow: 0 10px 30px -8px rgba(245, 158, 11, 0.25);
+    }
+    .prof-badge-banner {
+      position: absolute;
+      top: 14px;
+      right: -32px;
+      transform: rotate(45deg);
+      background: #F59E0B;
+      color: #000;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 3px 34px;
+      text-transform: uppercase;
+    }
+
+    /* Live Safety HUD Top Bar */
+    .safety-hud-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .safety-hud-pill {
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid var(--border-dark);
+      backdrop-filter: blur(10px);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #E2E8F0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      transition: all 0.2s ease;
+    }
+    .safety-hud-pill.danger {
+      border-color: rgba(239, 68, 68, 0.6);
+      color: #FCA5A5;
+      background: rgba(239, 68, 68, 0.15);
+    }
+    .safety-hud-pill.safe {
+      border-color: rgba(16, 185, 129, 0.6);
+      color: #A7F3D0;
+      background: rgba(16, 185, 129, 0.15);
+    }
+    .safety-hud-pill.warning {
+      border-color: rgba(245, 158, 11, 0.6);
+      color: #FDE68A;
+      background: rgba(245, 158, 11, 0.15);
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .status-dot.danger { background: #EF4444; box-shadow: 0 0 8px #EF4444; }
+    .status-dot.safe { background: #10B981; box-shadow: 0 0 8px #10B981; }
+    .status-dot.warning { background: #F59E0B; box-shadow: 0 0 8px #F59E0B; }
+
+    /* Player Inventory Quick Dock */
+    .safety-inventory-bar {
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid var(--border-dark);
+      padding: 8px 14px;
+      border-radius: 24px;
+      backdrop-filter: blur(14px);
+      z-index: 25;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+    }
+    .safety-inv-slot {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .safety-inv-slot:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: #60A5FA;
+      transform: translateY(-2px);
+    }
+    .safety-inv-slot.active {
+      background: rgba(0, 82, 255, 0.35);
+      border-color: #0052FF;
+      box-shadow: 0 0 16px rgba(0, 82, 255, 0.5);
+    }
+    .safety-inv-slot.equipped {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #10B981;
+      color: #A7F3D0;
+    }
+    .safety-slot-num {
+      width: 18px; height: 18px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Multimeter Floating HUD Display */
+    .multimeter-hud-panel {
+      position: absolute;
+      top: 60px;
+      right: 16px;
+      width: 220px;
+      background: #1E293B;
+      border: 2px solid #F59E0B;
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(245, 158, 11, 0.25);
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 26;
+      animation: slideInRight 0.25s ease-out;
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .multimeter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 800;
+      color: #F59E0B;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .multimeter-lcd {
+      background: #849386;
+      border: 2px solid #4A5568;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #0F172A;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .lcd-subline {
+      font-size: 9px;
+      font-weight: 700;
+      color: #334155;
+      display: flex;
+      justify-content: space-between;
+    }
+    .lcd-main-digits {
+      font-size: 24px;
+      font-weight: 900;
+      color: #0F172A;
+      letter-spacing: 1px;
+      text-align: right;
+    }
+    .multimeter-status-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 5px 8px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .multimeter-status-tag.danger {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: #B91C1C;
+    }
+    .multimeter-status-tag.safe {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #047857;
+    }
+
+    /* Telemetry Action Log Drawer */
+    .telemetry-log-panel {
+      position: absolute;
+      bottom: 22px;
+      left: 16px;
+      max-width: 300px;
+      background: rgba(15, 23, 42, 0.90);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius-sm);
+      backdrop-filter: blur(10px);
+      padding: 8px 12px;
+      z-index: 22;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      pointer-events: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .telemetry-log-title {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text-muted-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 4px;
+    }
+    .telemetry-log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 120px;
+      overflow: hidden;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+    }
+    .telemetry-log-entry {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #CBD5E1;
+    }
+    .telemetry-log-entry.ok { color: #10B981; }
+    @media (max-width: 768px) { #telemetryLogPanel { display: none !important; } }
+    .app-container.mode-mobile-frame #telemetryLogPanel { display: none !important; }
+    @media (max-width: 768px) {
+      .guide-panel { width: 250px; }
+      .guide-why, .guide-steps { display: none !important; }
+    }
+    .app-container.mode-mobile-frame .guide-panel { width: 250px; }
+    .app-container.mode-mobile-frame .guide-why,
+    .app-container.mode-mobile-frame .guide-steps { display: none !important; }
+    .telemetry-log-entry.err { color: #EF4444; }
+
+    /* Alert Banner for Safety Violation */
+    .safety-alert-banner {
+      position: absolute;
+      top: 18%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(239, 68, 68, 0.96);
+      border: 2px solid #FCA5A5;
+      color: #FFFFFF;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 10px 30px rgba(239, 68, 68, 0.5);
+      z-index: 35;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      animation: shakeAlert 0.4s ease-in-out;
+    }
+    @keyframes shakeAlert {
+      0%, 100% { transform: translateX(-50%); }
+      20%, 60% { transform: translateX(calc(-50% - 8px)); }
+      40%, 80% { transform: translateX(calc(-50% + 8px)); }
+    }
+
+
+    /* ================= HOME (clean light layout) ================= */
+    #homeScreen { background: #F6F7F9; }
+    .home-nav {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 32px;
+      background: rgba(246, 247, 249, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #E6E8EC;
+      flex-shrink: 0;
+    }
+    .home-main {
+      width: 100%;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 56px 32px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 56px;
+    }
+    .home-hero { max-width: 680px; }
+    .eyebrow {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 14px;
+    }
+    .home-hero h1 {
+      font-size: clamp(30px, 5vw, 48px);
+      line-height: 1.08;
+      font-weight: 800;
+      letter-spacing: -1.4px;
+      color: #0B0F17;
+      margin-bottom: 18px;
+    }
+    .home-hero p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #5B6472;
+      max-width: 560px;
+    }
+    .home-section { display: flex; flex-direction: column; gap: 18px; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .section-head h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; color: #0B0F17; }
+    .section-note { font-size: 13px; color: #8A93A1; }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .module-card {
+      background: #FFFFFF;
+      border: 1px solid #E6E8EC;
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .module-card:hover {
+      transform: translateY(-3px);
+      border-color: #D5D9E0;
+      box-shadow: 0 18px 40px -18px rgba(15, 23, 42, 0.28);
+    }
+    .module-visual {
+      height: 170px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .module-visual svg { width: 100%; height: 100%; display: block; }
+    .visual-safety { background: #FBF3E6; }
+    .visual-barista { background: #F4EEE8; }
+    .module-body { padding: 22px 24px 8px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .module-tags { display: flex; gap: 6px; }
+    .tag {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4B5563;
+      background: #F1F3F5;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+    .tag-accent { color: var(--primary); background: #EAF0FF; }
+    .module-body h3 { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; color: #0B0F17; }
+    .module-body p { font-size: 14px; line-height: 1.55; color: #5B6472; }
+    .module-meta {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 4px;
+      font-size: 13px;
+      color: #6B7482;
+    }
+    .module-meta li { display: flex; align-items: center; gap: 6px; }
+    .module-foot { padding: 16px 24px 24px; }
+    .btn-start {
+      height: 46px;
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      background: #0B0F17;
+      color: #FFFFFF;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-start:hover { background: var(--primary); }
+    .btn-start svg { transition: transform 0.15s ease; }
+    .module-card:hover .btn-start svg { transform: translateX(3px); }
+
+    .how-steps {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .how-steps li {
+      display: flex;
+      gap: 14px;
+      padding: 20px;
+      background: #FFFFFF;
+      border: 1px solid #E6E8EC;
+      border-radius: 14px;
+    }
+    .how-num {
+      width: 28px; height: 28px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: #F1F3F5;
+      color: #0B0F17;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .how-steps h4 { font-size: 15px; font-weight: 700; color: #0B0F17; margin-bottom: 4px; }
+    .how-steps p { font-size: 13px; line-height: 1.5; color: #6B7482; }
+
+    .controls-strip {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 12px 28px;
+      padding-top: 24px;
+      border-top: 1px solid #E6E8EC;
+    }
+    .control-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #5B6472; }
+    .keys { display: flex; gap: 4px; }
+    kbd {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #1F2937;
+      background: #FFFFFF;
+      border: 1px solid #D9DDE3;
+      border-bottom-width: 2px;
+      border-radius: 6px;
+    }
+    @media (max-width: 640px) {
+      .home-nav { padding: 12px 16px; }
+      .home-main { padding: 32px 16px 48px; gap: 40px; }
+      .home-hero p { font-size: 15px; }
+      .module-grid { grid-template-columns: 1fr; }
+    }
+    .app-container.mode-mobile-frame .home-main { padding: 32px 16px 48px; gap: 40px; }
+    .app-container.mode-mobile-frame .home-nav { padding: 12px 16px; }
+    .app-container.mode-mobile-frame .module-grid { grid-template-columns: 1fr; }
+
+    /* ================= IN-GAME GUIDE ================= */
+    .guide-panel {
+      position: absolute;
+      top: 60px;
+      left: 16px;
+      width: 300px;
+      max-width: calc(100% - 32px);
+      background: rgba(255, 255, 255, 0.97);
+      color: #0B0F17;
+      border-radius: 14px;
+      box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.45);
+      z-index: 24;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .guide-panel.visible { display: flex; }
+    .guide-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px 0;
+    }
+    .guide-label { font-size: 11px; font-weight: 700; color: var(--primary); letter-spacing: 0.3px; text-transform: uppercase; }
+    .guide-hide {
+      border: none;
+      background: #F1F3F5;
+      color: #4B5563;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      padding: 3px 8px;
+      cursor: pointer;
+    }
+    .guide-current { padding: 8px 14px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .guide-task { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; line-height: 1.3; }
+    .guide-how { font-size: 13px; line-height: 1.5; color: #374151; }
+    .guide-how b { color: #0B0F17; }
+    .guide-why {
+      font-size: 12px;
+      line-height: 1.45;
+      color: #6B7482;
+      background: #F6F7F9;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .guide-progress { height: 3px; background: #EEF0F3; }
+    .guide-progress-fill { height: 100%; width: 0%; background: var(--primary); transition: width 0.3s ease; }
+    .guide-steps {
+      list-style: none;
+      padding: 10px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-top: 1px solid #EEF0F3;
+    }
+    .guide-steps li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #8A93A1; }
+    .guide-steps li .gs-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid #CBD2DA;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #FFFFFF;
+    }
+    .guide-steps li.done { color: #6B7482; text-decoration: line-through; }
+    .guide-steps li.done .gs-dot { background: #10B981; border-color: #10B981; }
+    .guide-steps li.current { color: #0B0F17; font-weight: 600; }
+    .guide-steps li.current .gs-dot { border-color: var(--primary); box-shadow: inset 0 0 0 3px #FFFFFF; background: var(--primary); }
+    .guide-toggle-btn {
+      position: absolute;
+      top: 60px;
+      left: 16px;
+      z-index: 24;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.97);
+      color: #0B0F17;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.45);
+    }
+    .guide-toggle-btn.visible { display: flex; }
+
+    .guide-toast {
+      position: absolute;
+      top: 64px;
+      left: 50%;
+      transform: translate(-50%, -8px);
+      background: #0B0F17;
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 10px;
+      z-index: 34;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      max-width: calc(100% - 32px);
+      text-align: center;
+    }
+    .guide-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    /* 3D object labels projected into screen space */
+    .label-layer { position: absolute; inset: 0; pointer-events: none; z-index: 19; overflow: hidden; }
+    .obj-label {
+      position: absolute;
+      left: 0; top: 0;
+      transform: translate(-50%, -100%);
+      background: rgba(11, 15, 23, 0.78);
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      display: none;
+    }
+    .obj-label.target {
+      background: var(--primary);
+      font-size: 12px;
+      padding: 5px 10px;
+      box-shadow: 0 4px 14px rgba(0, 82, 255, 0.45);
+    }
+    .obj-label.target::before { content: 'Сюда · '; opacity: 0.85; }
+    .offscreen-pointer {
+      position: absolute;
+      left: 0; top: 0;
+      z-index: 27;
+      pointer-events: none;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary);
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 4px 14px rgba(0, 82, 255, 0.45);
+    }
+    .offscreen-pointer .op-arrow { display: inline-block; font-size: 14px; line-height: 1; }
+
+    /* Intro briefing overlay */
+    .intro-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(11, 15, 23, 0.72);
+      backdrop-filter: blur(6px);
+      z-index: 45;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .intro-overlay.visible { display: flex; }
+    .intro-card {
+      background: #FFFFFF;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 460px;
+      max-height: 100%;
+      overflow-y: auto;
+      padding: 26px 24px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: var(--shadow-modal);
+    }
+    .intro-card .eyebrow { margin-bottom: 0; }
+    .intro-card h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #0B0F17; line-height: 1.2; }
+    .intro-goal { font-size: 14px; line-height: 1.55; color: #4B5563; }
+    .intro-plan { list-style: none; display: flex; flex-direction: column; gap: 8px; counter-reset: plan; }
+    .intro-plan li {
+      counter-increment: plan;
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+      color: #1F2937;
+      line-height: 1.45;
+    }
+    .intro-plan li::before {
+      content: counter(plan);
+      width: 20px; height: 20px;
+      flex-shrink: 0;
+      border-radius: 6px;
+      background: #F1F3F5;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .intro-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      padding: 12px;
+      background: #F6F7F9;
+      border-radius: 12px;
+    }
+    .intro-controls .control-item { font-size: 12px; }
+    @media (max-width: 480px) { .intro-controls { grid-template-columns: 1fr; } }
+    /* Phones: toolbar above the D-pad, status pills are covered by the guide */
+    @media (max-width: 768px) {
+      .safety-inventory-bar { bottom: 186px; padding: 6px 8px; gap: 6px; }
+      .safety-inv-slot { padding: 6px 10px; font-size: 11px; }
+      #safetyHudBar { display: none !important; }
+      .fps-hover-tooltip { bottom: 186px; max-width: calc(100% - 32px); white-space: normal; text-align: center; }
+      #gameScreen.safety-mode .fps-hover-tooltip { bottom: 262px; }
+    }
+    .app-container.mode-mobile-frame .fps-hover-tooltip { bottom: 186px; max-width: calc(100% - 32px); white-space: normal; text-align: center; }
+    .app-container.mode-mobile-frame #gameScreen.safety-mode .fps-hover-tooltip { bottom: 262px; }
+    .app-container.mode-mobile-frame .safety-inventory-bar { bottom: 186px; padding: 6px 8px; gap: 6px; }
+    .app-container.mode-mobile-frame .safety-inv-slot { padding: 6px 10px; font-size: 11px; }
+    .app-container.mode-mobile-frame #safetyHudBar { display: none !important; }
+    .app-container.mode-mobile-frame .intro-controls { grid-template-columns: 1fr; }
+    .intro-actions { display: flex; flex-direction: column; gap: 10px; }
+    .intro-skip { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6B7482; cursor: pointer; }
+
   </style>
 </head>
 <body>
@@ -930,79 +1667,159 @@
 
   <!-- ================= SCREEN 1: HOME ================= -->
   <div id="homeScreen" class="screen active">
-    <div class="top-bar">
+    <header class="home-nav">
       <div class="logo">
         <span class="logo-brand">SYNAPK<span class="logo-eye-wrap"><svg class="logo-eye-svg" viewBox="0 0 24 24" fill="none"><path d="M1 12C3.2 6.8 7.2 3.8 12 3.8C16.8 3.8 20.8 6.8 23 12C20.8 17.2 16.8 20.2 12 20.2C7.2 20.2 3.2 17.2 1 12Z" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="4.5" fill="#FFFFFF" stroke="var(--primary)" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="var(--primary)"/></svg></span>R</span>
-        <span class="vr-badge">VR 3D</span>
       </div>
 
-      <div class="top-bar-controls">
-        <div class="device-switcher" id="deviceSwitcher">
-          <button class="device-btn active" id="btnModeDesktop" onclick="setDeviceMode('desktop')" title="Режим ПК (Широкий экран)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            <span>ПК</span>
-          </button>
-          <button class="device-btn" id="btnModeMobile" onclick="setDeviceMode('mobile-frame')" title="Режим Смартфон (Мобильный вид)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-            <span>Телефон</span>
-          </button>
-          <button class="device-btn" id="btnFullscreen" onclick="toggleFullScreen()" title="На весь экран (F)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-            <span>Экран</span>
-          </button>
-        </div>
-        <div class="xp-badge">⚡ 2800 XP</div>
+      <div class="device-switcher" id="deviceSwitcher">
+        <button class="device-btn active" id="btnModeDesktop" onclick="setDeviceMode('desktop')" title="Режим ПК">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>ПК</span>
+        </button>
+        <button class="device-btn" id="btnModeMobile" onclick="setDeviceMode('mobile-frame')" title="Режим смартфона">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>Телефон</span>
+        </button>
+        <button class="device-btn" id="btnFullscreen" onclick="toggleFullScreen()" title="На весь экран (F)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
       </div>
-    </div>
+    </header>
 
-    <div class="home-content-wrap">
-      <div class="hero-banner">
-        <div class="hero-badge">
-          <span>🎮</span> 3D FPS Simulation Engine • Responsive WebGL
-        </div>
-        <h2 class="hero-title">Barista Pro VR Edition</h2>
-        <p class="hero-subtitle">
-          Интерактивный симулятор профессии бариста: свободное перемещение за стойкой (WASD / D-Pad), точная моторика помола, темперовки, экстракции и стресс-тест коммуникации с гостем.
-        </p>
-        <div class="hero-actions-row">
-          <button class="btn-action" onclick="startBaristaVR()">
-            <span>▶</span> Начать симуляцию
-          </button>
-          <button class="btn-secondary" onclick="toggleFullScreen()">
-            <span>⛶</span> Развернуть на весь экран
-          </button>
-        </div>
-      </div>
+    <main class="home-main">
+      <section class="home-hero">
+        <span class="eyebrow">Симулятор профессий в 3D</span>
+        <h1>Попробуйте профессию<br>до первого рабочего дня</h1>
+        <p>Выполните настоящие рабочие задачи от первого лица. Гид подскажет каждый шаг, а в конце вы получите отчёт: точность, ошибки, время и зоны роста.</p>
+      </section>
 
-      <div>
-        <div style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
-          Управление и особенности симулятора
+      <section class="home-section">
+        <div class="section-head">
+          <h2>Выберите симуляцию</h2>
+          <span class="section-note">2 профессии</span>
         </div>
-      </div>
 
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🕹️</div>
-          <div class="feature-title">WASD / Д-Пад</div>
-          <div class="feature-desc">Свободное перемещение оператора вдоль барной стойки</div>
+        <div class="module-grid">
+          <article class="module-card" onclick="startSafetyVR()">
+            <div class="module-visual visual-safety" aria-hidden="true">
+              <svg viewBox="0 0 320 150" fill="none">
+                <rect x="0" y="118" width="320" height="32" fill="#F1E3CC"/>
+                <g opacity="0.9">
+                  <path d="M92 150 L110 118 H124 L106 150Z M122 150 L140 118 H154 L136 150Z M152 150 L170 118 H184 L166 150Z M182 150 L200 118 H214 L196 150Z M212 150 L230 118 H244 L226 150Z" fill="#E7B64A"/>
+                </g>
+                <rect x="104" y="18" width="112" height="104" rx="6" fill="#8D96A1"/>
+                <rect x="110" y="24" width="100" height="92" rx="4" fill="#A3ACB6"/>
+                <circle cx="130" cy="44" r="11" fill="#FFFFFF" stroke="#5B6470" stroke-width="3"/>
+                <line x1="130" y1="44" x2="136" y2="37" stroke="#D64545" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="160" cy="44" r="11" fill="#FFFFFF" stroke="#5B6470" stroke-width="3"/>
+                <line x1="160" y1="44" x2="167" y2="47" stroke="#D64545" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="190" cy="44" r="11" fill="#FFFFFF" stroke="#5B6470" stroke-width="3"/>
+                <line x1="190" y1="44" x2="186" y2="36" stroke="#D64545" stroke-width="2.5" stroke-linecap="round"/>
+                <rect x="148" y="64" width="24" height="34" rx="3" fill="#3C4550"/>
+                <rect x="157" y="58" width="6" height="22" rx="3" fill="#E9A23B" transform="rotate(-25 160 80)"/>
+                <rect x="140" y="104" width="40" height="8" rx="2" fill="#3C4550"/>
+                <circle cx="150" cy="108" r="2.2" fill="#E7B64A"/><circle cx="160" cy="108" r="2.2" fill="#E7B64A"/><circle cx="170" cy="108" r="2.2" fill="#E7B64A"/>
+                <circle cx="88" cy="82" r="12" stroke="#D64545" stroke-width="4"/>
+                <circle cx="232" cy="82" r="12" stroke="#D64545" stroke-width="4"/>
+                <rect x="244" y="22" width="44" height="26" rx="3" fill="#FFFFFF"/>
+                <rect x="244" y="22" width="44" height="9" rx="3" fill="#D64545"/>
+                <rect x="32" y="22" width="44" height="26" rx="3" fill="#F2C94C"/>
+                <path d="M54 27 L47 41 H61Z" fill="#2B2B2B"/>
+              </svg>
+            </div>
+            <div class="module-body">
+              <div class="module-tags">
+                <span class="tag">Промышленность</span>
+                <span class="tag tag-accent">Новое</span>
+              </div>
+              <h3>Инженер по технике безопасности</h3>
+              <p>Подготовьте электрощит 380 В к ремонту: наденьте СИЗ, отключите питание, повесьте замок LOTO, проверьте напряжение и сбросьте давление.</p>
+              <ul class="module-meta">
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>3–5 минут</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>6 шагов</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V14M10 20V9M16 20V4"/></svg>Средняя</li>
+              </ul>
+            </div>
+            <div class="module-foot">
+              <button class="btn-start" onclick="event.stopPropagation(); startSafetyVR();">
+                Начать симуляцию
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="module-card" onclick="startBaristaVR()">
+            <div class="module-visual visual-barista" aria-hidden="true">
+              <svg viewBox="0 0 320 150" fill="none">
+                <rect x="0" y="104" width="320" height="10" fill="#B98B5E"/>
+                <rect x="0" y="114" width="320" height="36" fill="#6E4F3A"/>
+                <rect x="70" y="34" width="112" height="70" rx="6" fill="#D5D9DE"/>
+                <rect x="70" y="30" width="112" height="10" rx="3" fill="#B7BDC4"/>
+                <rect x="78" y="48" width="96" height="12" rx="2" fill="#2F3338"/>
+                <circle cx="92" cy="54" r="3.5" fill="#FFFFFF"/><circle cx="160" cy="54" r="3.5" fill="#FFFFFF"/>
+                <rect x="96" y="66" width="18" height="10" rx="2" fill="#8B939C"/>
+                <rect x="138" y="66" width="18" height="10" rx="2" fill="#8B939C"/>
+                <rect x="100" y="84" width="12" height="18" rx="2" fill="#F4F1EC" stroke="#C9C2B8"/>
+                <rect x="100" y="93" width="12" height="9" fill="#7A4B2A"/>
+                <rect x="30" y="50" width="26" height="54" rx="4" fill="#2F3338"/>
+                <path d="M28 50 L58 50 L52 26 L34 26Z" fill="#C9CED4"/>
+                <path d="M33 44 L53 44 L50 31 L36 31Z" fill="#5B3A22"/>
+                <path d="M206 72 h26 l-3 32 h-20z" fill="#E4E7EB"/>
+                <path d="M232 78 q10 4 0 14" stroke="#E4E7EB" stroke-width="4" fill="none"/>
+                <rect x="246" y="58" width="22" height="46" rx="3" fill="#3867D6"/>
+                <rect x="252" y="52" width="10" height="7" rx="2" fill="#FFFFFF"/>
+                <path d="M280 70 h22 l-3 34 h-16z" fill="#FFFFFF" opacity="0.7" stroke="#C9D2DA"/>
+                <path d="M283 84 h16 l-2 20 h-12z" fill="#C8A27A"/>
+              </svg>
+            </div>
+            <div class="module-body">
+              <div class="module-tags">
+                <span class="tag">HoReCa</span>
+              </div>
+              <h3>Бариста</h3>
+              <p>Приготовьте Iced Oat Latte по техкарте, успокойте недовольного гостя и рассчитайте недельную закупку зерна.</p>
+              <ul class="module-meta">
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>4–6 минут</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>3 задания</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V14M10 20V9M16 20V4"/></svg>Лёгкая</li>
+              </ul>
+            </div>
+            <div class="module-foot">
+              <button class="btn-start" onclick="event.stopPropagation(); startBaristaVR();">
+                Начать симуляцию
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </article>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">🖱️</div>
-          <div class="feature-title">Обзор мыши / Свайп</div>
-          <div class="feature-desc">Плавный FPS обзор 3D сцены от первого лица</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">👉</div>
-          <div class="feature-title">[E] / Клик / Тап</div>
-          <div class="feature-desc">Физическое взаимодействие с инвентарем и кнопками</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <div class="feature-title">ИИ-телеметрия</div>
-          <div class="feature-desc">Анализ точности движений, тремора и расчет Job Fit Score</div>
-        </div>
-      </div>
-    </div>
+      </section>
+
+      <section class="home-section">
+        <div class="section-head"><h2>Как это работает</h2></div>
+        <ol class="how-steps">
+          <li>
+            <span class="how-num">1</span>
+            <div><h4>Выберите профессию</h4><p>Каждая симуляция — реальный рабочий сценарий на 3–6 минут.</p></div>
+          </li>
+          <li>
+            <span class="how-num">2</span>
+            <div><h4>Действуйте в 3D</h4><p>Гид показывает, что делать, а стрелка указывает на нужный предмет.</p></div>
+          </li>
+          <li>
+            <span class="how-num">3</span>
+            <div><h4>Получите отчёт</h4><p>Оценка точности, ошибок и времени, а также зоны роста.</p></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="home-section controls-strip">
+        <div class="control-item"><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>Ходить</div>
+        <div class="control-item"><span class="keys"><kbd>Мышь</kbd></span>Осматриваться</div>
+        <div class="control-item"><span class="keys"><kbd>E</kbd><kbd>Клик</kbd></span>Действие</div>
+        <div class="control-item"><span class="keys"><kbd>H</kbd></span>Показать или скрыть гида</div>
+      </section>
+    </main>
   </div>
 
   <!-- ================= SCREEN 2: 3D FPS SIMULATOR ================= -->
@@ -1011,10 +1828,17 @@
     <div class="vr-status-bar">
       <div class="vr-status-left">
         <div class="vr-status-pill">
-          <span style="display:inline-block; width:8px; height:8px; background:var(--emerald); border-radius:50%;"></span>
+          <span style="display:inline-block; width:8px; height:8px; background:var(--emerald); border-radius:50%;" id="vrQuestDot"></span>
           <span id="vrQuestTitle">КВЕСТ 1: ICED OAT LATTE</span>
         </div>
         <div class="timer-pill" id="vrTimer">00:00</div>
+        <!-- Live Safety Indicators -->
+        <div id="safetyHudBar" class="safety-hud-bar" style="display:none;">
+          <div class="safety-hud-pill danger" id="pillPower"><span class="status-dot danger" id="dotPower"></span><span id="textPower">ПИТАНИЕ: 380V ON</span></div>
+          <div class="safety-hud-pill danger" id="pillPressure"><span class="status-dot danger" id="dotPressure"></span><span id="textPressure">ДАВЛЕНИЕ: 8.5 БАР</span></div>
+          <div class="safety-hud-pill warning" id="pillPPE"><span class="status-dot warning" id="dotPPE"></span><span id="textPPE">СИЗ: НЕ НАДЕТЫ</span></div>
+          <div class="safety-hud-pill warning" id="pillLOTO"><span class="status-dot warning" id="dotLOTO"></span><span id="textLOTO">LOTO: НЕТ</span></div>
+        </div>
       </div>
 
       <div class="vr-status-right">
@@ -1029,10 +1853,50 @@
 
     <!-- 3D FIRST-PERSON VIEWPORT -->
     <div class="fps-viewport-wrap" id="viewportWrap">
-      <div class="controls-help-badge">
-        <span>⌨️ [W][A][S][D] Перемещение</span>
-        <span>🖱️ Мышь / Свайп: Обзор</span>
-        <span>👉 [E] / Клик: Действие</span>
+      <!-- Object labels & off-screen target pointer -->
+      <div class="label-layer" id="labelLayer"></div>
+      <div class="offscreen-pointer" id="offscreenPointer">
+        <span class="op-arrow" id="offscreenPointerArrow">➜</span>
+        <span id="offscreenPointerText"></span>
+      </div>
+
+      <!-- Step-by-step guide -->
+      <div class="guide-panel visible" id="guidePanel">
+        <div class="guide-head">
+          <span class="guide-label" id="guideStepCount">Гид</span>
+          <button class="guide-hide" onclick="toggleGuide()" title="Скрыть гида (H)">Скрыть · H</button>
+        </div>
+        <div class="guide-current">
+          <div class="guide-task" id="guideTask"></div>
+          <div class="guide-how" id="guideHow"></div>
+          <div class="guide-why" id="guideWhy"></div>
+        </div>
+        <div class="guide-progress"><div class="guide-progress-fill" id="guideProgressFill"></div></div>
+        <ul class="guide-steps" id="guideSteps"></ul>
+      </div>
+      <button class="guide-toggle-btn" id="guideToggleBtn" onclick="toggleGuide()">💡 Гид · H</button>
+
+      <div class="guide-toast" id="guideToast"></div>
+
+      <!-- Intro briefing -->
+      <div class="intro-overlay" id="introOverlay">
+        <div class="intro-card">
+          <span class="eyebrow">Перед началом</span>
+          <h2 id="introTitle"></h2>
+          <p class="intro-goal" id="introGoal"></p>
+          <ol class="intro-plan" id="introPlan"></ol>
+          <div class="intro-controls">
+            <div class="control-item"><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>Ходить</div>
+            <div class="control-item"><span class="keys"><kbd>Мышь</kbd></span>Смотреть</div>
+            <div class="control-item"><span class="keys"><kbd>E</kbd></span>Действие</div>
+            <div class="control-item"><span class="keys"><kbd>H</kbd></span>Гид</div>
+            <div id="introExtraKeys" style="display:contents;"></div>
+          </div>
+          <div class="intro-actions">
+            <button class="btn-start" onclick="closeIntro()">Понятно, начать</button>
+            <label class="intro-skip"><input type="checkbox" id="introSkip"> Больше не показывать</label>
+          </div>
+        </div>
       </div>
 
       <div class="pointer-lock-badge" id="pointerLockBadge">
@@ -1040,7 +1904,7 @@
       </div>
 
       <div class="desktop-aim-hint" id="desktopAimHint">
-        <span>💡</span> Кликните по сцене для захвата мыши
+        <span>🖱️</span> Кликните по сцене, чтобы управлять мышью
       </div>
 
       <div class="crosshair" id="mainCrosshair">
@@ -1050,6 +1914,62 @@
       <div id="hoverTooltip" class="fps-hover-tooltip">
         <span id="tooltipIcon">👉</span>
         <span id="tooltipText">Нажмите [E] для взаимодействия</span>
+      </div>
+
+      <!-- Real-time Telemetry Log Console (Dart Bridge) -->
+      <div id="telemetryLogPanel" class="telemetry-log-panel">
+        <div class="telemetry-log-title">
+          <span>📡 DART BRIDGE TELEMETRY</span>
+          <span id="telemetryStatusBadge" style="color:#10B981;">CONNECTED</span>
+        </div>
+        <div id="telemetryLogList" class="telemetry-log-list">
+          <div class="telemetry-log-entry ok">• [00:00] Модуль ТБ SynapKor активен</div>
+        </div>
+      </div>
+
+      <!-- Multimeter Floating Digital LCD Display -->
+      <div id="multimeterHud" class="multimeter-hud-panel">
+        <div class="multimeter-header">
+          <span>⚡ FLUKE-87V TRUE RMS</span>
+          <button onclick="toggleMultimeterTool(false)" style="background:none; border:none; color:#94A3B8; cursor:pointer; font-weight:bold; font-size:14px;">✕</button>
+        </div>
+        <div class="multimeter-lcd">
+          <div class="lcd-subline">
+            <span>VAC ~ 50Hz</span>
+            <span>AUTO-RANGE</span>
+          </div>
+          <div class="lcd-main-digits" id="lcdDigits">380.4</div>
+          <div class="lcd-subline">
+            <span>HOLD</span>
+            <span id="lcdUnits">VOLTS RMS</span>
+          </div>
+        </div>
+        <div id="multimeterStatusTag" class="multimeter-status-tag danger">⚡ ОПАСНОЕ НАПРЯЖЕНИЕ</div>
+        <button class="btn-action" style="padding:6px; font-size:11px; width:100%;" onclick="testVoltageWithMultimeter()">
+          Замер на шинах щита [E]
+        </button>
+      </div>
+
+      <!-- Safety Violation Alert Banner -->
+      <div id="safetyAlertBanner" class="safety-alert-banner">
+        <span style="font-size:22px;">⚠️</span>
+        <span id="safetyAlertText">ОШИБКА БЕЗОПАСНОСТИ!</span>
+      </div>
+
+      <!-- Player Safety Inventory Quick Dock -->
+      <div id="safetyInventoryBar" class="safety-inventory-bar">
+        <div class="safety-inv-slot" id="invPPE" onclick="togglePPE()" title="[1] Надеть диэлектрические перчатки и щиток">
+          <div class="safety-slot-num">1</div>
+          <span>🧤 СИЗ (Перчатки)</span>
+        </div>
+        <div class="safety-inv-slot" id="invMultimeter" onclick="selectInventoryTool('multimeter')" title="[2] Взять мультиметр True RMS">
+          <div class="safety-slot-num">2</div>
+          <span>⚡ Мультиметр</span>
+        </div>
+        <div class="safety-inv-slot" id="invLOTO" onclick="selectInventoryTool('loto')" title="[3] Взять блокировочный замок LOTO">
+          <div class="safety-slot-num">3</div>
+          <span>🔒 Замок LOTO</span>
+        </div>
       </div>
 
       <!-- Action Progress Bar Overlay -->
@@ -1067,27 +1987,27 @@
       <div id="victoryModal" class="victory-modal-overlay">
         <div class="victory-card">
           <div style="font-size: 40px; margin-bottom: 10px;">🏆</div>
-          <h2 style="font-size: 19px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
+          <h2 id="victoryTitle" style="font-size: 19px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
             Симуляция успешно пройдена!
           </h2>
-          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
+          <p id="victoryText" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
             Вы приготовили напиток по стандарту, грамотно разрешили конфликт с гостем и рассчитали бюджет сырья.
           </p>
           <button class="btn-action" onclick="showAIReportScreen()" style="width: 100%;">
-            Посмотреть аналитический отчет ИИ
+            Посмотреть отчёт по навыкам
           </button>
         </div>
       </div>
 
       <!-- Virtual D-Pad for Mobile Movement -->
       <div class="virtual-dpad" id="virtualDpad">
-        <button class="dpad-btn" data-dir="w" onmousedown="setMoveKey('KeyW', true)" onmouseup="setMoveKey('KeyW', false)">▲</button>
+        <button class="dpad-btn" data-dir="w" onmousedown="setMoveKey('KeyW', true)" onmouseup="setMoveKey('KeyW', false)" onmouseleave="setMoveKey('KeyW', false)">▲</button>
         <div class="dpad-mid">
-          <button class="dpad-btn" data-dir="a" onmousedown="setMoveKey('KeyA', true)" onmouseup="setMoveKey('KeyA', false)">◀</button>
+          <button class="dpad-btn" data-dir="a" onmousedown="setMoveKey('KeyA', true)" onmouseup="setMoveKey('KeyA', false)" onmouseleave="setMoveKey('KeyA', false)">◀</button>
           <button class="dpad-btn dpad-action-center" style="background:var(--primary); border-color:var(--primary);" onclick="triggerCenterInteraction()">E</button>
-          <button class="dpad-btn" data-dir="d" onmousedown="setMoveKey('KeyD', true)" onmouseup="setMoveKey('KeyD', false)">▶</button>
+          <button class="dpad-btn" data-dir="d" onmousedown="setMoveKey('KeyD', true)" onmouseup="setMoveKey('KeyD', false)" onmouseleave="setMoveKey('KeyD', false)">▶</button>
         </div>
-        <button class="dpad-btn" data-dir="s" onmousedown="setMoveKey('KeyS', true)" onmouseup="setMoveKey('KeyS', false)">▼</button>
+        <button class="dpad-btn" data-dir="s" onmousedown="setMoveKey('KeyS', true)" onmouseup="setMoveKey('KeyS', false)" onmouseleave="setMoveKey('KeyS', false)">▼</button>
       </div>
 
       <!-- Mobile Quick Action Button -->
@@ -1111,7 +2031,7 @@
     <div class="top-bar">
       <div class="logo">
         <span class="logo-brand">SYNAPK<span class="logo-eye-wrap"><svg class="logo-eye-svg" viewBox="0 0 24 24" fill="none"><path d="M1 12C3.2 6.8 7.2 3.8 12 3.8C16.8 3.8 20.8 6.8 23 12C20.8 17.2 16.8 20.2 12 20.2C7.2 20.2 3.2 17.2 1 12Z" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="4.5" fill="#FFFFFF" stroke="var(--primary)" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="var(--primary)"/></svg></span>R</span>
-        <span class="vr-badge" style="background:var(--primary);">AI REPORT</span>
+        <span class="vr-badge" style="background:var(--primary);">ОТЧЁТ</span>
       </div>
       <div class="top-bar-controls">
         <div class="xp-badge" id="resTotalXp">⚡ +950 XP</div>
@@ -1123,7 +2043,7 @@
         <!-- Left Column: Fit Score Card & Actions -->
         <div class="report-card" style="text-align: center;">
           <div style="display:inline-block; padding:4px 12px; background:var(--emerald-bg); border:1px solid var(--emerald-border); border-radius:20px; font-size:11px; font-weight:700; color:var(--emerald-text); margin-bottom:12px;">
-            ВЕРДИКТ ИИ: РЕКОМЕНДОВАН
+            <span id="resVerdictBadge">ВЕРДИКТ: РЕКОМЕНДОВАН</span>
           </div>
           <h2 style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;" id="resPraiseTitle">
             Отличный результат симуляции
@@ -1137,7 +2057,7 @@
           <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 18px;" id="resVerdictDesc">Исключительная моторика рук, строгое соблюдение техкарты и грамотная деэскалация конфликта с клиентом.</p>
 
           <div style="display:flex; flex-direction:column; gap:8px;">
-            <button class="btn-action" onclick="startBaristaVR()" style="width:100%;">
+            <button class="btn-action" onclick="restartCurrentSimulation()" style="width:100%;">
               🔄 Повторить симуляцию
             </button>
             <button class="btn-secondary" onclick="exitToHome()" style="width:100%;">
@@ -1155,19 +2075,19 @@
             
             <div class="stat-table">
               <div class="stat-row">
-                <span class="stat-label">Точность технологии (Hard Skills)</span>
+                <span class="stat-label" id="statHardLabel">Точность технологии (Hard Skills)</span>
                 <span class="stat-val" style="color: var(--primary);" id="statHard">98%</span>
               </div>
               <div class="stat-row">
-                <span class="stat-label">Плавность моторики и тремор</span>
-                <span class="stat-val" style="color: var(--emerald-text);" id="statHands">Отличная (96%)</span>
+                <span class="stat-label" id="statHandsLabel">Лишние действия (промахи)</span>
+                <span class="stat-val" style="color: var(--emerald-text);" id="statHands">0</span>
               </div>
               <div class="stat-row">
-                <span class="stat-label">Стрессоустойчивость и эмпатия (Soft Skills)</span>
+                <span class="stat-label" id="statSoftLabel">Стрессоустойчивость и эмпатия (Soft Skills)</span>
                 <span class="stat-val" style="color: var(--primary);" id="statSoft">100%</span>
               </div>
               <div class="stat-row">
-                <span class="stat-label">Время полного цикла приготовления</span>
+                <span class="stat-label" id="statTimeLabel">Время полного цикла приготовления</span>
                 <span class="stat-val" id="statTime">42 сек</span>
               </div>
             </div>
@@ -1176,7 +2096,7 @@
           <!-- Recommendations -->
           <div class="report-card">
             <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">💡 Ключевые подтвержденные компетенции:</div>
-            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;" id="resCompetencies">
               • Соблюдение рабочего давления 9 бар и правильный расчет граммовки (18г)<br>
               • Быстрая деэскалация конфликтной ситуации с предложением комплимента<br>
               • Точный расчет закупки сырья на 35 кг без дефицита и перерасхода бюджета
@@ -1191,6 +2111,1245 @@
 
 <!-- THREE.JS 3D CINEMATIC GRAPHICS & FPS CONTROLLER -->
 <script>
+
+  // =========================================================================
+  // SYNAPKOR SAFETY & EQUIPMENT MAINTENANCE 3D FPS SIMULATION ENGINE
+  // =========================================================================
+
+  let currentProfession = 'safety'; // 'safety' | 'barista'
+
+  const safetyState = {
+    powerState: 'ON',        // 'ON' | 'OFF'
+    valvePressure: 'HIGH',   // 'HIGH' | 'NORMAL' | 'ZERO'
+    ppeEquipped: false,      // bool
+    lockoutApplied: false,   // bool
+    voltageTested: false,    // bool
+    valvesOpened: [false, false],
+    selectedTool: null,      // 'multimeter' | 'loto' | null
+    errors: 0,
+    completed: false,
+    stepsCompleted: []
+  };
+
+  // 3D Objects for Safety Environment
+  let safetyGroup = null;
+  let mainBreakerLever = null, breakerBase = null, lotoPadlockMesh = null;
+  let meter1Needle = null, meter2Needle = null, meter3Needle = null;
+  let valve1Wheel = null, valve2Wheel = null;
+  let steamParticles1 = null, steamParticles2 = null;
+  let redLedMesh = null, greenLedMesh = null, voltDisplayMesh = null;
+  let emergencyBeaconGroup = null, emergencyBeaconLight = null, emergencyBeaconDome = null, emergencyBeaconRotor = null;
+  let ppeStandMesh = null, testTerminalsMesh = null;
+  let transformerHumGain = null, transformerOsc1 = null, transformerOsc2 = null;
+
+  // ================= DART-BRIDGE TELEMETRY & LOGGING =================
+  function logAction(actionId, timestamp, isCorrectOrder) {
+    const ts = timestamp || Date.now();
+    const payload = {
+      actionId: actionId,
+      timestamp: ts,
+      isCorrectOrder: isCorrectOrder,
+      state: {
+        powerState: safetyState.powerState,
+        valvePressure: safetyState.valvePressure,
+        ppeEquipped: safetyState.ppeEquipped,
+        lockoutApplied: safetyState.lockoutApplied,
+        voltageTested: safetyState.voltageTested
+      }
+    };
+
+    // 1. Post to FlutterChannel (Dart WebView)
+    try {
+      if (window.FlutterChannel && window.FlutterChannel.postMessage) {
+        window.FlutterChannel.postMessage(JSON.stringify(payload));
+      }
+    } catch(e) { console.warn('FlutterChannel postMessage error:', e); }
+
+    // 2. Post to GameChannel (backward compatibility)
+    try {
+      if (window.GameChannel && window.GameChannel.postMessage) {
+        window.GameChannel.postMessage(JSON.stringify(payload));
+      }
+    } catch(e) { console.warn('GameChannel postMessage error:', e); }
+
+    // 3. Post to parent window (iframe / web preview)
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'SYNAPKOR_SAFETY_LOG', ...payload }, '*');
+      }
+    } catch(e) { console.warn('Parent postMessage error:', e); }
+
+    // 4. Update in-game Telemetry Console Drawer
+    appendSafetyConsoleLog(actionId, isCorrectOrder, ts);
+    console.log('[SynapKor logAction]', payload);
+  }
+
+  function appendSafetyConsoleLog(actionId, isCorrectOrder, ts) {
+    const logList = document.getElementById('telemetryLogList');
+    if (!logList) return;
+    const d = new Date(ts);
+    const timeStr = `${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}.${Math.floor(d.getMilliseconds()/100)}`;
+    const entry = document.createElement('div');
+    entry.className = `telemetry-log-entry ${isCorrectOrder ? 'ok' : 'err'}`;
+    const icon = isCorrectOrder ? '✓' : '✗';
+    entry.innerText = `${icon} [${timeStr}] ${actionId}`;
+    logList.prepend(entry);
+    while (logList.children.length > 5) {
+      logList.removeChild(logList.lastChild);
+    }
+  }
+
+  // ================= INDUSTRIAL PROCEDURAL SOUNDS =================
+  function startTransformerHum() {
+    try {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') ctx.resume();
+      if (transformerHumGain) return;
+
+      transformerOsc1 = ctx.createOscillator();
+      transformerOsc2 = ctx.createOscillator();
+      transformerHumGain = ctx.createGain();
+
+      transformerOsc1.type = 'sawtooth';
+      transformerOsc1.frequency.setValueAtTime(50, ctx.currentTime); // 50 Hz EU/CIS standard mains
+
+      transformerOsc2.type = 'sine';
+      transformerOsc2.frequency.setValueAtTime(100, ctx.currentTime); // 100 Hz harmonic
+
+      transformerHumGain.gain.setValueAtTime(0.001, ctx.currentTime);
+      transformerHumGain.gain.linearRampToValueAtTime(0.045, ctx.currentTime + 1.0);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(220, ctx.currentTime);
+
+      transformerOsc1.connect(filter);
+      transformerOsc2.connect(filter);
+      filter.connect(transformerHumGain);
+      transformerHumGain.connect(ctx.destination);
+
+      transformerOsc1.start();
+      transformerOsc2.start();
+    } catch(e){}
+  }
+
+  function stopTransformerHum() {
+    try {
+      if (transformerHumGain) {
+        const ctx = getAudioContext();
+        transformerHumGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+        setTimeout(() => {
+          if (transformerOsc1) { try { transformerOsc1.stop(); transformerOsc2.stop(); } catch(e){} }
+          transformerOsc1 = null;
+          transformerOsc2 = null;
+          transformerHumGain = null;
+        }, 550);
+      }
+    } catch(e){}
+  }
+
+  function playBreakerClack() {
+    // Heavy mechanical metallic clack
+    playTone(180, 'sawtooth', 0.18, 0.25);
+    playNoise(0.22, 600, 0.28);
+    setTimeout(() => playTone(80, 'triangle', 0.28, 0.35), 40);
+  }
+
+  function playValveHiss() {
+    playNoise(1.6, 1800, 0.25);
+    playTone(320, 'sine', 1.2, 0.08);
+  }
+
+  function playMultimeterBeep() {
+    playTone(2400, 'sine', 0.12, 0.22);
+  }
+
+  function playAlarmBuzzer() {
+    playTone(160, 'sawtooth', 0.35, 0.3);
+    setTimeout(() => playTone(140, 'sawtooth', 0.35, 0.3), 180);
+  }
+
+  function showSafetyAlert(text) {
+    const banner = document.getElementById('safetyAlertBanner');
+    const textEl = document.getElementById('safetyAlertText');
+    if (!banner || !textEl) return;
+    textEl.innerText = text;
+    banner.style.display = 'flex';
+    clearTimeout(banner._hideTimer);
+    banner._hideTimer = setTimeout(() => {
+      banner.style.display = 'none';
+    }, 3200);
+  }
+
+  // ================= PROCEDURAL TEXTURE GENERATORS =================
+  function createHazardStripeTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFC107'; // Vivid safety yellow
+    ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = '#1A1A1A'; // Dark hazard stripes
+    const stripeWidth = 32;
+    for (let i = -256; i < 512; i += stripeWidth * 2) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + 256, 256);
+      ctx.lineTo(i + 256 + stripeWidth, 256);
+      ctx.lineTo(i + stripeWidth, 0);
+      ctx.fill();
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  }
+
+  function createVoltageWarningTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFCC00';
+    ctx.fillRect(0, 0, 512, 256);
+    ctx.lineWidth = 12;
+    ctx.strokeStyle = '#000000';
+    ctx.strokeRect(6, 6, 500, 244);
+
+    // Hazard Triangle
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.moveTo(110, 40);
+    ctx.lineTo(190, 190);
+    ctx.lineTo(30, 190);
+    ctx.closePath();
+    ctx.fill();
+
+    // Lightning symbol
+    ctx.fillStyle = '#FFCC00';
+    ctx.beginPath();
+    ctx.moveTo(115, 65);
+    ctx.lineTo(95, 120);
+    ctx.lineTo(115, 120);
+    ctx.lineTo(95, 175);
+    ctx.lineTo(135, 110);
+    ctx.lineTo(115, 110);
+    ctx.closePath();
+    ctx.fill();
+
+    // Text
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 30px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('ОПАСНО: 380 В', 220, 90);
+    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('ВЫСОКОЕ НАПРЯЖЕНИЕ', 220, 130);
+    ctx.font = '16px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('НЕ ВКЛЮЧАТЬ! РАБОТАЮТ ЛЮДИ', 220, 170);
+
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  function createLotoSignTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, 512, 256);
+
+    // Red Danger Header
+    ctx.fillStyle = '#D32F2F';
+    ctx.fillRect(8, 8, 496, 70);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '900 36px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('DANGER / ОПАСНО', 256, 56);
+
+    // Body text
+    ctx.fillStyle = '#0F172A';
+    ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('НЕ ВКЛЮЧАТЬ!', 256, 130);
+    ctx.font = '700 20px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('РАБОТАЮТ ЛЮДИ НА ЛИНИИ', 256, 170);
+    ctx.font = '600 16px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#B91C1C';
+    ctx.fillText('LOCKOUT / TAGOUT PROTOCOL', 256, 210);
+
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  function createDialTexture(type) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Face background
+    ctx.fillStyle = '#F8FAFC';
+    ctx.beginPath();
+    ctx.arc(128, 128, 120, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#334155';
+    ctx.stroke();
+
+    // Scale Arc
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#64748B';
+    ctx.beginPath();
+    ctx.arc(128, 128, 90, Math.PI * 0.75, Math.PI * 2.25);
+    ctx.stroke();
+
+    // Colored Zones
+    if (type === 'volts') {
+      // Red warning zone > 400V
+      ctx.strokeStyle = '#EF4444';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.arc(128, 128, 90, Math.PI * 1.85, Math.PI * 2.25);
+      ctx.stroke();
+    } else if (type === 'pressure1' || type === 'pressure2') {
+      // Green zone
+      ctx.strokeStyle = '#10B981';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.arc(128, 128, 90, Math.PI * 0.75, Math.PI * 1.4);
+      ctx.stroke();
+      // Red zone
+      ctx.strokeStyle = '#EF4444';
+      ctx.beginPath();
+      ctx.arc(128, 128, 90, Math.PI * 1.6, Math.PI * 2.25);
+      ctx.stroke();
+    }
+
+    // Ticks & Labels
+    ctx.fillStyle = '#0F172A';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 12px "JetBrains Mono", monospace';
+    if (type === 'volts') {
+      ctx.fillText('0', 60, 180);
+      ctx.fillText('220', 70, 90);
+      ctx.fillText('380', 128, 60);
+      ctx.fillText('500', 190, 180);
+      ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('VOLTS ~ 50Hz', 128, 175);
+    } else if (type === 'pressure1') {
+      ctx.fillText('0', 60, 180);
+      ctx.fillText('4', 70, 90);
+      ctx.fillText('8.5', 128, 60);
+      ctx.fillText('16', 190, 180);
+      ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('STEAM (BAR)', 128, 175);
+    } else {
+      ctx.fillText('0', 60, 180);
+      ctx.fillText('3', 70, 90);
+      ctx.fillText('6.2', 128, 60);
+      ctx.fillText('10', 190, 180);
+      ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('PNEUMATIC (BAR)', 128, 175);
+    }
+
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  // ================= 3D SAFETY ENVIRONMENT BUILDER =================
+  function build3DSafetyEnvironment() {
+    if (!scene) return;
+    safetyGroup = new THREE.Group();
+    safetyGroup.name = 'safetyEnvironment';
+    interactiveObjects = [];
+    hoveredObject = null;
+
+    // 1. Industrial Concrete Floor with Clearance Hazard Stripes
+    const floorGeo = new THREE.PlaneGeometry(12, 12);
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: 0x4A4D52,
+      roughness: 0.9,
+      metalness: 0.0
+    });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, 0);
+    floor.receiveShadow = true;
+    safetyGroup.add(floor);
+
+    // Hazard Safety Striped Zone directly in front of the switchboard
+    const hazardTex = createHazardStripeTexture();
+    hazardTex.repeat.set(4, 2);
+    const hazardGeo = new THREE.PlaneGeometry(3.6, 1.8);
+    const hazardMat = new THREE.MeshStandardMaterial({
+      map: hazardTex,
+      roughness: 0.6
+    });
+    const hazardFloor = new THREE.Mesh(hazardGeo, hazardMat);
+    hazardFloor.rotation.x = -Math.PI / 2;
+    hazardFloor.position.set(0, 0.01, -0.4);
+    hazardFloor.receiveShadow = true;
+    safetyGroup.add(hazardFloor);
+
+    // 2. Concrete & Corrugated Steel Factory Walls
+    const backWallGeo = new THREE.PlaneGeometry(12, 5.5);
+    const backWallMat = new THREE.MeshStandardMaterial({
+      color: 0x5C6168,
+      roughness: 0.95,
+      metalness: 0.0
+    });
+    const backWall = new THREE.Mesh(backWallGeo, backWallMat);
+    backWall.position.set(0, 2.75, -2.5);
+    backWall.receiveShadow = true;
+    safetyGroup.add(backWall);
+
+    // Side Walls
+    const sideWallGeo = new THREE.PlaneGeometry(12, 5.5);
+    const leftWall = new THREE.Mesh(sideWallGeo, backWallMat);
+    leftWall.rotation.y = Math.PI / 2;
+    leftWall.position.set(-5.5, 2.75, 0);
+    safetyGroup.add(leftWall);
+
+    const rightWall = new THREE.Mesh(sideWallGeo, backWallMat);
+    rightWall.rotation.y = -Math.PI / 2;
+    rightWall.position.set(5.5, 2.75, 0);
+    safetyGroup.add(rightWall);
+
+    // Structural Steel I-Beams (Pillars)
+    for (let x of [-3.2, 3.2]) {
+      const pillarGeo = new THREE.BoxGeometry(0.3, 5.5, 0.3);
+      const pillarMat = new THREE.MeshStandardMaterial({ color: 0x374151, metalness: 0.8, roughness: 0.3 });
+      const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+      pillar.position.set(x, 2.75, -2.35);
+      safetyGroup.add(pillar);
+    }
+
+    // Overhead Cable Tray across the ceiling
+    const trayGeo = new THREE.BoxGeometry(10, 0.1, 0.6);
+    const trayMat = new THREE.MeshStandardMaterial({ color: 0x4B5563, metalness: 0.9, roughness: 0.3, wireframe: false });
+    const cableTray = new THREE.Mesh(trayGeo, trayMat);
+    cableTray.position.set(0, 4.2, -1.8);
+    safetyGroup.add(cableTray);
+
+    // Heavy Industrial Wall Pipes (Steam & Pneumatic)
+    const steamPipeMat = new THREE.MeshStandardMaterial({ color: 0xD97706, roughness: 0.4, metalness: 0.6 }); // Yellow/Orange
+    const steamPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 9.0, 16), steamPipeMat);
+    steamPipe.rotation.z = Math.PI / 2;
+    steamPipe.position.set(0, 3.7, -2.4);
+    safetyGroup.add(steamPipe);
+
+    const airPipeMat = new THREE.MeshStandardMaterial({ color: 0x0284C7, roughness: 0.4, metalness: 0.6 }); // Blue
+    const airPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 9.0, 16), airPipeMat);
+    airPipe.rotation.z = Math.PI / 2;
+    airPipe.position.set(0, 3.45, -2.4);
+    safetyGroup.add(airPipe);
+
+    // 3. Safety Warning Signs on Wall
+    const voltSignGeo = new THREE.PlaneGeometry(1.2, 0.6);
+    const voltSignMat = new THREE.MeshBasicMaterial({ map: createVoltageWarningTexture() });
+    const voltSign = new THREE.Mesh(voltSignGeo, voltSignMat);
+    voltSign.position.set(-1.8, 2.9, -2.48);
+    safetyGroup.add(voltSign);
+
+    const lotoSignGeo = new THREE.PlaneGeometry(1.2, 0.6);
+    const lotoSignMat = new THREE.MeshBasicMaterial({ map: createLotoSignTexture() });
+    const lotoSign = new THREE.Mesh(lotoSignGeo, lotoSignMat);
+    lotoSign.position.set(1.8, 2.9, -2.48);
+    safetyGroup.add(lotoSign);
+
+    // ================= HIGH VOLTAGE SWITCHGEAR CABINET =================
+    const cabinetGroup = new THREE.Group();
+    cabinetGroup.position.set(0, 1.1, -1.35);
+
+    // Main Heavy Steel Cabinet (RAL 7035 Industrial Grey)
+    const cabGeo = new THREE.BoxGeometry(2.4, 2.2, 0.7);
+    const cabMat = new THREE.MeshStandardMaterial({
+      color: 0x9DA4AC, // RAL 7035 light grey
+      metalness: 0.2,
+      roughness: 0.55
+    });
+    const cabinet = new THREE.Mesh(cabGeo, cabMat);
+    cabinet.castShadow = true;
+    cabinet.receiveShadow = true;
+    cabinetGroup.add(cabinet);
+
+    // Cabinet Door Bevel Frame
+    const frameGeo = new THREE.BoxGeometry(2.32, 2.12, 0.04);
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x7D858E, metalness: 0.2, roughness: 0.5 });
+    const doorFrame = new THREE.Mesh(frameGeo, frameMat);
+    doorFrame.position.set(0, 0, 0.36);
+    cabinetGroup.add(doorFrame);
+
+    // Copper Grounding Busbar at bottom
+    const busbarGeo = new THREE.BoxGeometry(2.0, 0.05, 0.03);
+    const busbarMat = new THREE.MeshStandardMaterial({ color: 0xB45309, metalness: 0.95, roughness: 0.2 });
+    const busbar = new THREE.Mesh(busbarGeo, busbarMat);
+    busbar.position.set(0, -0.95, 0.38);
+    cabinetGroup.add(busbar);
+
+    // ----------------- 1. MAIN KNIFE SWITCH / BREAKER -----------------
+    const breakerGroup = new THREE.Group();
+    breakerGroup.name = 'mainBreaker';
+    breakerGroup.position.set(0, 0.05, 0.40);
+
+    // Base plate
+    const bPlateGeo = new THREE.BoxGeometry(0.45, 0.65, 0.06);
+    const bPlateMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.5, metalness: 0.7 });
+    breakerBase = new THREE.Mesh(bPlateGeo, bPlateMat);
+    breakerGroup.add(breakerBase);
+
+    // Pivot Joint
+    const pivotJoint = new THREE.Group();
+    pivotJoint.position.set(0, 0, 0.04);
+
+    // Breaker Handle / Lever
+    const handleBarGeo = new THREE.BoxGeometry(0.06, 0.34, 0.04);
+    const handleBarMat = new THREE.MeshStandardMaterial({ color: 0xD97706, roughness: 0.3, metalness: 0.8 }); // Warning Orange/Yellow
+    const handleBar = new THREE.Mesh(handleBarGeo, handleBarMat);
+    handleBar.position.set(0, 0.17, 0);
+
+    // Red Ergonomic Grip Knob
+    const knobGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.12, 16);
+    const knobMat = new THREE.MeshStandardMaterial({ color: 0xDC2626, roughness: 0.2 });
+    const knob = new THREE.Mesh(knobGeo, knobMat);
+    knob.rotation.z = Math.PI / 2;
+    knob.position.set(0, 0.34, 0);
+    handleBar.add(knob);
+
+    // Padlock Hasp (Проушина под замок LOTO)
+    const haspGeo = new THREE.TorusGeometry(0.03, 0.008, 8, 16);
+    const haspMat = new THREE.MeshStandardMaterial({ color: 0x94A3B8, metalness: 0.95 });
+    const hasp = new THREE.Mesh(haspGeo, haspMat);
+    hasp.position.set(0, 0.02, 0.03);
+    breakerGroup.add(hasp);
+
+    pivotJoint.add(handleBar);
+    breakerGroup.add(pivotJoint);
+    mainBreakerLever = pivotJoint;
+
+    // Set initial ON position (angled UP +35 deg)
+    mainBreakerLever.rotation.z = -0.6; // ON position
+
+    // 3D LOTO Padlock Model (attached to hasp when lockoutApplied is true)
+    const lotoGroup = new THREE.Group();
+    lotoGroup.name = 'lotoPadlock';
+    lotoGroup.position.set(0, -0.04, 0.05);
+
+    // Red Padlock Body
+    const padBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.10, 0.04),
+      new THREE.MeshStandardMaterial({ color: 0xDC2626, roughness: 0.3 })
+    );
+    lotoGroup.add(padBody);
+
+    // Brass Shackle
+    const shackle = new THREE.Mesh(
+      new THREE.TorusGeometry(0.035, 0.008, 8, 16, Math.PI),
+      new THREE.MeshStandardMaterial({ color: 0xF59E0B, metalness: 0.9, roughness: 0.2 })
+    );
+    shackle.position.set(0, 0.05, 0);
+    lotoGroup.add(shackle);
+
+    // Yellow LOTO Tag
+    const tagMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.09, 0.14),
+      new THREE.MeshBasicMaterial({ color: 0xFEF08A })
+    );
+    tagMesh.position.set(0.06, -0.03, 0.02);
+    lotoGroup.add(tagMesh);
+
+    lotoGroup.visible = false;
+    lotoPadlockMesh = lotoGroup;
+    breakerGroup.add(lotoPadlockMesh);
+
+    cabinetGroup.add(breakerGroup);
+    interactiveObjects.push(breakerGroup);
+
+    // ----------------- 2. 3 DIAL METERS (VOLTS, P1, P2) -----------------
+    const dialConfigs = [
+      { name: 'meter1', type: 'volts', x: -0.65, y: 0.65 },
+      { name: 'meter2', type: 'pressure1', x: 0.0, y: 0.65 },
+      { name: 'meter3', type: 'pressure2', x: 0.65, y: 0.65 }
+    ];
+
+    dialConfigs.forEach((cfg) => {
+      const dialGroup = new THREE.Group();
+      dialGroup.name = cfg.name;
+      dialGroup.position.set(cfg.x, cfg.y, 0.37);
+
+      // Dial Housing Rim
+      const rimGeo = new THREE.CylinderGeometry(0.20, 0.20, 0.04, 32);
+      const rimMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, metalness: 0.9, roughness: 0.15 });
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      rim.rotation.x = Math.PI / 2;
+      dialGroup.add(rim);
+
+      // Dial Face with Canvas Texture
+      const faceGeo = new THREE.CircleGeometry(0.18, 32);
+      const faceMat = new THREE.MeshBasicMaterial({ map: createDialTexture(cfg.type) });
+      const face = new THREE.Mesh(faceGeo, faceMat);
+      face.position.set(0, 0, 0.022);
+      dialGroup.add(face);
+
+      // Animated Needle Pointer
+      const needleGeo = new THREE.BoxGeometry(0.008, 0.14, 0.005);
+      const needleMat = new THREE.MeshBasicMaterial({ color: 0xDC2626 });
+      const needle = new THREE.Mesh(needleGeo, needleMat);
+      needle.geometry.translate(0, 0.06, 0); // pivot at base
+      needle.position.set(0, 0, 0.025);
+      dialGroup.add(needle);
+
+      // Center Pin
+      const pin = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 0.01, 16),
+        new THREE.MeshStandardMaterial({ color: 0x000000 })
+      );
+      pin.rotation.x = Math.PI / 2;
+      pin.position.set(0, 0, 0.03);
+      dialGroup.add(pin);
+
+      if (cfg.type === 'volts') meter1Needle = needle;
+      else if (cfg.type === 'pressure1') meter2Needle = needle;
+      else if (cfg.type === 'pressure2') meter3Needle = needle;
+
+      cabinetGroup.add(dialGroup);
+      interactiveObjects.push(dialGroup);
+    });
+
+    // ----------------- 3. 2 PRESSURE RELIEF VALVES -----------------
+    const valveConfigs = [
+      { name: 'valve1', x: -1.25, y: -0.2, rotZ: Math.PI / 2 },
+      { name: 'valve2', x: 1.25, y: -0.2, rotZ: -Math.PI / 2 }
+    ];
+
+    valveConfigs.forEach((cfg, idx) => {
+      const valveGroup = new THREE.Group();
+      valveGroup.name = cfg.name;
+      valveGroup.position.set(cfg.x, cfg.y, 0.15);
+
+      // Pipe stem
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 0.35, 16),
+        new THREE.MeshStandardMaterial({ color: 0x64748B, metalness: 0.8, roughness: 0.3 })
+      );
+      stem.rotation.z = cfg.rotZ;
+      valveGroup.add(stem);
+
+      // Red Cast Iron Handwheel (Маховик)
+      const wheelGroup = new THREE.Group();
+      wheelGroup.position.set(idx === 0 ? -0.2 : 0.2, 0, 0);
+
+      const rimMesh = new THREE.Mesh(
+        new THREE.TorusGeometry(0.14, 0.022, 12, 24),
+        new THREE.MeshStandardMaterial({ color: 0xDC2626, metalness: 0.4, roughness: 0.35 })
+      );
+      wheelGroup.add(rimMesh);
+
+      // Spokes
+      for (let s = 0; s < 4; s++) {
+        const spoke = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.012, 0.012, 0.26, 8),
+          new THREE.MeshStandardMaterial({ color: 0xDC2626 })
+        );
+        spoke.rotation.z = (Math.PI / 4) * s;
+        wheelGroup.add(spoke);
+      }
+
+      // Valve Exhaust Nozzle pointing downward
+      const nozzle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 0.15, 12),
+        new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 })
+      );
+      nozzle.position.set(0, -0.15, 0);
+      valveGroup.add(nozzle);
+
+      wheelGroup.rotation.y = Math.PI / 2;
+      valveGroup.add(wheelGroup);
+
+      if (idx === 0) valve1Wheel = wheelGroup;
+      else valve2Wheel = wheelGroup;
+
+      // Steam Particle System
+      const pCount = 35;
+      const pGeo = new THREE.BufferGeometry();
+      const pPos = new Float32Array(pCount * 3);
+      for (let i = 0; i < pCount * 3; i += 3) {
+        pPos[i] = (Math.random() - 0.5) * 0.1;
+        pPos[i+1] = -Math.random() * 0.6;
+        pPos[i+2] = (Math.random() - 0.5) * 0.1;
+      }
+      pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+      const pMat = new THREE.PointsMaterial({
+        color: 0xE2E8F0,
+        size: 0.07,
+        transparent: true,
+        opacity: 0.7
+      });
+      const steamSystem = new THREE.Points(pGeo, pMat);
+      steamSystem.position.set(0, -0.2, 0);
+      steamSystem.visible = false;
+      valveGroup.add(steamSystem);
+
+      if (idx === 0) steamParticles1 = steamSystem;
+      else steamParticles2 = steamSystem;
+
+      cabinetGroup.add(valveGroup);
+      interactiveObjects.push(valveGroup);
+    });
+
+    // ----------------- 4. STATUS LED PANEL & DIGITAL DISPLAY -----------------
+    const ledPanel = new THREE.Group();
+    ledPanel.position.set(0, 0.96, 0.37);
+
+    // Red LED (DANGER: LIVE POWER)
+    const redGeo = new THREE.SphereGeometry(0.04, 16, 16);
+    const redMat = new THREE.MeshStandardMaterial({
+      color: 0xFF0000,
+      emissive: 0xFF0000,
+      emissiveIntensity: 1.8,
+      roughness: 0.2
+    });
+    redLedMesh = new THREE.Mesh(redGeo, redMat);
+    redLedMesh.position.set(-0.25, 0, 0);
+    ledPanel.add(redLedMesh);
+
+    // Green LED (SAFE: DISCONNECTED)
+    const greenGeo = new THREE.SphereGeometry(0.04, 16, 16);
+    const greenMat = new THREE.MeshStandardMaterial({
+      color: 0x00FF66,
+      emissive: 0x00FF66,
+      emissiveIntensity: 0.05,
+      roughness: 0.2
+    });
+    greenLedMesh = new THREE.Mesh(greenGeo, greenMat);
+    greenLedMesh.position.set(0.25, 0, 0);
+    ledPanel.add(greenLedMesh);
+
+    cabinetGroup.add(ledPanel);
+
+    // ----------------- 5. TEST TERMINALS BUSBAR -----------------
+    const testTerminals = new THREE.Group();
+    testTerminals.name = 'testTerminals';
+    testTerminals.position.set(0, -0.55, 0.38);
+
+    const termBox = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.2, 0.06),
+      new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.7 })
+    );
+    testTerminals.add(termBox);
+
+    // 3 Test Terminal Studs (L1, L2, L3)
+    for (let t = -1; t <= 1; t++) {
+      const stud = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.025, 0.025, 0.05, 16),
+        new THREE.MeshStandardMaterial({ color: 0xF59E0B, metalness: 0.95 }) // Brass studs
+      );
+      stud.rotation.x = Math.PI / 2;
+      stud.position.set(t * 0.18, 0, 0.035);
+      testTerminals.add(stud);
+    }
+    cabinetGroup.add(testTerminals);
+    interactiveObjects.push(testTerminals);
+
+    safetyGroup.add(cabinetGroup);
+
+    // ================= EMERGENCY ROTATING STROBE BEACON =================
+    emergencyBeaconGroup = new THREE.Group();
+    emergencyBeaconGroup.position.set(0, 3.25, -2.4);
+
+    // Base bracket
+    const bBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.14, 0.08, 24),
+      new THREE.MeshStandardMaterial({ color: 0x1E293B, metalness: 0.8 })
+    );
+    bBase.rotation.x = Math.PI / 2;
+    emergencyBeaconGroup.add(bBase);
+
+    // Ribbed Fluted Red Polycarbonate Dome
+    const bDome = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.11, 0.11, 0.22, 24),
+      new THREE.MeshPhysicalMaterial({
+        color: 0xDC2626,
+        emissive: 0xDC2626,
+        emissiveIntensity: 1.2,
+        transparent: true,
+        opacity: 0.85,
+        roughness: 0.1,
+        transmission: 0.6
+      })
+    );
+    bDome.rotation.x = Math.PI / 2;
+    bDome.position.set(0, 0, 0.12);
+    emergencyBeaconDome = bDome;
+    emergencyBeaconGroup.add(bDome);
+
+    // Internal Rotating Reflector
+    const rotor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.15, 0.04),
+      new THREE.MeshStandardMaterial({ color: 0xFFFFFF, metalness: 0.98 })
+    );
+    rotor.position.set(0, 0, 0.12);
+    emergencyBeaconRotor = rotor;
+    emergencyBeaconGroup.add(rotor);
+
+    // Dynamic Pulsating Point Light
+    emergencyBeaconLight = new THREE.PointLight(0xFF2A2A, 2.2, 10, 1.5);
+    emergencyBeaconLight.position.set(0, 0, 0.18);
+    emergencyBeaconGroup.add(emergencyBeaconLight);
+
+    safetyGroup.add(emergencyBeaconGroup);
+
+    // ================= PPE STORAGE STAND (LEFT WALL) =================
+    const ppeStand = new THREE.Group();
+    ppeStand.name = 'ppeStand';
+    ppeStand.position.set(-4.5, 1.6, -1.0);
+
+    const standCabinet = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 1.2, 0.25),
+      new THREE.MeshStandardMaterial({ color: 0x0284C7, metalness: 0.5, roughness: 0.3 })
+    );
+    ppeStand.add(standCabinet);
+
+    // Stand Sign
+    const ppeSign = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.5, 0.2),
+      new THREE.MeshBasicMaterial({ map: createTextTexture([
+        { text: 'СИЗ', font: '800 54px "Plus Jakarta Sans", sans-serif' },
+        { text: 'перчатки · щиток', font: '600 22px "Plus Jakarta Sans", sans-serif' }
+      ], '#FFFFFF', '#0B4A8B') })
+    );
+    ppeSign.position.set(0, 0.45, 0.13);
+    ppeStand.add(ppeSign);
+
+    safetyGroup.add(ppeStand);
+    interactiveObjects.push(ppeStand);
+
+    // Gloves hanging on the PPE cabinet so it reads as a PPE station
+    for (const gx of [-0.12, 0.12]) {
+      const glove = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 0.22, 0.04),
+        new THREE.MeshStandardMaterial({ color: 0xFFB703, roughness: 0.6 })
+      );
+      glove.position.set(gx, 0.05, 0.15);
+      ppeStand.add(glove);
+    }
+    safetyGroup.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    floor.castShadow = false;
+
+    scene.add(safetyGroup);
+    rebuildObjectLabels();
+  }
+
+  // ================= FPS HANDS GLOVES CUSTOMIZATION =================
+  function updateFPSHandsForPPE(isEquipped) {
+    if (!handsGroup) return;
+    handsGroup.traverse((child) => {
+      if (child.isMesh && child.name.includes('Hand')) {
+        if (isEquipped) {
+          // Dielectric Rubber Safety Gloves (High-visibility Yellow/Orange)
+          child.material.color.setHex(0xFFB703);
+          child.material.roughness = 0.4;
+          child.material.metalness = 0.05;
+        } else {
+          // Standard work hands (restore original colors)
+          child.material.color.setHex(child.userData.baseColor !== undefined ? child.userData.baseColor : 0x334155);
+          child.material.roughness = 0.5;
+          child.material.metalness = 0.2;
+        }
+      }
+    });
+  }
+
+  // ================= INVENTORY & TOOLS INTERACTION =================
+  function togglePPE() {
+    safetyState.ppeEquipped = !safetyState.ppeEquipped;
+    const invSlot = document.getElementById('invPPE');
+    const pill = document.getElementById('pillPPE');
+    const dot = document.getElementById('dotPPE');
+    const text = document.getElementById('textPPE');
+
+    if (safetyState.ppeEquipped) {
+      if (invSlot) invSlot.classList.add('equipped');
+      if (pill) { pill.className = 'safety-hud-pill safe'; }
+      if (dot) { dot.className = 'status-dot safe'; }
+      if (text) { text.innerText = 'СИЗ: ДИЭЛЕКТРИЧЕСКИЕ ПЕРЧАТКИ (1000В)'; }
+      updateFPSHandsForPPE(true);
+      playSuccessChime();
+      showComboPopup('🧤 СИЗ ЭКИПИРОВАНЫ: ДОПУСК К ЩИТУ! +100 XP');
+      logAction('EQUIP_PPE_SUCCESS', Date.now(), true);
+    } else {
+      if (invSlot) invSlot.classList.remove('equipped');
+      if (pill) { pill.className = 'safety-hud-pill warning'; }
+      if (dot) { dot.className = 'status-dot warning'; }
+      if (text) { text.innerText = 'СИЗ: НЕ НАДЕТЫ'; }
+      updateFPSHandsForPPE(false);
+      logAction('UNEQUIP_PPE', Date.now(), false);
+    }
+  }
+
+  function selectInventoryTool(toolId) {
+    if (safetyState.selectedTool === toolId) {
+      safetyState.selectedTool = null;
+    } else {
+      safetyState.selectedTool = toolId;
+    }
+
+    document.querySelectorAll('.safety-inv-slot').forEach(s => s.classList.remove('active'));
+    const multimeterHud = document.getElementById('multimeterHud');
+
+    if (safetyState.selectedTool === 'multimeter') {
+      const slot = document.getElementById('invMultimeter');
+      if (slot) slot.classList.add('active');
+      if (multimeterHud) multimeterHud.style.display = 'flex';
+      playMultimeterBeep();
+      updateMultimeterDisplay();
+    } else {
+      if (multimeterHud) multimeterHud.style.display = 'none';
+    }
+
+    if (safetyState.selectedTool === 'loto') {
+      const slot = document.getElementById('invLOTO');
+      if (slot) slot.classList.add('active');
+      showComboPopup('🔒 Выбран замок LOTO: Наведите на рубильник [E]');
+    }
+  }
+
+  function toggleMultimeterTool(show) {
+    if (!show) {
+      safetyState.selectedTool = null;
+      const slot = document.getElementById('invMultimeter');
+      if (slot) slot.classList.remove('active');
+      const hud = document.getElementById('multimeterHud');
+      if (hud) hud.style.display = 'none';
+    }
+  }
+
+  function updateMultimeterDisplay() {
+    const digits = document.getElementById('lcdDigits');
+    const tag = document.getElementById('multimeterStatusTag');
+    if (!digits || !tag) return;
+
+    if (safetyState.powerState === 'ON') {
+      digits.innerText = (378.0 + Math.random() * 4.5).toFixed(1);
+      tag.className = 'multimeter-status-tag danger';
+      tag.innerText = '⚡ ОПАСНОЕ НАПРЯЖЕНИЕ (380V)';
+    } else {
+      digits.innerText = '000.0';
+      tag.className = 'multimeter-status-tag safe';
+      tag.innerText = '🟢 ОБЕСТОЧЕНО (0.00 V RMS)';
+    }
+  }
+
+  function testVoltageWithMultimeter() {
+    if (isActionInProgress) return;
+    isActionInProgress = true;
+    playMultimeterBeep();
+    animateHandPunch(() => {
+      isActionInProgress = false;
+      updateMultimeterDisplay();
+      if (safetyState.powerState === 'ON') {
+        safetyState.errors++;
+        logAction('TEST_VOLTAGE_LIVE_DANGER', Date.now(), false);
+        showSafetyAlert('⚡ ВНИМАНИЕ! Напряжение 380V НЕ снято! Опасность поражения током!');
+      } else {
+        safetyState.voltageTested = true;
+        logAction('TEST_VOLTAGE_CONFIRMED_ZERO', Date.now(), true);
+        showComboPopup('🟢 НАПРЯЖЕНИЕ ОТСУТСТВУЕТ (0.0V): БЕЗОПАСНО +150 XP');
+        checkSafetyCompletion();
+      }
+    });
+  }
+
+  // ================= MAIN INTERACTION ROUTER =================
+  function handleSafetyInteraction(targetName) {
+    if (isActionInProgress) return;
+
+    // 0. LOTO PADLOCK (tool selected + breaker targeted)
+    if (targetName === 'lotoPadlock' || (targetName === 'mainBreaker' && safetyState.selectedTool === 'loto')) {
+      applyLotoLock();
+      return;
+    }
+
+    // 1. MAIN HIGH-VOLTAGE BREAKER
+    if (targetName === 'mainBreaker') {
+      if (!safetyState.ppeEquipped) {
+        safetyState.errors++;
+        playAlarmBuzzer();
+        showSafetyAlert('⚠️ НАРУШЕНИЕ ТБ! Запрещено касаться рубильника без диэлектрических перчаток (СИЗ)!');
+        logAction('VIOLATION_BREAKER_NO_PPE', Date.now(), false);
+        return;
+      }
+
+      if (safetyState.lockoutApplied) {
+        showSafetyAlert('🔒 Рубильник заблокирован навесным замком LOTO! Снятие запрещено регламентом.');
+        return;
+      }
+
+      if (safetyState.powerState === 'ON') {
+        isActionInProgress = true;
+        animateHandPunch(() => {
+          playBreakerClack();
+          stopTransformerHum();
+          if (mainBreakerLever) mainBreakerLever.rotation.z = 0.6; // Angled DOWN (OFF)
+          safetyState.powerState = 'OFF';
+
+          // Update HUD Pill
+          const pill = document.getElementById('pillPower');
+          const dot = document.getElementById('dotPower');
+          const text = document.getElementById('textPower');
+          if (pill) pill.className = 'safety-hud-pill safe';
+          if (dot) dot.className = 'status-dot safe';
+          if (text) text.innerText = 'ПИТАНИЕ: 0.0V OFF (ОБЕСТОЧЕНО)';
+
+          showComboPopup('⚡ РУБИЛЬНИК ВЫКЛЮЧЕН! ПОРЯДОК ВЕРЕН +150 XP');
+          logAction('SWITCH_POWER_BREAKER_OFF', Date.now(), true);
+          isActionInProgress = false;
+          checkSafetyCompletion();
+        });
+      } else {
+        showSafetyAlert('💡 Рубильник уже обесточен. Установите замок LOTO [3] и проверьте напряжение [2].');
+      }
+      return;
+    }
+
+    // 3. PRESSURE RELIEF VALVES
+    if (targetName === 'valve1') {
+      operateValve(0);
+      return;
+    }
+    if (targetName === 'valve2') {
+      operateValve(1);
+      return;
+    }
+
+    // 4. TEST TERMINALS
+    if (targetName === 'testTerminals') {
+      if (safetyState.selectedTool !== 'multimeter') {
+        showSafetyAlert('💡 Возьмите мультиметр [2], чтобы выполнить замер на шинах.');
+        return;
+      }
+      testVoltageWithMultimeter();
+      return;
+    }
+
+    // 5. PPE STAND
+    if (targetName === 'ppeStand') {
+      togglePPE();
+      return;
+    }
+  }
+
+  function applyLotoLock() {
+    if (safetyState.powerState === 'ON') {
+      safetyState.errors++;
+      playAlarmBuzzer();
+      showSafetyAlert('⚠️ ГРУБОЕ НАРУШЕНИЕ ТБ! Запрещено устанавливать замок LOTO на включенный рубильник!');
+      logAction('VIOLATION_LOTO_WHILE_POWER_ON', Date.now(), false);
+      return;
+    }
+
+    if (safetyState.lockoutApplied) {
+      showSafetyAlert('🔒 Замок LOTO уже установлен на рубильнике.');
+      return;
+    }
+
+    if (!safetyState.ppeEquipped) {
+      safetyState.errors++;
+      playAlarmBuzzer();
+      showSafetyAlert('⚠️ НАРУШЕНИЕ ТБ! Установка замка LOTO на щит без диэлектрических перчаток (СИЗ) запрещена!');
+      logAction('VIOLATION_LOTO_NO_PPE', Date.now(), false);
+      return;
+    }
+
+    isActionInProgress = true;
+    animateHandPunch(() => {
+      if (lotoPadlockMesh) lotoPadlockMesh.visible = true;
+      safetyState.lockoutApplied = true;
+      playBreakerClack();
+      playSuccessChime();
+
+      const pill = document.getElementById('pillLOTO');
+      const dot = document.getElementById('dotLOTO');
+      const text = document.getElementById('textLOTO');
+      if (pill) pill.className = 'safety-hud-pill safe';
+      if (dot) dot.className = 'status-dot safe';
+      if (text) text.innerText = 'LOTO: БЛОКИРОВКА АКТИВНА';
+
+      showComboPopup('🔒 LOTO ЗАМОК УСТАНОВЛЕН: НЕ ВКЛЮЧАТЬ! +150 XP');
+      logAction('APPLY_LOTO_LOCK_SUCCESS', Date.now(), true);
+      if (safetyState.selectedTool === 'loto') selectInventoryTool('loto');
+      isActionInProgress = false;
+      checkSafetyCompletion();
+    });
+  }
+
+  function operateValve(idx) {
+    if (safetyState.valvesOpened[idx]) {
+      showSafetyAlert(`Клапан ${idx + 1} уже открыт, давление стравливается.`);
+      return;
+    }
+
+    isActionInProgress = true;
+    animateHandPunch(() => {
+      playValveHiss();
+      const wheel = idx === 0 ? valve1Wheel : valve2Wheel;
+      const particles = idx === 0 ? steamParticles1 : steamParticles2;
+      if (wheel) wheel.rotation.z += Math.PI * 2;
+      if (particles) particles.visible = true;
+
+      safetyState.valvesOpened[idx] = true;
+
+      if (safetyState.valvesOpened[0] && safetyState.valvesOpened[1]) {
+        safetyState.valvePressure = 'ZERO';
+        const pill = document.getElementById('pillPressure');
+        const dot = document.getElementById('dotPressure');
+        const text = document.getElementById('textPressure');
+        if (pill) pill.className = 'safety-hud-pill safe';
+        if (dot) dot.className = 'status-dot safe';
+        if (text) text.innerText = 'ДАВЛЕНИЕ: 0.0 БАР (СБРОШЕНО)';
+        showComboPopup('💨 ДАВЛЕНИЕ В КОНТУРАХ ПОЛНОСТЬЮ СБРОШЕНО! +150 XP');
+        logAction('PRESSURE_VALVES_RELIEVED_ZERO', Date.now(), true);
+      } else {
+        safetyState.valvePressure = 'NORMAL';
+        const text = document.getElementById('textPressure');
+        if (text) text.innerText = 'ДАВЛЕНИЕ: 4.0 БАР (СТРАВЛИВАНИЕ)';
+        showComboPopup(`💨 Клапан ${idx + 1} открыт: стравливание давления +75 XP`);
+        logAction(`OPEN_VALVE_${idx + 1}_PRESSURE_RELIEF`, Date.now(), true);
+      }
+
+      isActionInProgress = false;
+      checkSafetyCompletion();
+    });
+  }
+
+  function checkSafetyCompletion() {
+    const isReady = (
+      safetyState.ppeEquipped &&
+      safetyState.powerState === 'OFF' &&
+      safetyState.lockoutApplied &&
+      safetyState.voltageTested &&
+      safetyState.valvePressure === 'ZERO'
+    );
+
+    if (isReady && !safetyState.completed) {
+      safetyState.completed = true;
+      clearInterval(state.timerInterval);
+      setTimeout(() => {
+        // Deactivate Emergency Strobe & turn on steady Green Safe Beacon
+        if (emergencyBeaconLight) emergencyBeaconLight.intensity = 0;
+        if (greenLedMesh) greenLedMesh.material.emissiveIntensity = 2.0;
+
+        playVictoryFanfare();
+        logAction('SAFETY_EQUIPMENT_READY_ALL_CLEAR', Date.now(), true);
+
+        // Display Victory Modal
+        const modal = document.getElementById('victoryModal');
+        if (modal) {
+          document.getElementById('victoryTitle').innerText = 'Регламент безопасности успешно выполнен!';
+          document.getElementById('victoryText').innerHTML = `
+            <strong>Оборудование обесточено (0.0V), заблокировано по LOTO, а давление сброшено до 0 бар.</strong><br>
+            Ошибок нарушения ТБ: <span style="color:${safetyState.errors === 0 ? '#10B981' : '#EF4444'}; font-weight:bold;">${safetyState.errors}</span><br>
+            Специалист полностью готов к безопасному ТО агрегатов.
+          `;
+          modal.style.display = 'flex';
+        }
+      }, 500);
+    }
+  }
+
+  // ================= START SAFETY VR ENTRY POINT =================
+  function startSafetyVR() {
+    currentProfession = 'safety';
+    document.getElementById('gameScreen').classList.add('safety-mode');
+    isActionInProgress = false;
+
+    safetyState.powerState = 'ON';
+    safetyState.valvePressure = 'HIGH';
+    safetyState.ppeEquipped = false;
+    safetyState.lockoutApplied = false;
+    safetyState.voltageTested = false;
+    safetyState.valvesOpened = [false, false];
+    safetyState.selectedTool = null;
+    safetyState.errors = 0;
+    safetyState.completed = false;
+
+    // Reset player position strictly at eye-level y: 1.6
+    applyArenaBounds('safety');
+    player.pos.set(0, 1.6, 1.2);
+    player.baseEyeHeight = 1.6;
+    player.yaw = 0;
+    player.pitch = -0.15;
+
+    // Setup HUD UI
+    document.getElementById('vrQuestTitle').innerText = 'ИНЖЕНЕР ПО ТБ: РЕГЛАМЕНТ LOTO И 380В';
+    const safetyHudBar = document.getElementById('safetyHudBar');
+    if (safetyHudBar) safetyHudBar.style.display = 'flex';
+    const inventoryBar = document.getElementById('safetyInventoryBar');
+    if (inventoryBar) inventoryBar.style.display = 'flex';
+    const telemetryPanel = document.getElementById('telemetryLogPanel');
+    if (telemetryPanel) telemetryPanel.style.display = 'flex';
+
+    // Reset Pills
+    document.getElementById('pillPower').className = 'safety-hud-pill danger';
+    document.getElementById('dotPower').className = 'status-dot danger';
+    document.getElementById('textPower').innerText = 'ПИТАНИЕ: 380V ON';
+
+    document.getElementById('pillPressure').className = 'safety-hud-pill danger';
+    document.getElementById('dotPressure').className = 'status-dot danger';
+    document.getElementById('textPressure').innerText = 'ДАВЛЕНИЕ: 8.5 БАР';
+
+    document.getElementById('pillPPE').className = 'safety-hud-pill warning';
+    document.getElementById('dotPPE').className = 'status-dot warning';
+    document.getElementById('textPPE').innerText = 'СИЗ: НЕ НАДЕТЫ';
+
+    document.getElementById('pillLOTO').className = 'safety-hud-pill warning';
+    document.getElementById('dotLOTO').className = 'status-dot warning';
+    document.getElementById('textLOTO').innerText = 'LOTO: НЕТ';
+
+    resetSafetyToolsUI();
+    document.getElementById('vrTimer').innerText = '00:00';
+    const hudDock = document.getElementById('hudDockInner');
+    if (hudDock) hudDock.innerHTML = '';
+
+    const victoryModal = document.getElementById('victoryModal');
+    if (victoryModal) victoryModal.style.display = 'none';
+
+    showScreen('gameScreen');
+
+    setTimeout(() => {
+      initThreeFPS();
+      if (scene) {
+        // Remove barista objects if present
+        const oldBarista = scene.getObjectByName('baristaEnvironment');
+        if (oldBarista) scene.remove(oldBarista);
+        const oldSafety = scene.getObjectByName('safetyEnvironment');
+        if (oldSafety) scene.remove(oldSafety);
+
+        build3DSafetyEnvironment();
+      }
+      startTransformerHum();
+      handleWindowResize();
+    }, 100);
+
+    clearInterval(state.timerInterval);
+    state.timer = 0;
+    state.timerInterval = setInterval(() => {
+      state.timer++;
+      const m = String(Math.floor(state.timer / 60)).padStart(2, '0');
+      const s = String(state.timer % 60).padStart(2, '0');
+      document.getElementById('vrTimer').innerText = `${m}:${s}`;
+    }, 1000);
+
+    logAction('SESSION_START_SAFETY_ENGINEER', Date.now(), true);
+    setGuideVisible(guideVisible);
+    showIntro('safety');
+  }
+
+  // Window exports for UI event handlers, Dart bridge, and tests
+  window.safetyState = safetyState;
+  window.startSafetyVR = startSafetyVR;
+  window.handleSafetyInteraction = handleSafetyInteraction;
+  window.togglePPE = togglePPE;
+  window.selectInventoryTool = selectInventoryTool;
+  window.toggleMultimeterTool = toggleMultimeterTool;
+  window.testVoltageWithMultimeter = testVoltageWithMultimeter;
+  window.applyLotoLock = applyLotoLock;
+  window.operateValve = operateValve;
+  window.logAction = logAction;
+  Object.defineProperty(window, 'currentProfession', { get: () => currentProfession, configurable: true });
+
   // ================= WEBAUDIO PROCEDURAL SOUND SYNTHESIS =================
   let audioCtx = null;
   function getAudioContext() {
@@ -1289,6 +3448,8 @@
     timerInterval: null,
     misclicks: 0,
     conflictChoice: '',
+    conflictResponseSec: 0,
+    quest2StartedAt: 0,
     budgetChoice: '',
     stepsConfig: [
       { id: 'portafilter', name: 'Взять Холдер', hint: 'Наведите прицел и нажмите [E] / Клик', popup: 'HOLDER GRABBED!' },
@@ -1307,6 +3468,7 @@
   let portafilterObj, grinderObj, tamperObj, machineObj, pitcherObj, oatMilkObj, cupObj, customerObj;
   let espressoStreamParticles, steamParticles, iceCubesGroup;
   let cupLiquidMesh;
+  let baristaGroup = null;
 
   const player = {
     pos: new THREE.Vector3(0, 1.65, 0.95),
@@ -1328,6 +3490,17 @@
     swayX: 0,
     swayY: 0
   };
+  window.player = player;
+
+  // Movement limits per module (barista counter vs. industrial workshop)
+  const ARENA_BOUNDS = {
+    barista: { minX: -2.2, maxX: 2.2, minZ: 0.15, maxZ: 2.4 },
+    safety:  { minX: -5.0, maxX: 5.0, minZ: -0.6, maxZ: 4.5 }
+  };
+  function applyArenaBounds(mode) {
+    Object.assign(player, ARENA_BOUNDS[mode]);
+    player.velocity.set(0, 0, 0);
+  }
 
   function setMoveKey(code, val) {
     if (player.keys.hasOwnProperty(code)) player.keys[code] = val;
@@ -1342,8 +3515,8 @@
     const height = wrap ? wrap.clientHeight : (container.clientHeight || 460);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0F172A);
-    scene.fog = new THREE.FogExp2(0x0F172A, 0.04);
+    scene.background = new THREE.Color(0x15181D);
+    scene.fog = new THREE.FogExp2(0x15181D, 0.035);
 
     camera = new THREE.PerspectiveCamera(72, width / height, 0.05, 50);
     camera.position.set(player.pos.x, player.baseEyeHeight, player.pos.z);
@@ -1355,7 +3528,7 @@
     // CLEAN STUDIO COLOR GRADING & ACES TONEMAPPING
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.0;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -1364,21 +3537,25 @@
 
     raycaster = new THREE.Raycaster();
 
-    // CLEAN STUDIO AMBIENT & DIRECTIONAL LIGHTING (Pro SaaS Standard)
-    const ambientLight = new THREE.AmbientLight(0xE2E8F0, 1.8);
-    scene.add(ambientLight);
+    // Soft studio environment for realistic metal / glass reflections
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(buildStudioEnvScene(), 0.04).texture;
+    pmrem.dispose();
 
-    // Warm Barista Counter Spotlight
-    const warmCounterSpot = new THREE.SpotLight(0xFFFFFF, 3.8, 14, Math.PI / 3.4, 0.35, 1.0);
+    // Balanced lighting: soft sky/ground fill + one key light with shadows
+    const hemiLight = new THREE.HemisphereLight(0xFFFFFF, 0x2A2D33, 0.35);
+    scene.add(hemiLight);
+
+    const warmCounterSpot = new THREE.SpotLight(0xFFF4E5, 1.4, 14, Math.PI / 3.4, 0.45, 1.0);
     warmCounterSpot.position.set(0, 3.6, 1.2);
     warmCounterSpot.castShadow = true;
     warmCounterSpot.shadow.mapSize.width = 1024;
     warmCounterSpot.shadow.mapSize.height = 1024;
+    warmCounterSpot.shadow.bias = -0.0005;
     scene.add(warmCounterSpot);
 
-    // Soft Studio Fill Light
-    const fillLight = new THREE.DirectionalLight(0xF1F5F9, 1.2);
-    fillLight.position.set(2, 3.5, 2);
+    const fillLight = new THREE.DirectionalLight(0xFFFFFF, 0.55);
+    fillLight.position.set(2.5, 4, 3);
     scene.add(fillLight);
 
     build3DEnvironment();
@@ -1387,6 +3564,8 @@
 
     let clock = new THREE.Clock();
     let shakeIntensity = 0;
+    let guideRenderTimer = 0;
+    createGuideArrow();
 
     function animate() {
       requestAnimationFrame(animate);
@@ -1430,7 +3609,7 @@
       player.pos.z += player.velocity.z * delta;
 
       // Bar Counter Collision: slide smoothly along counter without stopping strafe
-      if (player.pos.z < 0.22 && player.pos.x > -1.65 && player.pos.x < 1.65) {
+      if (currentProfession === 'barista' && player.pos.z < 0.22 && player.pos.x > -1.65 && player.pos.x < 1.65) {
         player.pos.z = 0.22;
         if (player.velocity.z < 0) player.velocity.z = 0;
       }
@@ -1496,6 +3675,10 @@
       }
 
       checkCenterRaycast();
+      updateObjectLabels();
+      updateGuideArrow(time);
+      guideRenderTimer += delta;
+      if (guideRenderTimer > 0.2) { guideRenderTimer = 0; renderGuide(); }
 
       if (customerObj && customerObj.visible) {
         customerObj.position.y = 1.3 + Math.sin(time * 3.2) * 0.012;
@@ -1520,21 +3703,96 @@
         steamParticles.geometry.attributes.position.needsUpdate = true;
       }
 
-      // Dynamic Pulsing Target Beacon Ring
+      // ================= SAFETY ENGINEER 3D SIMULATION UPDATES =================
+      if (currentProfession === 'safety') {
+        // 1. Emergency Strobe Beacon Animation
+        if (emergencyBeaconLight && emergencyBeaconDome && emergencyBeaconRotor) {
+          if (safetyState.powerState === 'ON' || safetyState.valvePressure !== 'ZERO') {
+            const strobe = Math.pow(Math.sin(time * 8.0), 6) * 5.0 + Math.sin(time * 16.0) * 0.4 + 0.3;
+            emergencyBeaconLight.intensity = strobe;
+            emergencyBeaconDome.material.emissiveIntensity = strobe * 0.7;
+            emergencyBeaconRotor.rotation.y = time * 8.5;
+          } else {
+            emergencyBeaconLight.intensity = 0.05;
+            emergencyBeaconDome.material.emissiveIntensity = 0.1;
+          }
+        }
+
+        // 2. Animated Needles with physical micro-jitter
+        // Voltmeter needle (380V -> 0V)
+        if (meter1Needle) {
+          const voltTarget = (safetyState.powerState === 'ON') ? (0.65 + Math.sin(time * 24.0) * 0.015) : -1.25;
+          meter1Needle.rotation.z = THREE.MathUtils.lerp(meter1Needle.rotation.z, voltTarget, 0.08);
+        }
+
+        // Manometer 1 (Steam line: 8.5 bar -> 4 bar -> 0 bar)
+        if (meter2Needle) {
+          let p1Target = 0.72; // High (8.5 bar)
+          if (safetyState.valvesOpened[0] && safetyState.valvesOpened[1]) {
+            p1Target = -1.25; // 0 bar
+          } else if (safetyState.valvesOpened[0]) {
+            p1Target = -0.15; // 4 bar
+          }
+          if (safetyState.valvePressure !== 'ZERO') p1Target += Math.sin(time * 18.0) * 0.012;
+          meter2Needle.rotation.z = THREE.MathUtils.lerp(meter2Needle.rotation.z, p1Target, 0.06);
+        }
+
+        // Manometer 2 (Pneumatic line: 6.2 bar -> 0 bar)
+        if (meter3Needle) {
+          let p2Target = 0.55; // 6.2 bar
+          if (safetyState.valvesOpened[1] && safetyState.valvesOpened[0]) {
+            p2Target = -1.25; // 0 bar
+          } else if (safetyState.valvesOpened[1]) {
+            p2Target = -0.30;
+          }
+          if (safetyState.valvePressure !== 'ZERO') p2Target += Math.sin(time * 20.0) * 0.01;
+          meter3Needle.rotation.z = THREE.MathUtils.lerp(meter3Needle.rotation.z, p2Target, 0.06);
+        }
+
+        // 3. Steam particle discharge
+        if (steamParticles1 && steamParticles1.visible) {
+          const pos1 = steamParticles1.geometry.attributes.position.array;
+          for (let i = 1; i < pos1.length; i += 3) {
+            pos1[i] -= delta * 1.2;
+            if (pos1[i] < -0.8) pos1[i] = 0;
+          }
+          steamParticles1.geometry.attributes.position.needsUpdate = true;
+        }
+
+        if (steamParticles2 && steamParticles2.visible) {
+          const pos2 = steamParticles2.geometry.attributes.position.array;
+          for (let i = 1; i < pos2.length; i += 3) {
+            pos2[i] -= delta * 1.2;
+            if (pos2[i] < -0.8) pos2[i] = 0;
+          }
+          steamParticles2.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // 4. Status LEDs
+        if (redLedMesh) {
+          redLedMesh.material.emissiveIntensity = (safetyState.powerState === 'ON') ? 1.8 : 0.05;
+        }
+        if (greenLedMesh) {
+          const isSafe = (safetyState.powerState === 'OFF' && safetyState.lockoutApplied);
+          greenLedMesh.material.emissiveIntensity = isSafe ? 1.8 : 0.05;
+        }
+      }
+
+      // Dynamic Pulsing Target Beacon Ring (Barista mode)
       const beacon = scene.getObjectByName('targetBeaconRing');
       if (beacon) {
-        if (state.quest === 1) {
+        if (currentProfession === 'barista' && state.quest === 1) {
           beacon.visible = true;
           const pulse = 1.0 + Math.sin(time * 5.0) * 0.18;
           beacon.scale.set(pulse, pulse, pulse);
 
           switch(state.step) {
-            case 0: beacon.position.set(portafilterObj.position.x, 1.165, portafilterObj.position.z); break;
-            case 1: beacon.position.set(grinderObj.position.x, 1.165, grinderObj.position.z); break;
-            case 2: beacon.position.set(tamperObj.position.x, 1.165, tamperObj.position.z); break;
+            case 0: beacon.position.set(portafilterObj ? portafilterObj.position.x : 0, 1.165, portafilterObj ? portafilterObj.position.z : 0); break;
+            case 1: beacon.position.set(grinderObj ? grinderObj.position.x : 0, 1.165, grinderObj ? grinderObj.position.z : 0); break;
+            case 2: beacon.position.set(tamperObj ? tamperObj.position.x : 0, 1.165, tamperObj ? tamperObj.position.z : 0); break;
             case 3: beacon.position.set(-0.70, 1.165, -0.17); break;
-            case 4: beacon.position.set(pitcherObj.position.x, 1.165, pitcherObj.position.z); break;
-            case 5: beacon.position.set(cupObj.position.x, 1.165, cupObj.position.z); break;
+            case 4: beacon.position.set(pitcherObj ? pitcherObj.position.x : 0, 1.165, pitcherObj ? pitcherObj.position.z : 0); break;
+            case 5: beacon.position.set(cupObj ? cupObj.position.x : 0, 1.165, cupObj ? cupObj.position.z : 0); break;
           }
         } else {
           beacon.visible = false;
@@ -1550,33 +3808,96 @@
     };
   }
 
+  function buildStudioEnvScene() {
+    const envScene = new THREE.Scene();
+    const room = new THREE.Mesh(
+      new THREE.BoxGeometry(12, 6, 12),
+      new THREE.MeshBasicMaterial({ color: 0x1C1F24, side: THREE.BackSide })
+    );
+    envScene.add(room);
+    // Bright softbox panels give metals readable highlights
+    const panelMat = new THREE.MeshBasicMaterial({ color: 0xA8ACB2 });
+    [[0, 2.9, 0, Math.PI / 2, 0, 4, 2], [-5.9, 1, 0, 0, Math.PI / 2, 3, 2], [5.9, 1.5, -2, 0, -Math.PI / 2, 2, 1.5], [0, 1.5, 5.9, 0, Math.PI, 3, 1.5]]
+      .forEach(([x, y, z, rx, ry, pw, ph]) => {
+        const panel = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), panelMat);
+        panel.position.set(x, y, z);
+        panel.rotation.set(rx, ry, 0);
+        envScene.add(panel);
+      });
+    return envScene;
+  }
+
+  function createTextTexture(lines, bg, fg, w = 256, h = 128) {
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = fg;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    lines.forEach((ln, i) => {
+      ctx.font = ln.font;
+      ctx.fillText(ln.text, w / 2, h / (lines.length + 1) * (i + 1));
+    });
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
   function build3DEnvironment() {
     interactiveObjects = [];
+    hoveredObject = null;
+    baristaGroup = new THREE.Group();
+    baristaGroup.name = 'baristaEnvironment';
+    scene.add(baristaGroup);
 
     // 1. Back Wall & Menu Board
     const wallGeo = new THREE.PlaneGeometry(10, 6);
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.85 });
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xD9D2C7, roughness: 0.9 });
     const wall = new THREE.Mesh(wallGeo, wallMat);
     wall.position.set(0, 2.5, -2.5);
-    scene.add(wall);
+    baristaGroup.add(wall);
+
+    const cafeFloor = new THREE.Mesh(
+      new THREE.PlaneGeometry(10, 8),
+      new THREE.MeshStandardMaterial({ color: 0x5A4A3E, roughness: 0.8 })
+    );
+    cafeFloor.rotation.x = -Math.PI / 2;
+    cafeFloor.position.set(0, 0, 1);
+    cafeFloor.receiveShadow = true;
+    baristaGroup.add(cafeFloor);
+
+    for (const sx of [-5, 5]) {
+      const sideWall = new THREE.Mesh(new THREE.PlaneGeometry(8, 6), wallMat);
+      sideWall.rotation.y = sx < 0 ? Math.PI / 2 : -Math.PI / 2;
+      sideWall.position.set(sx, 2.5, 1);
+      baristaGroup.add(sideWall);
+    }
 
     const menuGeo = new THREE.PlaneGeometry(2.4, 1.2);
-    const menuMat = new THREE.MeshStandardMaterial({ color: 0x1A1A24, roughness: 0.5 });
+    const menuMat = new THREE.MeshStandardMaterial({
+      map: createTextTexture([
+        { text: 'MENU', font: '800 34px "Plus Jakarta Sans", sans-serif' },
+        { text: 'Espresso · Latte · Iced Oat Latte', font: '500 20px "Plus Jakarta Sans", sans-serif' }
+      ], '#2B2B2B', '#F5F0E6', 512, 256),
+      roughness: 0.8
+    });
     const menuBoard = new THREE.Mesh(menuGeo, menuMat);
     menuBoard.position.set(0, 2.4, -2.48);
-    scene.add(menuBoard);
+    baristaGroup.add(menuBoard);
 
-    const signGeo = new THREE.BoxGeometry(1.6, 0.08, 0.04);
-    const signMat = new THREE.MeshStandardMaterial({ color: 0x00FFB3, emissive: 0x00FFB3, emissiveIntensity: 1.3 });
+    const signGeo = new THREE.BoxGeometry(1.6, 0.06, 0.04);
+    const signMat = new THREE.MeshStandardMaterial({ color: 0xF5F0E6, emissive: 0xFFF4E0, emissiveIntensity: 0.6 });
     const neonSign = new THREE.Mesh(signGeo, signMat);
     neonSign.position.set(0, 3.1, -2.46);
-    scene.add(neonSign);
+    baristaGroup.add(neonSign);
 
     const shelfGeo = new THREE.BoxGeometry(1.4, 0.04, 0.3);
     const shelfMat = new THREE.MeshStandardMaterial({ color: 0x3E2723, roughness: 0.7 });
     const shelf = new THREE.Mesh(shelfGeo, shelfMat);
     shelf.position.set(-1.4, 1.9, -1.8);
-    scene.add(shelf);
+    baristaGroup.add(shelf);
 
     const syrupColors = [0xFFA502, 0xFF4757, 0x2ED573];
     syrupColors.forEach((color, i) => {
@@ -1585,23 +3906,23 @@
         new THREE.MeshStandardMaterial({ color: color, transparent: true, opacity: 0.85, roughness: 0.1, metalness: 0.1 })
       );
       bottle.position.set(-1.8 + i * 0.18, 2.05, -1.8);
-      scene.add(bottle);
+      baristaGroup.add(bottle);
     });
 
     // 2. Bar Counter Top
     const counterGeo = new THREE.BoxGeometry(3.6, 1.1, 1.6);
-    const counterMat = new THREE.MeshStandardMaterial({ color: 0x1A1828, roughness: 0.25, metalness: 0.2 });
+    const counterMat = new THREE.MeshStandardMaterial({ color: 0x3B2C24, roughness: 0.7, metalness: 0.0 });
     const counter = new THREE.Mesh(counterGeo, counterMat);
     counter.position.set(0, 0.55, -0.4);
     counter.receiveShadow = true;
-    scene.add(counter);
+    baristaGroup.add(counter);
 
     const topGeo = new THREE.BoxGeometry(3.7, 0.06, 1.7);
-    const topMat = new THREE.MeshStandardMaterial({ color: 0x242238, roughness: 0.15, metalness: 0.4 });
+    const topMat = new THREE.MeshStandardMaterial({ color: 0xA87A52, roughness: 0.6, metalness: 0.0 });
     const counterTop = new THREE.Mesh(topGeo, topMat);
     counterTop.position.set(0, 1.12, -0.4);
     counterTop.receiveShadow = true;
-    scene.add(counterTop);
+    baristaGroup.add(counterTop);
 
     // 3. Authentic Commercial Dual-Group Espresso Machine (La Marzocco / Victoria Arduino Style)
     machineObj = new THREE.Group();
@@ -1701,7 +4022,7 @@
     }
 
     machineObj.position.set(-0.50, 1.15, -0.45);
-    scene.add(machineObj);
+    baristaGroup.add(machineObj);
     interactiveObjects.push(machineObj);
 
     // 4. Portafilter / Holder (Station 1 - Left-Center Counter)
@@ -1709,7 +4030,7 @@
     portafilterObj.name = 'portafilter';
     const basket = new THREE.Mesh(
       new THREE.CylinderGeometry(0.065, 0.052, 0.08, 24),
-      new THREE.MeshStandardMaterial({ color: 0xEEEEEE, metalness: 0.98, roughness: 0.08 })
+      new THREE.MeshStandardMaterial({ color: 0x8C939B, metalness: 0.9, roughness: 0.25 })
     );
     const handle = new THREE.Mesh(
       new THREE.CylinderGeometry(0.018, 0.022, 0.24, 16),
@@ -1720,7 +4041,8 @@
     portafilterObj.add(basket);
     portafilterObj.add(handle);
     portafilterObj.position.set(-0.42, 1.18, 0.05);
-    scene.add(portafilterObj);
+    baristaGroup.add(portafilterObj);
+    baristaGroup.traverse(o => { if (o.isMesh) o.castShadow = true; });
     interactiveObjects.push(portafilterObj);
 
     // 5. Commercial On-Demand Grinder (Left)
@@ -1758,7 +4080,7 @@
     grinderObj.add(beansCore);
     grinderObj.add(spout);
     grinderObj.position.set(-1.18, 1.15, -0.42);
-    scene.add(grinderObj);
+    baristaGroup.add(grinderObj);
     interactiveObjects.push(grinderObj);
 
     // 6. Heavy Stainless Steel Tamper & Dedicated Silicone Mat (Station 2)
@@ -1788,7 +4110,7 @@
     tamperObj.add(tamperBase);
     tamperObj.add(tamperGrip);
     tamperObj.position.set(-0.18, 1.16, 0.05);
-    scene.add(tamperObj);
+    baristaGroup.add(tamperObj);
     interactiveObjects.push(tamperObj);
 
     // 7. PROMINENT STAINLESS STEEL MILK PITCHER (Station 3 - Steaming)
@@ -1799,9 +4121,9 @@
     const pitcherMesh = new THREE.Mesh(
       new THREE.CylinderGeometry(0.068, 0.078, 0.16, 28, 1, true),
       new THREE.MeshPhysicalMaterial({
-        color: 0xF5F5FA,
-        metalness: 0.98,
-        roughness: 0.08,
+        color: 0xB8BEC6,
+        metalness: 0.9,
+        roughness: 0.22,
         clearcoat: 1.0,
         clearcoatRoughness: 0.1,
         side: THREE.DoubleSide
@@ -1829,7 +4151,7 @@
 
     // Place Pitcher PROMINENTLY in front of the counter
     pitcherObj.position.set(0.20, 1.16, -0.05);
-    scene.add(pitcherObj);
+    baristaGroup.add(pitcherObj);
     interactiveObjects.push(pitcherObj);
 
     // 7b. Standalone Oat Milk Carton (Stationary next to steaming station)
@@ -1849,7 +4171,7 @@
     oatCap.position.set(0, 0.23, 0);
     oatMilkObj.add(oatCap);
     oatMilkObj.position.set(0.38, 1.16, -0.05);
-    scene.add(oatMilkObj);
+    baristaGroup.add(oatMilkObj);
 
     // Active Target Pulsing Beacon Ring (Follows current step)
     const ringGeo = new THREE.RingGeometry(0.09, 0.13, 32);
@@ -1863,7 +4185,7 @@
     targetBeaconRing.name = 'targetBeaconRing';
     targetBeaconRing.rotation.x = Math.PI / 2;
     targetBeaconRing.position.set(-0.42, 1.165, 0.05);
-    scene.add(targetBeaconRing);
+    baristaGroup.add(targetBeaconRing);
 
     // 8. Physical Glass Cup with Liquid Layering (On Espresso Drip Tray)
     cupObj = new THREE.Group();
@@ -1910,7 +4232,8 @@
     cupObj.add(iceCubesGroup);
 
     cupObj.position.set(-0.70, 1.21, -0.17);
-    scene.add(cupObj);
+    baristaGroup.add(cupObj);
+    [grinderObj, tamperObj, pitcherObj, oatMilkObj, cupObj].forEach(g => g.traverse(o => { if (o.isMesh) o.castShadow = true; }));
     interactiveObjects.push(cupObj);
 
     // 9. Customer Avatar
@@ -1930,9 +4253,10 @@
     customerObj.add(torsoMesh);
     customerObj.position.set(0, 1.3, -1.6);
     customerObj.visible = false;
-    scene.add(customerObj);
+    baristaGroup.add(customerObj);
 
     createParticleEffects();
+    rebuildObjectLabels();
   }
 
   function createParticleEffects() {
@@ -1948,7 +4272,7 @@
     const streamMat = new THREE.PointsMaterial({ color: 0x4A2511, size: 0.024, transparent: true, opacity: 0.95 });
     espressoStreamParticles = new THREE.Points(streamGeo, streamMat);
     espressoStreamParticles.visible = false;
-    scene.add(espressoStreamParticles);
+    baristaGroup.add(espressoStreamParticles);
 
     const steamGeo = new THREE.BufferGeometry();
     const sCount = 80;
@@ -1962,7 +4286,7 @@
     const steamMat = new THREE.PointsMaterial({ color: 0xFFFFFF, size: 0.045, transparent: true, opacity: 0.65 });
     steamParticles = new THREE.Points(steamGeo, steamMat);
     steamParticles.visible = false;
-    scene.add(steamParticles);
+    baristaGroup.add(steamParticles);
   }
 
   function build3DFPSHands() {
@@ -1978,6 +4302,10 @@
       new THREE.MeshStandardMaterial({ color: 0x0052FF, roughness: 0.3, emissive: 0x002277, emissiveIntensity: 0.4 })
     );
     fingers.position.set(0, 0, -0.09);
+    palm.name = 'HandPalm';
+    fingers.name = 'HandFingers';
+    palm.userData.baseColor = 0x1E293B;
+    fingers.userData.baseColor = 0x0052FF;
     rightHand.add(palm);
     rightHand.add(fingers);
 
@@ -2016,11 +4344,16 @@
     const viewportWrap = document.getElementById('viewportWrap') || container;
 
     // Desktop Pointer Lock on click
+    const UI_OVERLAY_SELECTOR = 'button, #virtualDpad, #mobileActionTrigger, .vr-status-bar, .safety-inventory-bar, .multimeter-hud-panel, .victory-modal-overlay, .telemetry-log-panel, .intro-overlay, .guide-panel, .guide-toggle-btn';
     viewportWrap.addEventListener('click', (e) => {
+      if (e.target && e.target.closest && e.target.closest(UI_OVERLAY_SELECTOR)) return;
+      const victoryModal = document.getElementById('victoryModal');
+      if (victoryModal && victoryModal.style.display === 'flex') return;
+      if (isIntroVisible()) return;
       if (window.innerWidth > 768 && !document.pointerLockElement) {
         try {
           const req = viewportWrap.requestPointerLock || viewportWrap.mozRequestPointerLock || viewportWrap.webkitRequestPointerLock;
-          if (req) req.call(viewportWrap);
+          if (req) { req.call(viewportWrap); return; }
         } catch(err){}
       }
       if (totalDragDistance <= 12) {
@@ -2060,15 +4393,23 @@
     // Keyboard support (WASD + Arrow Keys + Shift Sprint + E/Space Interact)
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return;
+      const gameActive = document.getElementById('gameScreen').classList.contains('active');
       if (e.code === 'KeyW' || e.code === 'ArrowUp') player.keys.KeyW = true;
       if (e.code === 'KeyS' || e.code === 'ArrowDown') player.keys.KeyS = true;
       if (e.code === 'KeyA' || e.code === 'ArrowLeft') player.keys.KeyA = true;
       if (e.code === 'KeyD' || e.code === 'ArrowRight') player.keys.KeyD = true;
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') player.keys.Shift = true;
 
-      if (e.code === 'KeyE' || e.code === 'Space') {
+      if ((e.code === 'KeyE' || e.code === 'Space') && gameActive) {
         e.preventDefault();
         triggerCenterInteraction();
+      }
+      if (e.code === 'KeyH' && gameActive) toggleGuide();
+      if ((e.code === 'Enter' || e.code === 'Escape') && gameActive && isIntroVisible()) { e.preventDefault(); closeIntro(); return; }
+      if (currentProfession === 'safety' && gameActive && !isIntroVisible()) {
+        if (e.code === 'Digit1') togglePPE();
+        if (e.code === 'Digit2') selectInventoryTool('multimeter');
+        if (e.code === 'Digit3') selectInventoryTool('loto');
       }
       if (e.code === 'KeyF') {
         toggleFullScreen();
@@ -2092,7 +4433,7 @@
 
     // Mouse drag fallback on PC (when pointer lock is not active)
     viewportWrap.addEventListener('mousedown', (e) => {
-      if (e.target && (e.target.closest('#virtualDpad') || e.target.closest('#mobileActionTrigger') || e.target.closest('.vr-status-bar'))) return;
+      if (e.target && e.target.closest(UI_OVERLAY_SELECTOR)) return;
       isDragging = true;
       previousMouseX = e.clientX;
       previousMouseY = e.clientY;
@@ -2163,10 +4504,12 @@
         const target = document.elementFromPoint(t.clientX, t.clientY);
 
         if (target && target.closest('#mobileActionTrigger')) {
-          triggerCenterInteraction();
+          // handled by the button's own onclick
         } else if (target && target.closest('#virtualDpad')) {
           dpadTouchId = t.identifier;
           updateDpadFromTouch(t);
+        } else if (target && target.closest(UI_OVERLAY_SELECTOR)) {
+          // taps on HUD panels / buttons are not camera or movement input
         } else if (t.clientX < vRect.left + vRect.width * 0.40 && t.clientY > vRect.top + vRect.height * 0.35) {
           // Left touch area as joystick
           dpadTouchId = t.identifier;
@@ -2264,9 +4607,13 @@
   }
 
   function triggerCenterInteraction() {
-    if (isActionInProgress) return;
+    if (isActionInProgress || isIntroVisible()) return;
     if (hoveredObject) {
-      handleFPSObjectClick(hoveredObject.name);
+      if (currentProfession === 'safety') {
+        handleSafetyInteraction(hoveredObject.name);
+      } else {
+        handleFPSObjectClick(hoveredObject.name);
+      }
     } else {
       state.misclicks++;
     }
@@ -2288,6 +4635,38 @@
   }
 
   function getObjectActionHint(name) {
+    if (currentProfession === 'safety') {
+      switch(name) {
+        case 'mainBreaker':
+          return (safetyState.powerState === 'ON')
+            ? 'Главный рубильник 380В: [E] Отключить питание (Power OFF)'
+            : (safetyState.lockoutApplied ? 'Рубильник: Заблокирован замком LOTO' : 'Рубильник: Обесточен (0.0V)');
+        case 'lotoPadlock':
+          return 'Проушина замка: [E] Навесить замок LOTO';
+        case 'valve1':
+          return safetyState.valvesOpened[0]
+            ? 'Предохранительный клапан 1: Открыт (Давление сброшено)'
+            : 'Предохранительный клапан 1: [E] Стравить давление пара';
+        case 'valve2':
+          return safetyState.valvesOpened[1]
+            ? 'Предохранительный клапан 2: Открыт (Давление сброшено)'
+            : 'Предохранительный клапан 2: [E] Стравить давление пневматики';
+        case 'testTerminals':
+          return 'Контрольные шины 380В: [E] Замерить мультиметром True RMS';
+        case 'ppeStand':
+          return safetyState.ppeEquipped
+            ? 'Стенд СИЗ: [E] Снять диэлектрические перчатки'
+            : 'Стенд СИЗ: [E] Экипировать диэлектрические перчатки (1000В)';
+        case 'meter1':
+          return `Вольтметр сети: ${safetyState.powerState === 'ON' ? '380 V (ОПАСНО)' : '0.0 V (ОБЕСТОЧЕНО)'}`;
+        case 'meter2':
+          return `Манометр пара: ${safetyState.valvePressure === 'ZERO' ? '0.0 БАР' : (safetyState.valvesOpened[0] ? '4.0 БАР (СТРАВЛИВАНИЕ)' : '8.5 БАР (ВЫСОКОЕ)')}`;
+        case 'meter3':
+          return `Манометр пневматики: ${safetyState.valvePressure === 'ZERO' ? '0.0 БАР' : (safetyState.valvesOpened[1] ? '3.0 БАР (СТРАВЛИВАНИЕ)' : '6.2 БАР')}`;
+        default:
+          return '[E] Взаимодействовать';
+      }
+    }
     switch(name) {
       case 'portafilter': return 'Холдер: [E] Взять в руку';
       case 'grinder': return 'Кофемолка: [E] Смолоть 18г зерна';
@@ -2299,8 +4678,326 @@
     }
   }
 
+
+  // ================= IN-GAME GUIDE, OBJECT LABELS & INTRO =================
+  const OBJECT_LABELS = {
+    portafilter: 'Холдер',
+    grinder: 'Кофемолка',
+    tamper: 'Темпер',
+    espressoMachine: 'Кофемашина',
+    milkPitcher: 'Питчер с молоком',
+    glassCup: 'Стакан',
+    mainBreaker: 'Рубильник',
+    meter1: 'Вольтметр',
+    meter2: 'Манометр пара',
+    meter3: 'Манометр воздуха',
+    valve1: 'Клапан 1',
+    valve2: 'Клапан 2',
+    testTerminals: 'Клеммы для замера',
+    ppeStand: 'Шкаф СИЗ'
+  };
+  // Height of the label / guide arrow above each object's origin (metres)
+  const LABEL_OFFSETS = {
+    espressoMachine: 0.78, grinder: 0.9, ppeStand: 0.72, mainBreaker: 0.45,
+    meter1: 0.26, meter2: 0.26, meter3: 0.26, valve1: 0.26, valve2: 0.26,
+    testTerminals: 0.18, glassCup: 0.3, milkPitcher: 0.26, tamper: 0.2, portafilter: 0.16
+  };
+
+  const SAFETY_GUIDE = [
+    {
+      done: () => safetyState.ppeEquipped, target: 'ppeStand', task: 'Наденьте СИЗ',
+      how: 'Нажмите <b>1</b> — или подойдите к синему шкафу СИЗ слева, наведите прицел и нажмите <b>E</b>.',
+      why: 'Касаться щита 380 В без диэлектрических перчаток запрещено. Это всегда первый шаг.'
+    },
+    {
+      done: () => safetyState.powerState === 'OFF', target: 'mainBreaker', task: 'Отключите рубильник',
+      how: 'Наведите прицел на жёлтую рукоятку в центре щита и нажмите <b>E</b>.',
+      why: 'Сначала снимаем напряжение с оборудования и только потом работаем с ним.'
+    },
+    {
+      done: () => safetyState.lockoutApplied, target: 'mainBreaker', task: 'Повесьте замок LOTO',
+      how: 'Нажмите <b>3</b>, чтобы взять замок, затем наведите прицел на рубильник и нажмите <b>E</b>.',
+      why: 'Замок не даст никому случайно включить питание, пока вы работаете.'
+    },
+    {
+      done: () => safetyState.voltageTested, target: 'testTerminals', task: 'Проверьте отсутствие напряжения',
+      how: 'Нажмите <b>2</b>, чтобы взять мультиметр, наведите прицел на три латунные клеммы внизу щита и нажмите <b>E</b>.',
+      why: 'Рубильник может быть неисправен. Прибор должен показать 0 В.'
+    },
+    {
+      done: () => safetyState.valvesOpened[0], target: 'valve1', task: 'Сбросьте давление: клапан 1',
+      how: 'Красный маховик слева от щита. Наведите прицел и нажмите <b>E</b>.',
+      why: 'В паровой линии 8.5 бар. Ремонт под давлением опасен.'
+    },
+    {
+      done: () => safetyState.valvesOpened[1], target: 'valve2', task: 'Сбросьте давление: клапан 2',
+      how: 'Красный маховик справа от щита. Наведите прицел и нажмите <b>E</b>.',
+      why: 'Пневмолиния тоже должна быть на 0 бар. Следите за стрелками манометров.'
+    }
+  ];
+
+  const BARISTA_STEP_GUIDE = {
+    portafilter: { how: 'Холдер лежит на стойке перед кофемашиной. Наведите прицел и нажмите <b>E</b>.', why: 'Холдер — ручка с корзинкой, в которую засыпают молотый кофе.' },
+    grinder: { how: 'Чёрная кофемолка с бункером зерна слева. Наведите прицел и нажмите <b>E</b>.', why: 'Для одной порции эспрессо нужно 18 г свежесмолотого кофе.' },
+    tamper: { how: 'Темпер стоит на чёрном коврике рядом с холдером. Наведите прицел и нажмите <b>E</b>.', why: 'Кофе нужно плотно и ровно спрессовать, иначе вода пройдёт неравномерно.' },
+    espressoMachine: { how: 'Наведите прицел на кофемашину и нажмите <b>E</b>, чтобы запустить пролив.', why: 'Эспрессо готовится под давлением 9 бар около 25–30 секунд.' },
+    milkPitcher: { how: 'Металлический питчер стоит справа от темпера. Наведите прицел и нажмите <b>E</b>.', why: 'Овсяное молоко взбивают паром до гладкой микропены.' },
+    glassCup: { how: 'Стакан стоит под группой кофемашины. Наведите прицел и нажмите <b>E</b>.', why: 'Добавьте лёд и отдайте гостю готовый Iced Oat Latte.' }
+  };
+
+  function getGuideState() {
+    if (currentProfession === 'safety') {
+      const steps = SAFETY_GUIDE.map(g => ({ task: g.task, done: g.done() }));
+      const idx = steps.findIndex(st => !st.done);
+      if (idx === -1) {
+        return { steps, idx: steps.length, current: { task: 'Регламент выполнен', how: 'Оборудование безопасно для ремонта. Откройте отчёт по навыкам.', why: '', target: null } };
+      }
+      return { steps, idx, current: SAFETY_GUIDE[idx] };
+    }
+
+    const cookSteps = state.stepsConfig.map((st, i) => ({ task: st.name, done: state.quest > 1 || i < state.step }));
+    const steps = [
+      ...cookSteps,
+      { task: 'Ответить гостю', done: state.quest > 2 },
+      { task: 'Рассчитать закупку', done: !!state.budgetChoice }
+    ];
+    if (state.quest === 1) {
+      const cfg = state.stepsConfig[state.step];
+      if (cfg) {
+        const g = BARISTA_STEP_GUIDE[cfg.id] || {};
+        return { steps, idx: state.step, current: { task: cfg.name, how: g.how || cfg.hint, why: g.why || '', target: cfg.id } };
+      }
+      return { steps, idx: state.stepsConfig.length, current: { task: 'Напиток готов', how: 'Сейчас подойдёт гость…', why: '', target: null } };
+    }
+    if (state.quest === 2) {
+      return { steps, idx: cookSteps.length, current: {
+        task: 'Успокойте недовольного гостя',
+        how: 'Прочитайте жалобу и выберите ответ <b>внизу экрана</b>.',
+        why: 'Оценивается умение признать ошибку и предложить решение, а не спорить.',
+        target: null } };
+    }
+    if (state.budgetChoice) {
+      return { steps, idx: steps.length, current: { task: 'Симуляция завершена', how: 'Откройте отчёт по навыкам.', why: '', target: null } };
+    }
+    return { steps, idx: cookSteps.length + 1, current: {
+      task: 'Рассчитайте закупку зерна',
+      how: 'Расход — 35 кг в неделю, бюджет — 120 000 ₸. Выберите вариант <b>внизу экрана</b>.',
+      why: 'Нужно покрыть весь расход и не выйти за бюджет.',
+      target: null } };
+  }
+
+  let guideVisible = true;
+  let lastGuideSignature = '';
+
+  function renderGuide(force) {
+    const panel = document.getElementById('guidePanel');
+    if (!panel) return;
+    const g = getGuideState();
+    const signature = currentProfession + '|' + g.idx + '|' + g.steps.map(s => s.done ? 1 : 0).join('');
+    if (!force && signature === lastGuideSignature) return;
+    lastGuideSignature = signature;
+
+    document.getElementById('guideStepCount').innerText =
+      g.idx < g.steps.length ? `Гид · шаг ${g.idx + 1} из ${g.steps.length}` : 'Гид · всё готово';
+    document.getElementById('guideTask').innerText = g.current.task;
+    document.getElementById('guideHow').innerHTML = g.current.how;
+    const why = document.getElementById('guideWhy');
+    why.innerText = g.current.why;
+    why.style.display = g.current.why ? 'block' : 'none';
+    const doneCount = g.steps.filter(s => s.done).length;
+    document.getElementById('guideProgressFill').style.width = (doneCount / g.steps.length * 100) + '%';
+    document.getElementById('guideSteps').innerHTML = g.steps.map((s, i) => `
+      <li class="${s.done ? 'done' : (i === g.idx ? 'current' : '')}">
+        <span class="gs-dot">${s.done ? '✓' : ''}</span>${s.task}
+      </li>`).join('');
+  }
+
+  function setGuideVisible(show) {
+    guideVisible = show;
+    document.getElementById('guidePanel')?.classList.toggle('visible', show);
+    document.getElementById('guideToggleBtn')?.classList.toggle('visible', !show);
+    if (show) renderGuide(true);
+  }
+
+  function toggleGuide() {
+    setGuideVisible(!guideVisible);
+  }
+
+  function showGuideToast(text) {
+    const el = document.getElementById('guideToast');
+    if (!el) return;
+    el.innerText = text;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  function getGuideTargetName() {
+    if (!document.getElementById('gameScreen').classList.contains('active')) return null;
+    return getGuideState().current.target || null;
+  }
+
+  // ---- Screen-space labels above interactive objects ----
+  let objectLabels = [];
+  const _labelVec = new THREE.Vector3();
+
+  function rebuildObjectLabels() {
+    const layer = document.getElementById('labelLayer');
+    if (!layer) return;
+    layer.querySelectorAll('.obj-label').forEach(el => el.remove());
+    objectLabels = interactiveObjects
+      .filter(obj => OBJECT_LABELS[obj.name])
+      .map(obj => {
+        const el = document.createElement('div');
+        el.className = 'obj-label';
+        el.innerText = OBJECT_LABELS[obj.name];
+        layer.appendChild(el);
+        return { obj, el, offset: LABEL_OFFSETS[obj.name] || 0.22 };
+      });
+  }
+
+  function updateObjectLabels() {
+    const wrap = document.getElementById('viewportWrap');
+    const pointer = document.getElementById('offscreenPointer');
+    if (!wrap || !camera) return;
+    const w = wrap.clientWidth;
+    const h = wrap.clientHeight;
+    const targetName = getGuideTargetName();
+    let targetEntry = null;
+
+    for (const entry of objectLabels) {
+      const isTarget = entry.obj.name === targetName;
+      if (isTarget) targetEntry = entry;
+      entry.obj.getWorldPosition(_labelVec);
+      _labelVec.y += entry.offset;
+      const dist = _labelVec.distanceTo(camera.position);
+      const p = _labelVec.clone().project(camera);
+      const onScreen = p.z < 1 && p.x > -1 && p.x < 1 && p.y > -1 && p.y < 1;
+      // Non-target labels only nearby to keep the view clean
+      if (!onScreen || (!isTarget && dist > 3.2)) {
+        entry.el.style.display = 'none';
+        continue;
+      }
+      entry.el.style.display = 'block';
+      entry.el.classList.toggle('target', isTarget);
+      entry.el.style.opacity = isTarget ? '1' : String(Math.max(0.35, 1 - dist / 4));
+      entry.el.style.transform = `translate(${(p.x + 1) / 2 * w}px, ${(1 - p.y) / 2 * h}px) translate(-50%, -100%)`;
+    }
+
+    // Edge pointer when the current target is out of view
+    if (!pointer) return;
+    if (!targetEntry || targetEntry.el.style.display === 'block') {
+      pointer.style.display = 'none';
+      return;
+    }
+    targetEntry.obj.getWorldPosition(_labelVec);
+    const local = _labelVec.applyMatrix4(camera.matrixWorldInverse);
+    let dx = local.x;
+    let dy = local.y;
+    if (local.z > 0) dy = 0; // behind the camera: point sideways
+    if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) dx = 1;
+    const angle = Math.atan2(-dy, dx);
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const rx = w / 2 - 90;
+    const ry = h / 2 - 40;
+    const scale = Math.min(rx / Math.max(Math.abs(cos), 0.001), ry / Math.max(Math.abs(sin), 0.001));
+    const px = w / 2 + cos * scale;
+    const py = h / 2 + sin * scale;
+    pointer.style.display = 'flex';
+    pointer.style.transform = `translate(${px}px, ${py}px) translate(-50%, -50%)`;
+    document.getElementById('offscreenPointerText').innerText = OBJECT_LABELS[targetEntry.obj.name];
+    document.getElementById('offscreenPointerArrow').style.transform = `rotate(${angle}rad)`;
+  }
+
+  // ---- 3D guide arrow floating above the current target ----
+  let guideArrow = null;
+
+  function createGuideArrow() {
+    guideArrow = new THREE.Group();
+    const cone = new THREE.Mesh(
+      new THREE.ConeGeometry(0.045, 0.1, 20),
+      new THREE.MeshBasicMaterial({ color: 0x0052FF })
+    );
+    cone.rotation.x = Math.PI; // point down
+    guideArrow.add(cone);
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.05, 0.008, 8, 24),
+      new THREE.MeshBasicMaterial({ color: 0xFFFFFF })
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.05;
+    guideArrow.add(ring);
+    guideArrow.visible = false;
+    scene.add(guideArrow);
+  }
+
+  function updateGuideArrow(time) {
+    if (!guideArrow) return;
+    const targetName = getGuideTargetName();
+    const entry = targetName ? objectLabels.find(e => e.obj.name === targetName) : null;
+    if (!entry) {
+      guideArrow.visible = false;
+      return;
+    }
+    entry.obj.getWorldPosition(guideArrow.position);
+    guideArrow.position.y += entry.offset - 0.08 + Math.sin(time * 4) * 0.025;
+    guideArrow.rotation.y = time * 1.5;
+    guideArrow.visible = true;
+  }
+
+  // ---- Intro briefing shown at the start of each simulation ----
+  const INTRO_CONTENT = {
+    safety: {
+      title: 'Подготовка щита 380 В к ремонту',
+      goal: 'Вы — инженер по технике безопасности. Нужно безопасно вывести оборудование в ремонт по процедуре LOTO. Ошибки в порядке действий считаются нарушениями ТБ.',
+      plan: ['Наденьте СИЗ (диэлектрические перчатки)', 'Отключите рубильник', 'Повесьте замок LOTO', 'Проверьте мультиметром, что напряжения нет', 'Откройте оба клапана, чтобы сбросить давление'],
+      extra: [['1', 'СИЗ'], ['2', 'Мультиметр'], ['3', 'Замок LOTO']]
+    },
+    barista: {
+      title: 'Смена бариста',
+      goal: 'Приготовьте Iced Oat Latte по техкарте, затем разберитесь с недовольным гостем и рассчитайте закупку зерна на неделю.',
+      plan: ['Приготовьте напиток: 6 шагов по порядку', 'Ответьте гостю, который недоволен заказом', 'Выберите оптимальную закупку зерна'],
+      extra: []
+    }
+  };
+
+  function isIntroVisible() {
+    const el = document.getElementById('introOverlay');
+    return !!el && el.classList.contains('visible');
+  }
+
+  function showIntro(profession) {
+    const overlay = document.getElementById('introOverlay');
+    if (!overlay) return;
+    let skip = false;
+    try { skip = localStorage.getItem('synapkor_skip_intro_' + profession) === '1'; } catch (e) {}
+    if (skip) return;
+    const c = INTRO_CONTENT[profession];
+    document.getElementById('introTitle').innerText = c.title;
+    document.getElementById('introGoal').innerText = c.goal;
+    document.getElementById('introPlan').innerHTML = c.plan.map(p => `<li>${p}</li>`).join('');
+    document.getElementById('introExtraKeys').innerHTML = c.extra.map(([k, t]) =>
+      `<div class="control-item"><span class="keys"><kbd>${k}</kbd></span>${t}</div>`).join('');
+    document.getElementById('introSkip').checked = false;
+    overlay.dataset.profession = profession;
+    overlay.classList.add('visible');
+  }
+
+  function closeIntro() {
+    const overlay = document.getElementById('introOverlay');
+    if (!overlay) return;
+    if (document.getElementById('introSkip').checked) {
+      try { localStorage.setItem('synapkor_skip_intro_' + overlay.dataset.profession, '1'); } catch (e) {}
+    }
+    overlay.classList.remove('visible');
+    // Time is measured from the moment the player actually starts
+    state.timer = 0;
+    document.getElementById('vrTimer').innerText = '00:00';
+  }
+
   function animateHandPunch(onComplete) {
-    if (!handsGroup) return;
+    if (!handsGroup || !rightHand) { if (onComplete) onComplete(); return; }
     handsGroup.userData.animating = true;
     let progress = 0;
 
@@ -2366,6 +5063,9 @@
       } else {
         state.misclicks++;
         playTone(160, 'sawtooth', 0.25, 0.12);
+        if (currentTarget) {
+          showGuideToast(`Сейчас нужен другой предмет: «${OBJECT_LABELS[currentTarget.id]}» — ${currentTarget.name.toLowerCase()}`);
+        }
       }
     }
   }
@@ -2477,12 +5177,16 @@
 
   function renderQuestSuccess() {
     renderHUDComplete();
-    setTimeout(() => { startQuest2Conflict(); }, 1400);
+    setTimeout(() => {
+      const gameActive = document.getElementById('gameScreen').classList.contains('active');
+      if (currentProfession === 'barista' && state.quest === 1 && gameActive) startQuest2Conflict();
+    }, 1400);
   }
 
   // ================= QUEST 2: SOFT SKILLS =================
   function startQuest2Conflict() {
     state.quest = 2;
+    state.quest2StartedAt = Date.now();
     document.getElementById('vrQuestTitle').innerText = 'КВЕСТ 2: КОНФЛИКТ С ГОСТЕМ';
     if (customerObj) customerObj.visible = true;
 
@@ -2529,6 +5233,7 @@
 
   function handleConflictAnswer(opt) {
     state.conflictChoice = opt;
+    state.conflictResponseSec = Math.round((Date.now() - state.quest2StartedAt) / 100) / 10;
     playSuccessChime();
     if (customerObj) customerObj.visible = false;
     startQuest3Management();
@@ -2579,26 +5284,27 @@
     player.yaw = -0.2;
     player.pitch = -0.35;
 
-    // Show Victory Overlay Modal
+    // Show Victory Overlay Modal (texts may have been replaced by the safety module)
+    document.getElementById('victoryTitle').innerText = 'Симуляция успешно пройдена!';
+    document.getElementById('victoryText').innerText = 'Вы приготовили напиток по стандарту, грамотно разрешили конфликт с гостем и рассчитали бюджет сырья.';
     const victoryModal = document.getElementById('victoryModal');
     if (victoryModal) victoryModal.style.display = 'flex';
   }
 
-  function showAIReportScreen() {
-    let score = 84;
-    if (state.misclicks === 0) score += 10;
-    else if (state.misclicks <= 2) score += 5;
+  function setResultTexts(t) {
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    set('statHardLabel', t.hardLabel); set('statHard', t.hard);
+    set('statHandsLabel', t.handsLabel); set('statHands', t.hands);
+    set('statSoftLabel', t.softLabel); set('statSoft', t.soft);
+    set('statTimeLabel', t.timeLabel); set('statTime', t.time);
+    set('resVerdictGrade', t.grade); set('resVerdictDesc', t.desc);
+    set('resPraiseTitle', t.praise); set('resVerdictBadge', t.badge);
+    set('resTotalXp', t.xp);
+    const comp = document.getElementById('resCompetencies');
+    if (comp) comp.innerHTML = t.competencies.map(c => '• ' + c).join('<br>');
+  }
 
-    if (state.conflictChoice === 'B') score += 8;
-    if (state.budgetChoice === 'optimal') score += 5;
-    score = Math.min(score, 99);
-
-    document.getElementById('statHard').innerText = (100 - state.misclicks * 2) + '%';
-    document.getElementById('statTime').innerText = state.timer + ' сек';
-
-    showScreen('resultScreen');
-
-    // Smooth counter animation for Fit Score
+  function animateFitScore(score) {
     let cur = 0;
     const scoreEl = document.getElementById('resFitScore');
     const scoreIntv = setInterval(() => {
@@ -2609,17 +5315,94 @@
       }
       if (scoreEl) scoreEl.innerText = cur + '%';
     }, 20);
+  }
+
+  function showSafetyReportScreen() {
+    const errors = safetyState.errors;
+    const score = Math.max(20, 99 - errors * 12);
+    const passed = errors === 0;
+    setResultTexts({
+      hardLabel: 'Соблюдение регламента LOTO', hard: Math.max(0, 100 - errors * 15) + '%',
+      handsLabel: 'Нарушения ТБ', hands: String(errors),
+      softLabel: 'Проверка отсутствия напряжения', soft: safetyState.voltageTested ? 'Выполнена' : 'Нет',
+      timeLabel: 'Время подготовки оборудования', time: state.timer + ' сек',
+      grade: passed ? 'Инженер ТБ: допуск к работам' : (errors <= 2 ? 'Требуется повторный инструктаж' : 'Допуск не рекомендован'),
+      desc: passed
+        ? 'Правильная последовательность: СИЗ → отключение → LOTO → проверка напряжения → сброс давления.'
+        : 'Регламент выполнен, но с нарушениями ТБ. Повторите последовательность операций без ошибок.',
+      praise: passed ? 'Отличный результат симуляции' : 'Симуляция завершена с замечаниями',
+      badge: passed ? 'ВЕРДИКТ: РЕКОМЕНДОВАН' : 'ВЕРДИКТ: НУЖНА ДОРАБОТКА',
+      xp: '⚡ +' + Math.max(100, 750 - errors * 100) + ' XP',
+      competencies: [
+        'Использование диэлектрических СИЗ перед работой в электрощитовой',
+        'Отключение рубильника 380В и установка блокировочного замка LOTO',
+        'Контроль отсутствия напряжения мультиметром и сброс давления в контурах'
+      ]
+    });
+    showScreen('resultScreen');
+    animateFitScore(score);
+
+    const telemetryPayload = {
+      module: 'safety',
+      safety_metrics: {
+        violations: errors,
+        voltage_tested: safetyState.voltageTested,
+        lockout_applied: safetyState.lockoutApplied,
+        total_time_sec: state.timer
+      }
+    };
+    if (window.FlutterChannel && window.FlutterChannel.postMessage) {
+      window.FlutterChannel.postMessage(JSON.stringify(telemetryPayload));
+    }
+  }
+
+  function showAIReportScreen() {
+    if (currentProfession === 'safety') {
+      showSafetyReportScreen();
+      return;
+    }
+    let score = 84;
+    if (state.misclicks === 0) score += 10;
+    else if (state.misclicks <= 2) score += 5;
+
+    if (state.conflictChoice === 'B') score += 8;
+    if (state.budgetChoice === 'optimal') score += 5;
+    score = Math.min(score, 99);
+
+    const accuracy = Math.max(0, 100 - state.misclicks * 2);
+    const recommended = score >= 90;
+    setResultTexts({
+      hardLabel: 'Точность технологии (Hard Skills)', hard: accuracy + '%',
+      handsLabel: 'Лишние действия (промахи)', hands: state.misclicks === 0 ? 'Нет' : String(state.misclicks),
+      softLabel: 'Стрессоустойчивость и эмпатия (Soft Skills)', soft: state.conflictChoice === 'B' ? '100%' : (state.conflictChoice === 'C' ? '70%' : '40%'),
+      timeLabel: 'Время полного цикла приготовления', time: state.timer + ' сек',
+      grade: recommended ? 'Senior Barista / Shift Supervisor' : 'Junior Barista',
+      desc: recommended
+        ? 'Исключительная моторика рук, строгое соблюдение техкарты и грамотная деэскалация конфликта с клиентом.'
+        : 'Техкарта выполнена. Рекомендуется поработать над точностью действий, общением с гостем и расчетом закупок.',
+      praise: recommended ? 'Отличный результат симуляции' : 'Хороший результат, есть зоны роста',
+      badge: recommended ? 'ВЕРДИКТ: РЕКОМЕНДОВАН' : 'ВЕРДИКТ: С ОБУЧЕНИЕМ',
+      xp: '⚡ +950 XP',
+      competencies: [
+        'Соблюдение рабочего давления 9 бар и правильный расчет граммовки (18г)',
+        state.conflictChoice === 'B' ? 'Быстрая деэскалация конфликтной ситуации с предложением комплимента' : 'Зона роста: деэскалация конфликта с гостем',
+        state.budgetChoice === 'optimal' ? 'Точный расчет закупки сырья на 35 кг без дефицита и перерасхода бюджета' : 'Зона роста: расчет закупки сырья под недельный расход'
+      ]
+    });
+
+    showScreen('resultScreen');
+    animateFitScore(score);
 
     const telemetryPayload = {
       view_mode: "First-Person 3D VR",
       fps_metrics: {
         step_accuracy_percent: 100 - state.misclicks * 2,
-        hand_shakiness_detected: state.misclicks > 2,
+        extra_actions_detected: state.misclicks > 2,
         total_preparation_time_sec: state.timer
       },
       soft_skills: {
         conflict_resolution_choice: state.conflictChoice === 'B' ? 'Apologized & Remade Fast' : 'Defensive',
-        eye_contact_held_sec: 4.5
+        response_time_sec: state.conflictResponseSec
       },
       management: {
         inventory_calc_accuracy: state.budgetChoice === 'optimal' ? 100 : 60
@@ -2717,13 +5500,33 @@
   }
 
   function startBaristaVR() {
+    currentProfession = 'barista';
+    document.getElementById('gameScreen').classList.remove('safety-mode');
+    stopTransformerHum();
+    const safetyHud = document.getElementById('safetyHudBar');
+    if (safetyHud) safetyHud.style.display = 'none';
+    const inventoryBar = document.getElementById('safetyInventoryBar');
+    if (inventoryBar) inventoryBar.style.display = 'none';
+    const telemetryPanel = document.getElementById('telemetryLogPanel');
+    if (telemetryPanel) telemetryPanel.style.display = 'none';
+    const multimeterHud = document.getElementById('multimeterHud');
+    if (multimeterHud) multimeterHud.style.display = 'none';
+
+    document.getElementById('vrQuestTitle').innerText = 'КВЕСТ 1: ICED OAT LATTE';
+
     isActionInProgress = false;
+    resetSafetyToolsUI();
     state.quest = 1;
     state.step = 0;
     state.timer = 0;
     state.misclicks = 0;
+    state.conflictChoice = '';
+    state.budgetChoice = '';
+    document.getElementById('vrTimer').innerText = '00:00';
 
+    applyArenaBounds('barista');
     player.pos.set(0, 1.65, 0.95);
+    player.baseEyeHeight = 1.65;
     player.yaw = 0;
     player.pitch = -0.28;
 
@@ -2767,9 +5570,19 @@
     showScreen('gameScreen');
     setTimeout(() => {
       initThreeFPS();
+      if (scene) {
+        const oldSafety = scene.getObjectByName('safetyEnvironment');
+        if (oldSafety) scene.remove(oldSafety);
+        // Always rebuild so objects, interactive list and quest props start fresh
+        const oldBarista = scene.getObjectByName('baristaEnvironment');
+        if (oldBarista) scene.remove(oldBarista);
+        build3DEnvironment();
+      }
       renderHUD();
       handleWindowResize();
     }, 100);
+    setGuideVisible(guideVisible);
+    showIntro('barista');
 
     clearInterval(state.timerInterval);
     state.timerInterval = setInterval(() => {
@@ -2780,8 +5593,34 @@
     }, 1000);
   }
 
+  function restartCurrentSimulation() {
+    if (currentProfession === 'safety') startSafetyVR();
+    else startBaristaVR();
+  }
+
+  function resetSafetyToolsUI() {
+    safetyState.selectedTool = null;
+    document.querySelectorAll('.safety-inv-slot').forEach(sl => sl.classList.remove('active', 'equipped'));
+    const multimeterHud = document.getElementById('multimeterHud');
+    if (multimeterHud) multimeterHud.style.display = 'none';
+    const alertBanner = document.getElementById('safetyAlertBanner');
+    if (alertBanner) alertBanner.style.display = 'none';
+    updateFPSHandsForPPE(false);
+  }
+
   function exitToHome() {
+    if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
+    document.getElementById('introOverlay')?.classList.remove('visible');
     clearInterval(state.timerInterval);
+    stopTransformerHum();
+    const safetyHud = document.getElementById('safetyHudBar');
+    if (safetyHud) safetyHud.style.display = 'none';
+    const inventoryBar = document.getElementById('safetyInventoryBar');
+    if (inventoryBar) inventoryBar.style.display = 'none';
+    const telemetryPanel = document.getElementById('telemetryLogPanel');
+    if (telemetryPanel) telemetryPanel.style.display = 'none';
+    const multimeterHud = document.getElementById('multimeterHud');
+    if (multimeterHud) multimeterHud.style.display = 'none';
     showScreen('homeScreen');
   }
 

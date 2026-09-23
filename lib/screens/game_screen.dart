@@ -1,25 +1,49 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../models/fps_telemetry_model.dart';
 import '../providers/game_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/fps_hud_overlay.dart';
 import '../widgets/three_d_fps_viewport.dart';
 import 'result_screen.dart';
 
-class GameScreen extends StatelessWidget {
+class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
+
+  @override
+  State<GameScreen> createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  bool _navigatedToResult = false;
+
+  /// Final telemetry posted by the WebView simulator (window.FlutterChannel).
+  void _onWebViewMessage(String data) {
+    try {
+      final decoded = jsonDecode(data);
+      if (decoded is Map<String, dynamic> && decoded['fps_metrics'] != null) {
+        context.read<GameProvider>().finishWithTelemetry(FpsTelemetrySession.fromJson(decoded));
+      }
+    } catch (_) {
+      // Non-JSON or intermediate log messages are ignored
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final game = context.watch<GameProvider>();
 
-    // Listen for completion and navigate to ResultScreen
-    if (game.status == GameStatus.completed && game.report != null) {
+    // Navigate to ResultScreen exactly once when the report is ready
+    if (!_navigatedToResult && game.status == GameStatus.completed && game.report != null) {
+      _navigatedToResult = true;
+      final report = game.report!;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => ResultScreen(report: game.report!)),
+          MaterialPageRoute(builder: (_) => ResultScreen(report: report)),
         );
       });
     }
@@ -111,9 +135,7 @@ class GameScreen extends StatelessWidget {
               child: Stack(
                 children: [
                   ThreeDFpsViewport(
-                    onMessageReceived: (data) {
-                      // Process messages from Three.js channel
-                    },
+                    onMessageReceived: _onWebViewMessage,
                   ),
                   if (game.status == GameStatus.analyzing)
                     Container(
@@ -132,7 +154,7 @@ class GameScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 20),
                             Text(
-                              'ИИ АНАЛИЗИРУЕТ ТЕЛЕМЕТРИЮ...',
+                              'АНАЛИЗ РЕЗУЛЬТАТОВ...',
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,

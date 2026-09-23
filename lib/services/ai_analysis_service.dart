@@ -17,7 +17,7 @@ class AiAnalysisService {
 Телеметрия игрока:
 ${jsonEncode(telemetry.toJson())}
 
-Оцени мелкую моторику, последовательность действий в 3D, стрессоустойчивость при личном контакте с клиентом и умение работать с кассой.
+Оцени точность и последовательность действий в 3D, стрессоустойчивость при личном контакте с клиентом и умение работать с кассой.
 Верни ТОЛЬКО валидный JSON со следующими полями:
 {
   "fit_score": 94,
@@ -38,7 +38,7 @@ ${jsonEncode(telemetry.toJson())}
 """;
 
         final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey',
         );
 
         final response = await http.post(
@@ -67,7 +67,7 @@ ${jsonEncode(telemetry.toJson())}
       }
     }
 
-    // High-precision offline neural scoring algorithm
+    // Offline rule-based scoring (used when no API key is configured or the request fails)
     await Future.delayed(const Duration(milliseconds: 1400));
     return _generateLocalScoring(telemetry);
   }
@@ -75,11 +75,11 @@ ${jsonEncode(telemetry.toJson())}
   AiReportModel _generateLocalScoring(FpsTelemetrySession t) {
     final accuracy = t.fpsMetrics.stepAccuracyPercent;
     final time = t.fpsMetrics.totalPreparationTimeSec;
-    final hasShakiness = t.fpsMetrics.handShakinessDetected;
+    final hasExtraActions = t.fpsMetrics.extraActionsDetected;
     final conflictGood = t.softSkills.conflictResolutionChoice.contains('Apologized');
     final mgmtAcc = t.management.inventoryCalcAccuracy;
 
-    int motor = hasShakiness ? 82 : (accuracy > 90 ? 96 : 88);
+    int motor = hasExtraActions ? 82 : (accuracy > 90 ? 96 : 88);
     int tech = accuracy.clamp(60, 100);
     int stress = conflictGood ? 98 : 72;
     int mgmt = mgmtAcc.clamp(50, 100);
@@ -110,7 +110,7 @@ ${jsonEncode(telemetry.toJson())}
         'Оптимальный баланс запасов сырья без заморозки оборотного капитала'
       ],
       growthAreas: [
-        if (hasShakiness) 'Снижение тремора и резких движений при захвате 3D-предметов',
+        if (hasExtraActions) 'Меньше лишних действий: сначала найдите нужный предмет, потом действуйте',
         if (time > 50) 'Оптимизация эргономики движений для сокращения времени отдачи напитка',
         'Углубленное изучение сенсорного анализа и профилей обжарки specialty-кофе'
       ],

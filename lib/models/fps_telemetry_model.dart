@@ -1,48 +1,50 @@
 class FpsMetrics {
   final int stepAccuracyPercent;
-  final bool handShakinessDetected;
+  /// More than 2 wrong clicks during the recipe (proxy for unsure / chaotic actions)
+  final bool extraActionsDetected;
   final int totalPreparationTimeSec;
 
   const FpsMetrics({
     required this.stepAccuracyPercent,
-    required this.handShakinessDetected,
+    required this.extraActionsDetected,
     required this.totalPreparationTimeSec,
   });
 
   factory FpsMetrics.fromJson(Map<String, dynamic> json) {
     return FpsMetrics(
       stepAccuracyPercent: json['step_accuracy_percent'] as int? ?? 90,
-      handShakinessDetected: json['hand_shakiness_detected'] as bool? ?? false,
+      extraActionsDetected: json['extra_actions_detected'] as bool? ?? false,
       totalPreparationTimeSec: json['total_preparation_time_sec'] as int? ?? 45,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'step_accuracy_percent': stepAccuracyPercent,
-    'hand_shakiness_detected': handShakinessDetected,
+    'extra_actions_detected': extraActionsDetected,
     'total_preparation_time_sec': totalPreparationTimeSec,
   };
 }
 
 class SoftSkillsMetrics {
   final String conflictResolutionChoice;
-  final double eyeContactHeldSec;
+  /// Seconds from the guest complaint to the chosen answer
+  final double responseTimeSec;
 
   const SoftSkillsMetrics({
     required this.conflictResolutionChoice,
-    required this.eyeContactHeldSec,
+    required this.responseTimeSec,
   });
 
   factory SoftSkillsMetrics.fromJson(Map<String, dynamic> json) {
     return SoftSkillsMetrics(
       conflictResolutionChoice: json['conflict_resolution_choice'] as String? ?? 'Apologized & Remade Fast',
-      eyeContactHeldSec: (json['eye_contact_held_sec'] as num?)?.toDouble() ?? 4.0,
+      responseTimeSec: (json['response_time_sec'] as num?)?.toDouble() ?? 4.0,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'conflict_resolution_choice': conflictResolutionChoice,
-    'eye_contact_held_sec': eyeContactHeldSec,
+    'response_time_sec': responseTimeSec,
   };
 }
 
@@ -82,10 +84,10 @@ class FpsTelemetrySession {
       viewMode: json['view_mode'] as String? ?? "First-Person 3D VR",
       fpsMetrics: json['fps_metrics'] != null 
           ? FpsMetrics.fromJson(json['fps_metrics'] as Map<String, dynamic>)
-          : const FpsMetrics(stepAccuracyPercent: 95, handShakinessDetected: false, totalPreparationTimeSec: 42),
+          : const FpsMetrics(stepAccuracyPercent: 95, extraActionsDetected: false, totalPreparationTimeSec: 42),
       softSkills: json['soft_skills'] != null 
           ? SoftSkillsMetrics.fromJson(json['soft_skills'] as Map<String, dynamic>)
-          : const SoftSkillsMetrics(conflictResolutionChoice: 'Apologized & Remade Fast', eyeContactHeldSec: 4.5),
+          : const SoftSkillsMetrics(conflictResolutionChoice: 'Apologized & Remade Fast', responseTimeSec: 4.5),
       management: json['management'] != null
           ? ManagementMetrics.fromJson(json['management'] as Map<String, dynamic>)
           : const ManagementMetrics(inventoryCalcAccuracy: 100),

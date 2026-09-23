@@ -30,6 +30,9 @@ class GameProvider extends ChangeNotifier {
   String _budgetChoice = '';
   String get budgetChoice => _budgetChoice;
 
+  DateTime? _quest2StartedAt;
+  double _conflictResponseSec = 0;
+
   AiReportModel? _report;
   AiReportModel? get report => _report;
 
@@ -54,6 +57,8 @@ class GameProvider extends ChangeNotifier {
     _misclicks = 0;
     _conflictChoice = '';
     _budgetChoice = '';
+    _quest2StartedAt = null;
+    _conflictResponseSec = 0;
     _report = null;
 
     _timer?.cancel();
@@ -72,6 +77,7 @@ class GameProvider extends ChangeNotifier {
     } else {
       // Transition to Quest 2
       _currentQuest = 2;
+      _quest2StartedAt = DateTime.now();
       notifyListeners();
     }
   }
@@ -83,6 +89,9 @@ class GameProvider extends ChangeNotifier {
 
   void selectConflict(String option) {
     _conflictChoice = option;
+    if (_quest2StartedAt != null) {
+      _conflictResponseSec = DateTime.now().difference(_quest2StartedAt!).inMilliseconds / 1000.0;
+    }
     _currentQuest = 3;
     notifyListeners();
   }
@@ -93,25 +102,37 @@ class GameProvider extends ChangeNotifier {
   }
 
   Future<void> finishSession() async {
-    _timer?.cancel();
-    _status = GameStatus.analyzing;
-    notifyListeners();
+    if (_status != GameStatus.running) return;
 
     final telemetry = FpsTelemetrySession(
       viewMode: "First-Person 3D VR",
       fpsMetrics: FpsMetrics(
         stepAccuracyPercent: (100 - _misclicks * 2).clamp(60, 100),
-        handShakinessDetected: _misclicks > 2,
+        extraActionsDetected: _misclicks > 2,
         totalPreparationTimeSec: _elapsedSeconds > 0 ? _elapsedSeconds : 42,
       ),
       softSkills: SoftSkillsMetrics(
         conflictResolutionChoice: _conflictChoice.isEmpty ? 'Apologized & Remade Fast' : _conflictChoice,
-        eyeContactHeldSec: 4.5,
+        responseTimeSec: _conflictResponseSec,
       ),
       management: ManagementMetrics(
         inventoryCalcAccuracy: _budgetChoice == 'optimal' ? 100 : 70,
       ),
     );
+
+    await _analyze(telemetry);
+  }
+
+  /// Finish the session with telemetry reported by the 3D WebView simulator.
+  Future<void> finishWithTelemetry(FpsTelemetrySession telemetry) async {
+    if (_status != GameStatus.running) return;
+    await _analyze(telemetry);
+  }
+
+  Future<void> _analyze(FpsTelemetrySession telemetry) async {
+    _timer?.cancel();
+    _status = GameStatus.analyzing;
+    notifyListeners();
 
     _report = await aiService.analyzeFpsSimulation(telemetry);
     _status = GameStatus.completed;
