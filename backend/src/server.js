@@ -23,10 +23,24 @@ function rateLimited(ip) {
   hits.set(ip, recent);
   return recent.length > RATE_LIMIT_PER_MIN;
 }
+// Forget idle clients so the limiter's memory does not grow without bound
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, times] of hits) if (!times.some(t => now - t < 60_000)) hits.delete(ip);
+}, 60_000).unref();
 
 export function createApp() {
   const app = express();
   app.disable('x-powered-by');
+  // Behind a reverse proxy (Render, Nginx) set TRUST_PROXY=1 so rate limiting sees the real client IP
+  if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
+  // Basic hardening headers for the API and the static client
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    next();
+  });
   app.use(express.json({ limit: '32kb' }));
 
   // CORS for the Flutter web build / GitHub Pages client
