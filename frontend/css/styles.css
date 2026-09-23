@@ -1712,5 +1712,8 @@ kbd {
 .scn-code .k { color: #C084FC; }
 @media (max-width: 600px) {
   .scn-goal-hint { display: none; }
+  .scn-pill-text { display: none; }
+  .steps-bar { gap: 6px; }
 }
-.app-container.mode-mobile-frame .scn-goal-hint { display: none; }
+.app-container.mode-mobile-frame .scn-goal-hint,
+.app-container.mode-mobile-frame .scn-pill-text { display: none; }

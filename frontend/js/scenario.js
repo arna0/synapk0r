@@ -183,7 +183,7 @@ function renderScenarioHUD() {
     <div class="steps-bar">
       ${def.steps.map((s, idx) => `
         <div class="step-pill ${idx < scenarioState.step ? 'done' : (idx === scenarioState.step ? 'active' : '')}">
-          ${idx < scenarioState.step ? '✓ ' : (idx + 1) + '. '}${s.short}
+          ${idx < scenarioState.step ? '✓ ' : (idx + 1) + '. '}<span class="scn-pill-text">${s.short}</span>
         </div>`).join('')}
     </div>
     <div class="scn-goal">

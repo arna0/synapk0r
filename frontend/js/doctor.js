@@ -308,7 +308,7 @@ registerScenario({
     tonometer: 'Тонометр',
     stethoscope: 'Стетоскоп'
   },
-  labelOffsets: { patientCard: 0.75, sanitizer: 0.2, thermometer: 0.1, oximeter: 0.1, tonometer: 0.1, stethoscope: 0.1 },
+  labelOffsets: { patientCard: 0.75, sanitizer: 0.2, thermometer: 0.1, oximeter: 0.2, tonometer: 0.1, stethoscope: 0.2 },
   intro: {
     title: 'Приём врача-терапевта',
     goal: 'Вы — врач-терапевт. К вам пришёл пациент с кашлем и температурой. Проведите осмотр по порядку, примите решение о дальнейших шагах и поговорите с пациентом. Учебный сценарий упрощён и не является медицинской рекомендацией.',
