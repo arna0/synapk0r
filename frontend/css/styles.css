@@ -1285,7 +1285,7 @@ html, body {
 
 .module-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
   gap: 20px;
 }
 .module-card {
@@ -1662,3 +1662,55 @@ kbd {
   animation: aiSpin 0.8s linear infinite;
 }
 @keyframes aiSpin { to { transform: rotate(360deg); } }
+
+/* ================= SCENARIO MODULES (IT, DOCTOR) ================= */
+.visual-it { background: #E8EEF7; }
+.visual-doctor { background: #E6F4F1; }
+.scn-goal {
+  background: var(--surface-slate);
+  border: 1px solid var(--border-dark);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.scn-goal-label { font-size: 10px; font-weight: 700; color: var(--text-muted-dark); text-transform: uppercase; letter-spacing: 0.5px; }
+.scn-goal-task { font-size: 13px; font-weight: 700; color: var(--text-on-dark); }
+.scn-goal-hint { font-size: 12px; color: var(--text-muted-dark); font-weight: 500; text-align: right; }
+.scn-complete {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid var(--emerald);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+.scn-complete h3 { color: var(--emerald); font-size: 14px; font-weight: 800; }
+.scn-complete p { font-size: 12px; color: #E2E8F0; margin-top: 4px; }
+.speech-bubble.scn-bubble-info { border-left-color: var(--primary); }
+.speech-bubble code, .dialog-option code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.scn-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #E2E8F0;
+  background: #0B1020;
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 10px;
+  overflow-x: auto;
+  white-space: pre;
+}
+.scn-code .k { color: #C084FC; }
+@media (max-width: 600px) {
+  .scn-goal-hint { display: none; }
+}
+.app-container.mode-mobile-frame .scn-goal-hint { display: none; }

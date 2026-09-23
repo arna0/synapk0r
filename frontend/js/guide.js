@@ -67,6 +67,8 @@ const BARISTA_STEP_GUIDE = {
 };
 
 function getGuideState() {
+  const scn = getActiveScenario();
+  if (scn) return getScenarioGuideState(scn);
   if (currentProfession === 'safety') {
     const steps = SAFETY_GUIDE.map(g => ({ task: g.task, done: g.done() }));
     const idx = steps.findIndex(st => !st.done);
@@ -114,7 +116,7 @@ function renderGuide(force) {
   const panel = document.getElementById('guidePanel');
   if (!panel) return;
   const g = getGuideState();
-  const signature = currentProfession + '|' + g.idx + '|' + g.steps.map(s => s.done ? 1 : 0).join('');
+  const signature = currentProfession + '|' + g.idx + '|' + g.current.task + '|' + g.steps.map(s => s.done ? 1 : 0).join('');
   if (!force && signature === lastGuideSignature) return;
   lastGuideSignature = signature;
 

@@ -1,7 +1,7 @@
 // Validation of the report payload sent by the web client.
 // Everything here comes from the browser, so it is treated as untrusted data.
 
-export const MODULES = ['safety', 'barista'];
+export const MODULES = ['safety', 'barista', 'it', 'doctor'];
 
 const MAX_EVENTS = 200;
 const MAX_STRING = 120;

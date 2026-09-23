@@ -53,6 +53,29 @@ test('barista report mentions wrong clicks as growth area', async () => {
   assert.ok(data.growth_areas.length >= 2);
 });
 
+test('it report: wrong code fix and jargon become growth areas', async () => {
+  const res = await post({
+    module: 'it', score: 58,
+    metrics: { wrong_clicks: 3, code_choice: 'silence_error', code_correct: false, comms_choice: 'jargon', comms_correct: false, total_time_sec: 150 }
+  });
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.source, 'rules');
+  assert.match(data.summary, /IT/);
+  assert.ok(data.growth_areas.some(g => g.includes('3')));
+  assert.equal(data.growth_areas.length, 3);
+});
+
+test('doctor report with correct decisions lists them as strengths', async () => {
+  const res = await post({
+    module: 'doctor', score: 97,
+    metrics: { wrong_clicks: 0, diagnosis_choice: 'xray_and_tests', diagnosis_correct: true, comms_choice: 'empathy_plan', comms_correct: true, total_time_sec: 90 }
+  });
+  const data = await res.json();
+  assert.equal(data.strengths.length, 3);
+  assert.match(data.career_advice, /медицина/i);
+});
+
 test('invalid payloads are rejected with 400', async () => {
   assert.equal((await post({ module: 'pilot', score: 50, metrics: {} })).status, 400);
   assert.equal((await post({ module: 'safety', score: 150, metrics: {} })).status, 400);

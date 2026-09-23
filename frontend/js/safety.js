@@ -1118,6 +1118,7 @@ function startSafetyVR() {
       if (oldBarista) scene.remove(oldBarista);
       const oldSafety = scene.getObjectByName('safetyEnvironment');
       if (oldSafety) scene.remove(oldSafety);
+      removeScenarioScenes();
 
       build3DSafetyEnvironment();
     }

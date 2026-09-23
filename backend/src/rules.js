@@ -3,6 +3,8 @@
 
 export function ruleBasedFeedback({ module, score, metrics }) {
   if (module === 'safety') return safetyFeedback(score, metrics);
+  if (module === 'it') return itFeedback(score, metrics);
+  if (module === 'doctor') return doctorFeedback(score, metrics);
   return baristaFeedback(score, metrics);
 }
 
@@ -54,4 +56,60 @@ function baristaFeedback(score, m) {
       ? 'Вы уверенно справились и с руками, и с гостем, и с цифрами — работа бариста вам, вероятно, подойдёт.'
       : 'Базовые навыки есть. Если профессия интересна, потренируйтесь в общении с гостями и расчёте закупок.'
   };
+}
+
+// Shared shape of the scenario modules (it, doctor): steps in 3D + two decisions (hard / soft).
+function scenarioFeedback(score, m, t) {
+  const wrong = Number(m.wrong_clicks) || 0;
+  const strengths = [];
+  const growth = [];
+
+  if (wrong === 0) strengths.push(t.stepsPerfect);
+  else if (wrong <= 2) strengths.push(t.stepsGood);
+  if (m[t.hardKey + '_correct'] === true) strengths.push(t.hardOk);
+  if (m.comms_correct === true) strengths.push(t.softOk);
+
+  if (wrong > 2) growth.push(`Лишних действий: ${wrong}. ${t.stepsTip}`);
+  if (m[t.hardKey + '_correct'] === false) growth.push(t.hardTip);
+  if (m.comms_correct === false) growth.push(t.softTip);
+  if (growth.length === 0) growth.push('Попробуйте пройти сценарий быстрее, сохранив точность.');
+
+  return {
+    summary: `${t.title}, итоговый балл ${score}.`,
+    strengths,
+    growth_areas: growth,
+    career_advice: score >= 85 ? t.adviceTop : t.adviceLow
+  };
+}
+
+function itFeedback(score, m) {
+  return scenarioFeedback(score, m, {
+    title: 'Дежурство IT-инженера завершено',
+    hardKey: 'code',
+    stepsPerfect: 'Инцидент разобран строго по порядку: алерт → логи → причина → исправление → проверка.',
+    stepsGood: 'Инцидент разобран почти без лишних действий.',
+    hardOk: 'Баг в коде исправлен правильно: проверка пустого списка вместо сокрытия ошибки.',
+    softOk: 'Сбой объяснён заказчику простыми словами, с причиной и планом.',
+    stepsTip: 'Идите по плану диагностики: сначала факты (мониторинг, логи), потом действия.',
+    hardTip: 'Исправляйте причину ошибки (деление на ноль при пустом списке), а не прячьте её.',
+    softTip: 'С бизнесом говорите без жаргона: что случилось, что уже сделано и как не допустить повторения.',
+    adviceTop: 'У вас системное мышление и спокойствие при сбоях — профессии DevOps и инженера поддержки вам могут подойти.',
+    adviceLow: 'Если IT интересно, начните с основ Linux и Python и повторите симуляцию.'
+  });
+}
+
+function doctorFeedback(score, m) {
+  return scenarioFeedback(score, m, {
+    title: 'Приём врача-терапевта завершён',
+    hardKey: 'diagnosis',
+    stepsPerfect: 'Осмотр проведён по стандарту: жалобы, гигиена рук, все показатели и аускультация.',
+    stepsGood: 'Осмотр проведён почти без ошибок в порядке действий.',
+    hardOk: 'Симптомы связаны верно: подозрение на пневмонию подтверждается рентгеном и анализами.',
+    softOk: 'С пациентом вы говорили честно и бережно, объяснили план.',
+    stepsTip: 'Порядок осмотра важен: сначала жалобы и гигиена рук, потом измерения.',
+    hardTip: 'Не угадывайте диагноз: при температуре, низкой сатурации и хрипах нужно обследование.',
+    softTip: 'Встревоженному пациенту нужны спокойствие и понятный план, без отмахивания и запугивания.',
+    adviceTop: 'Вы внимательны к деталям и к людям — медицина может вам подойти. Следующий шаг: биология и химия на профильном уровне.',
+    adviceLow: 'Если медицина интересна, начните с основ анатомии и первой помощи и повторите симуляцию.'
+  });
 }

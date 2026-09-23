@@ -21,6 +21,8 @@ function setResultTexts(t) {
   const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
   set('statHardLabel', t.hardLabel); set('statHard', t.hard);
   set('statHandsLabel', t.handsLabel); set('statHands', t.hands);
+  const handsEl = document.getElementById('statHands');
+  if (handsEl) handsEl.style.color = 'var(--emerald-text)';
   set('statSoftLabel', t.softLabel); set('statSoft', t.soft);
   set('statTimeLabel', t.timeLabel); set('statTime', t.time);
   set('resVerdictGrade', t.grade); set('resVerdictDesc', t.desc);
@@ -85,6 +87,11 @@ function showSafetyReportScreen() {
 }
 
 function showAIReportScreen() {
+  const scn = getActiveScenario();
+  if (scn) {
+    showScenarioReport(scn);
+    return;
+  }
   if (currentProfession === 'safety') {
     showSafetyReportScreen();
     return;

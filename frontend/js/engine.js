@@ -338,6 +338,10 @@ function initThreeFPS() {
       }
     }
 
+    // Scenario modules (IT, Doctor, …) animate their own props
+    const activeScn = getActiveScenario();
+    if (activeScn && activeScn.update) activeScn.update(time, delta);
+
     // Dynamic Pulsing Target Beacon Ring (Barista mode)
     const beacon = scene.getObjectByName('targetBeaconRing');
     if (beacon) {

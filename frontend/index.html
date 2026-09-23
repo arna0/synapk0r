@@ -46,7 +46,7 @@
       <section class="home-section">
         <div class="section-head">
           <h2>Выберите симуляцию</h2>
-          <span class="section-note">2 профессии</span>
+          <span class="section-note">4 профессии</span>
         </div>
 
         <div class="module-grid">
@@ -136,6 +136,94 @@
             </div>
             <div class="module-foot">
               <button class="btn-start" onclick="event.stopPropagation(); startBaristaVR();">
+                Начать симуляцию
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="module-card" onclick="startScenario('it')">
+            <div class="module-visual visual-it" aria-hidden="true">
+              <svg viewBox="0 0 320 150" fill="none">
+                <rect x="0" y="120" width="320" height="30" fill="#C9D3E0"/>
+                <rect x="30" y="86" width="150" height="8" rx="2" fill="#94A3B8"/>
+                <rect x="40" y="94" width="6" height="26" fill="#64748B"/><rect x="164" y="94" width="6" height="26" fill="#64748B"/>
+                <rect x="48" y="30" width="92" height="56" rx="4" fill="#0F172A"/>
+                <rect x="52" y="34" width="84" height="12" fill="#DC2626"/>
+                <path d="M56 70 L68 64 L80 68 L92 62 L100 78 L132 78" stroke="#F87171" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <rect x="90" y="86" width="8" height="0" fill="#0F172A"/>
+                <rect x="146" y="72" width="30" height="14" rx="2" fill="#CBD5E1"/>
+                <rect x="210" y="14" width="64" height="106" rx="4" fill="#1E293B"/>
+                <g fill="#334155">
+                  <rect x="216" y="22" width="52" height="10" rx="1"/><rect x="216" y="36" width="52" height="10" rx="1"/>
+                  <rect x="216" y="50" width="52" height="10" rx="1"/><rect x="216" y="78" width="52" height="10" rx="1"/>
+                  <rect x="216" y="92" width="52" height="10" rx="1"/><rect x="216" y="106" width="52" height="10" rx="1"/>
+                </g>
+                <rect x="216" y="64" width="52" height="10" rx="1" fill="#475569"/>
+                <circle cx="222" cy="69" r="2.6" fill="#EF4444"/>
+                <g fill="#22C55E"><circle cx="222" cy="27" r="2"/><circle cx="222" cy="41" r="2"/><circle cx="222" cy="55" r="2"/><circle cx="222" cy="83" r="2"/><circle cx="222" cy="97" r="2"/><circle cx="222" cy="111" r="2"/></g>
+                <path d="M270 70 C 290 76, 286 104, 280 118" stroke="#2563EB" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <rect x="276" y="116" width="8" height="6" rx="1" fill="#93C5FD"/>
+              </svg>
+            </div>
+            <div class="module-body">
+              <div class="module-tags">
+                <span class="tag">IT</span>
+                <span class="tag tag-accent">Новое</span>
+              </div>
+              <h3>IT-инженер</h3>
+              <p>Сайт интернет-магазина упал. Найдите причину по логам, почините сервер, исправьте баг в коде и объясните сбой заказчику.</p>
+              <ul class="module-meta">
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>4–6 минут</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>8 шагов</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V14M10 20V9M16 20V4"/></svg>Средняя</li>
+              </ul>
+            </div>
+            <div class="module-foot">
+              <button class="btn-start" onclick="event.stopPropagation(); startScenario('it');">
+                Начать симуляцию
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="module-card" onclick="startScenario('doctor')">
+            <div class="module-visual visual-doctor" aria-hidden="true">
+              <svg viewBox="0 0 320 150" fill="none">
+                <rect x="0" y="120" width="320" height="30" fill="#CFE3DE"/>
+                <rect x="150" y="84" width="140" height="14" rx="3" fill="#0E7490"/>
+                <rect x="156" y="98" width="128" height="22" fill="#E2E8F0"/>
+                <circle cx="206" cy="42" r="13" fill="#E0AC84"/>
+                <path d="M193 38 a13 13 0 0 1 26 0 z" fill="#2B1B12"/>
+                <rect x="192" y="56" width="28" height="34" rx="8" fill="#60A5FA"/>
+                <rect x="194" y="88" width="10" height="30" rx="4" fill="#1E3A8A"/><rect x="208" y="88" width="10" height="30" rx="4" fill="#1E3A8A"/>
+                <rect x="232" y="18" width="62" height="40" rx="4" fill="#0B1220"/>
+                <path d="M238 40 h10 l4 -10 l6 20 l5 -10 h25" stroke="#67E8F9" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+                <rect x="40" y="82" width="80" height="6" rx="2" fill="#94A3B8"/>
+                <rect x="46" y="88" width="4" height="32" fill="#94A3B8"/><rect x="110" y="88" width="4" height="32" fill="#94A3B8"/>
+                <circle cx="66" cy="74" r="9" stroke="#111827" stroke-width="3"/>
+                <path d="M75 74 C 86 74, 90 60, 96 56" stroke="#111827" stroke-width="3" fill="none"/>
+                <circle cx="98" cy="54" r="5" fill="#D1D5DB" stroke="#6B7280" stroke-width="1.5"/>
+                <rect x="100" y="70" width="14" height="10" rx="2" fill="#2563EB"/>
+                <rect x="30" y="22" width="36" height="36" rx="6" fill="#FFFFFF"/>
+                <path d="M44 28 h8 v10 h10 v8 h-10 v10 h-8 v-10 h-10 v-8 h10z" fill="#EF4444"/>
+              </svg>
+            </div>
+            <div class="module-body">
+              <div class="module-tags">
+                <span class="tag">Медицина</span>
+                <span class="tag tag-accent">Новое</span>
+              </div>
+              <h3>Врач-терапевт</h3>
+              <p>Примите пациента с кашлем и температурой: осмотр по стандарту, решение о дальнейших шагах и разговор с встревоженным пациентом.</p>
+              <ul class="module-meta">
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>4–6 минут</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>8 шагов</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V14M10 20V9M16 20V4"/></svg>Средняя</li>
+              </ul>
+            </div>
+            <div class="module-foot">
+              <button class="btn-start" onclick="event.stopPropagation(); startScenario('doctor');">
                 Начать симуляцию
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
               </button>
@@ -478,6 +566,9 @@
 <script src="js/effects.js"></script>
 <script src="js/barista.js"></script>
 <script src="js/report.js"></script>
+<script src="js/scenario.js"></script>
+<script src="js/it.js"></script>
+<script src="js/doctor.js"></script>
 <script src="js/ui.js"></script>
 
 </body>

@@ -4,7 +4,7 @@
 // SYNAPKOR SAFETY & EQUIPMENT MAINTENANCE 3D FPS SIMULATION ENGINE
 // =========================================================================
 
-let currentProfession = 'safety'; // 'safety' | 'barista'
+let currentProfession = 'safety'; // 'safety' | 'barista' | 'it' | 'doctor'
 
 const safetyState = {
   powerState: 'ON',        // 'ON' | 'OFF'

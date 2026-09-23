@@ -89,6 +89,7 @@ function setupFPSControls(container) {
       if (e.code === 'Digit2') selectInventoryTool('multimeter');
       if (e.code === 'Digit3') selectInventoryTool('loto');
     }
+    if (gameActive && !isIntroVisible() && getActiveScenario()) handleScenarioKey(e.code);
     if (e.code === 'KeyF') {
       toggleFullScreen();
     }
@@ -289,6 +290,8 @@ function triggerCenterInteraction() {
   if (hoveredObject) {
     if (currentProfession === 'safety') {
       handleSafetyInteraction(hoveredObject.name);
+    } else if (getActiveScenario()) {
+      handleScenarioClick(hoveredObject.name);
     } else {
       handleFPSObjectClick(hoveredObject.name);
     }
@@ -313,6 +316,8 @@ function setMeshGlow(objGroup, enabled) {
 }
 
 function getObjectActionHint(name) {
+  const scn = getActiveScenario();
+  if (scn) return getScenarioObjectHint(scn, name);
   if (currentProfession === 'safety') {
     switch(name) {
       case 'mainBreaker':

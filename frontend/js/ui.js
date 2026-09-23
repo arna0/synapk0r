@@ -160,6 +160,7 @@ function startBaristaVR() {
     if (scene) {
       const oldSafety = scene.getObjectByName('safetyEnvironment');
       if (oldSafety) scene.remove(oldSafety);
+      removeScenarioScenes();
       // Always rebuild so objects, interactive list and quest props start fresh
       const oldBarista = scene.getObjectByName('baristaEnvironment');
       if (oldBarista) scene.remove(oldBarista);
@@ -181,7 +182,8 @@ function startBaristaVR() {
 }
 
 function restartCurrentSimulation() {
-  if (currentProfession === 'safety') startSafetyVR();
+  if (getActiveScenario()) startScenario(currentProfession);
+  else if (currentProfession === 'safety') startSafetyVR();
   else startBaristaVR();
 }
 
@@ -216,8 +218,9 @@ window.addEventListener('DOMContentLoaded', () => {
   if (window.innerWidth <= 768) {
     setDeviceMode('desktop');
   }
-  // Deep link used by host apps: index.html?module=barista | safety
+  // Deep link used by host apps: index.html?module=barista | safety | it | doctor
   const module = new URLSearchParams(location.search).get('module');
   if (module === 'barista') startBaristaVR();
   else if (module === 'safety') startSafetyVR();
+  else if (SCENARIOS[module]) startScenario(module);
 });
