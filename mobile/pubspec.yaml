@@ -1,10 +1,10 @@
-name: jobsim_ai
-description: "JobSim AI - 3D Mobile Profession Simulator & AI Analytics MVP"
+name: synapkor
+description: "SynapKor - 3D profession simulator with skill assessment (VentureHack 2026, EduTech)"
 publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.4.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -15,6 +15,7 @@ dependencies:
   percent_indicator: ^4.2.3
   webview_flutter: ^4.7.0
   flutter_spinkit: ^5.2.0
+  web: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -23,5 +24,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Web client copied from ../frontend by `node ../scripts/sync-frontend.mjs`
   assets:
-    - web_preview/index.html
+    - assets/sim/
+    - assets/sim/css/
+    - assets/sim/js/

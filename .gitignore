@@ -17,3 +17,12 @@ Thumbs.db
 
 # Local tooling
 .claude/
+
+# Backend
+backend/node_modules/
+backend/.env
+
+# Mobile (Flutter): generated / copied files
+mobile/.dart_tool/
+mobile/build/
+mobile/assets/sim/

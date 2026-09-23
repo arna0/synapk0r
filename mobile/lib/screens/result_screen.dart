@@ -274,6 +274,30 @@ class ResultScreen extends StatelessWidget {
                         ],
                       ),
                     )),
+                    if (report.growthAreas.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Над чем поработать',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...report.growthAreas.map((g) => Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          '• $g',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+                        ),
+                      )),
+                    ],
+                    const SizedBox(height: 4),
+                    Text(
+                      report.feedbackSource == 'claude' ? 'Текст разбора сгенерирован Claude' : 'Разбор по правилам (ИИ не подключён)',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppTheme.textSecondary),
+                    ),
                   ],
                 ),
               ),

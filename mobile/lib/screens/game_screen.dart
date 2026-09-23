@@ -23,11 +23,13 @@ class _GameScreenState extends State<GameScreen> {
   void _onWebViewMessage(String data) {
     try {
       final decoded = jsonDecode(data);
-      if (decoded is Map<String, dynamic> && decoded['fps_metrics'] != null) {
+      if (decoded is Map<String, dynamic> &&
+          decoded['type'] == 'session_complete' &&
+          decoded['fps_metrics'] != null) {
         context.read<GameProvider>().finishWithTelemetry(FpsTelemetrySession.fromJson(decoded));
       }
     } catch (_) {
-      // Non-JSON or intermediate log messages are ignored
+      // Non-JSON messages are ignored; 'action' messages are live logs
     }
   }
 

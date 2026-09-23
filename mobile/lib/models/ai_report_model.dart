@@ -58,6 +58,9 @@ class AiReportModel {
   final SkillRadarData radar;
   final int xpEarned;
 
+  /// 'claude' when the text was written by the backend LLM, 'rules' otherwise
+  final String feedbackSource;
+
   const AiReportModel({
     required this.fitScore,
     required this.gradeLevel,
@@ -67,7 +70,29 @@ class AiReportModel {
     required this.growthAreas,
     required this.radar,
     required this.xpEarned,
+    this.feedbackSource = 'rules',
   });
+
+  /// Same score and radar, text replaced by backend feedback.
+  AiReportModel withFeedback({
+    required String source,
+    required String summary,
+    required List<String> strengths,
+    required List<String> growthAreas,
+    required String careerAdvice,
+  }) {
+    return AiReportModel(
+      fitScore: fitScore,
+      gradeLevel: gradeLevel,
+      careerVerdict: '$summary $careerAdvice'.trim(),
+      summary: summary,
+      strengths: strengths,
+      growthAreas: growthAreas,
+      radar: radar,
+      xpEarned: xpEarned,
+      feedbackSource: source,
+    );
+  }
 
   factory AiReportModel.fromJson(Map<String, dynamic> json) {
     return AiReportModel(

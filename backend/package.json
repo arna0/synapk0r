@@ -1,0 +1,20 @@
+{
+  "name": "synapkor-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SynapKor API: AI skill feedback via Claude + static hosting of the web client",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "express": "^5.2.1"
+  }
+}

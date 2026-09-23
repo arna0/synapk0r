@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'config.dart';
 import 'providers/game_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/ai_analysis_service.dart';
@@ -30,10 +31,8 @@ class BaristaVRApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<AiAnalysisService>(
-          // Optional LLM report: flutter run --dart-define=GEMINI_API_KEY=...
-          create: (_) => AiAnalysisService(
-            apiKey: const String.fromEnvironment('GEMINI_API_KEY'),
-          ),
+          // AI feedback via backend: --dart-define=API_BASE_URL=... (see lib/config.dart)
+          create: (_) => AiAnalysisService(apiBaseUrl: apiBaseUrl),
         ),
         ChangeNotifierProvider<GameProvider>(
           create: (context) => GameProvider(
@@ -42,7 +41,7 @@ class BaristaVRApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'SynapKor - Barista VR Edition',
+        title: 'SynapKor',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         home: const HomeScreen(),

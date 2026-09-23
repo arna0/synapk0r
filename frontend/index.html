@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SynapKor — 3D-симулятор профессий</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app-container mode-desktop" id="appContainer">
+
+  <!-- ================= SCREEN 1: HOME ================= -->
+  <div id="homeScreen" class="screen active">
+    <header class="home-nav">
+      <div class="logo">
+        <span class="logo-brand">SYNAPK<span class="logo-eye-wrap"><svg class="logo-eye-svg" viewBox="0 0 24 24" fill="none"><path d="M1 12C3.2 6.8 7.2 3.8 12 3.8C16.8 3.8 20.8 6.8 23 12C20.8 17.2 16.8 20.2 12 20.2C7.2 20.2 3.2 17.2 1 12Z" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="4.5" fill="#FFFFFF" stroke="var(--primary)" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="var(--primary)"/></svg></span>R</span>
+      </div>
+
+      <div class="device-switcher" id="deviceSwitcher">
+        <button class="device-btn active" id="btnModeDesktop" onclick="setDeviceMode('desktop')" title="Режим ПК">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>ПК</span>
+        </button>
+        <button class="device-btn" id="btnModeMobile" onclick="setDeviceMode('mobile-frame')" title="Режим смартфона">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>Телефон</span>
+        </button>
+        <button class="device-btn" id="btnFullscreen" onclick="toggleFullScreen()" title="На весь экран (F)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="home-main">
+      <section class="home-hero">
+        <span class="eyebrow">Симулятор профессий в 3D</span>
+        <h1>Попробуйте профессию<br>до первого рабочего дня</h1>
+        <p>Выполните настоящие рабочие задачи от первого лица. Гид подскажет каждый шаг, а в конце вы получите отчёт: точность, ошибки, время и зоны роста.</p>
+      </section>
+
+      <section class="home-section">
+        <div class="section-head">
+          <h2>Выберите симуляцию</h2>
+          <span class="section-note">2 профессии</span>
+        </div>
+
+        <div class="module-grid">
+          <article class="module-card" onclick="startSafetyVR()">
+            <div class="module-visual visual-safety" aria-hidden="true">
+              <svg viewBox="0 0 320 150" fill="none">
+                <rect x="0" y="118" width="320" height="32" fill="#F1E3CC"/>
+                <g opacity="0.9">
+                  <path d="M92 150 L110 118 H124 L106 150Z M122 150 L140 118 H154 L136 150Z M152 150 L170 118 H184 L166 150Z M182 150 L200 118 H214 L196 150Z M212 150 L230 118 H244 L226 150Z" fill="#E7B64A"/>
+                </g>
+                <rect x="104" y="18" width="112" height="104" rx="6" fill="#8D96A1"/>
+                <rect x="110" y="24" width="100" height="92" rx="4" fill="#A3ACB6"/>
+                <circle cx="130" cy="44" r="11" fill="#FFFFFF" stroke="#5B6470" stroke-width="3"/>
+                <line x1="130" y1="44" x2="136" y2="37" stroke="#D64545" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="160" cy="44" r="11" fill="#FFFFFF" stroke="#5B6470" stroke-width="3"/>
+                <line x1="160" y1="44" x2="167" y2="47" stroke="#D64545" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="190" cy="44" r="11" fill="#FFFFFF" stroke="#5B6470" stroke-width="3"/>
+                <line x1="190" y1="44" x2="186" y2="36" stroke="#D64545" stroke-width="2.5" stroke-linecap="round"/>
+                <rect x="148" y="64" width="24" height="34" rx="3" fill="#3C4550"/>
+                <rect x="157" y="58" width="6" height="22" rx="3" fill="#E9A23B" transform="rotate(-25 160 80)"/>
+                <rect x="140" y="104" width="40" height="8" rx="2" fill="#3C4550"/>
+                <circle cx="150" cy="108" r="2.2" fill="#E7B64A"/><circle cx="160" cy="108" r="2.2" fill="#E7B64A"/><circle cx="170" cy="108" r="2.2" fill="#E7B64A"/>
+                <circle cx="88" cy="82" r="12" stroke="#D64545" stroke-width="4"/>
+                <circle cx="232" cy="82" r="12" stroke="#D64545" stroke-width="4"/>
+                <rect x="244" y="22" width="44" height="26" rx="3" fill="#FFFFFF"/>
+                <rect x="244" y="22" width="44" height="9" rx="3" fill="#D64545"/>
+                <rect x="32" y="22" width="44" height="26" rx="3" fill="#F2C94C"/>
+                <path d="M54 27 L47 41 H61Z" fill="#2B2B2B"/>
+              </svg>
+            </div>
+            <div class="module-body">
+              <div class="module-tags">
+                <span class="tag">Промышленность</span>
+                <span class="tag tag-accent">Новое</span>
+              </div>
+              <h3>Инженер по технике безопасности</h3>
+              <p>Подготовьте электрощит 380 В к ремонту: наденьте СИЗ, отключите питание, повесьте замок LOTO, проверьте напряжение и сбросьте давление.</p>
+              <ul class="module-meta">
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>3–5 минут</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>6 шагов</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V14M10 20V9M16 20V4"/></svg>Средняя</li>
+              </ul>
+            </div>
+            <div class="module-foot">
+              <button class="btn-start" onclick="event.stopPropagation(); startSafetyVR();">
+                Начать симуляцию
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="module-card" onclick="startBaristaVR()">
+            <div class="module-visual visual-barista" aria-hidden="true">
+              <svg viewBox="0 0 320 150" fill="none">
+                <rect x="0" y="104" width="320" height="10" fill="#B98B5E"/>
+                <rect x="0" y="114" width="320" height="36" fill="#6E4F3A"/>
+                <rect x="70" y="34" width="112" height="70" rx="6" fill="#D5D9DE"/>
+                <rect x="70" y="30" width="112" height="10" rx="3" fill="#B7BDC4"/>
+                <rect x="78" y="48" width="96" height="12" rx="2" fill="#2F3338"/>
+                <circle cx="92" cy="54" r="3.5" fill="#FFFFFF"/><circle cx="160" cy="54" r="3.5" fill="#FFFFFF"/>
+                <rect x="96" y="66" width="18" height="10" rx="2" fill="#8B939C"/>
+                <rect x="138" y="66" width="18" height="10" rx="2" fill="#8B939C"/>
+                <rect x="100" y="84" width="12" height="18" rx="2" fill="#F4F1EC" stroke="#C9C2B8"/>
+                <rect x="100" y="93" width="12" height="9" fill="#7A4B2A"/>
+                <rect x="30" y="50" width="26" height="54" rx="4" fill="#2F3338"/>
+                <path d="M28 50 L58 50 L52 26 L34 26Z" fill="#C9CED4"/>
+                <path d="M33 44 L53 44 L50 31 L36 31Z" fill="#5B3A22"/>
+                <path d="M206 72 h26 l-3 32 h-20z" fill="#E4E7EB"/>
+                <path d="M232 78 q10 4 0 14" stroke="#E4E7EB" stroke-width="4" fill="none"/>
+                <rect x="246" y="58" width="22" height="46" rx="3" fill="#3867D6"/>
+                <rect x="252" y="52" width="10" height="7" rx="2" fill="#FFFFFF"/>
+                <path d="M280 70 h22 l-3 34 h-16z" fill="#FFFFFF" opacity="0.7" stroke="#C9D2DA"/>
+                <path d="M283 84 h16 l-2 20 h-12z" fill="#C8A27A"/>
+              </svg>
+            </div>
+            <div class="module-body">
+              <div class="module-tags">
+                <span class="tag">HoReCa</span>
+              </div>
+              <h3>Бариста</h3>
+              <p>Приготовьте Iced Oat Latte по техкарте, успокойте недовольного гостя и рассчитайте недельную закупку зерна.</p>
+              <ul class="module-meta">
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>4–6 минут</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>3 задания</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V14M10 20V9M16 20V4"/></svg>Лёгкая</li>
+              </ul>
+            </div>
+            <div class="module-foot">
+              <button class="btn-start" onclick="event.stopPropagation(); startBaristaVR();">
+                Начать симуляцию
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="home-section">
+        <div class="section-head"><h2>Как это работает</h2></div>
+        <ol class="how-steps">
+          <li>
+            <span class="how-num">1</span>
+            <div><h4>Выберите профессию</h4><p>Каждая симуляция — реальный рабочий сценарий на 3–6 минут.</p></div>
+          </li>
+          <li>
+            <span class="how-num">2</span>
+            <div><h4>Действуйте в 3D</h4><p>Гид показывает, что делать, а стрелка указывает на нужный предмет.</p></div>
+          </li>
+          <li>
+            <span class="how-num">3</span>
+            <div><h4>Получите отчёт</h4><p>Оценка точности, ошибок и времени, а также зоны роста.</p></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="home-section controls-strip">
+        <div class="control-item"><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>Ходить</div>
+        <div class="control-item"><span class="keys"><kbd>Мышь</kbd></span>Осматриваться</div>
+        <div class="control-item"><span class="keys"><kbd>E</kbd><kbd>Клик</kbd></span>Действие</div>
+        <div class="control-item"><span class="keys"><kbd>H</kbd></span>Показать или скрыть гида</div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ================= SCREEN 2: 3D FPS SIMULATOR ================= -->
+  <div id="gameScreen" class="screen">
+    <!-- TOP STATUS OVERLAY -->
+    <div class="vr-status-bar">
+      <div class="vr-status-left">
+        <div class="vr-status-pill">
+          <span style="display:inline-block; width:8px; height:8px; background:var(--emerald); border-radius:50%;" id="vrQuestDot"></span>
+          <span id="vrQuestTitle">КВЕСТ 1: ICED OAT LATTE</span>
+        </div>
+        <div class="timer-pill" id="vrTimer">00:00</div>
+        <!-- Live Safety Indicators -->
+        <div id="safetyHudBar" class="safety-hud-bar" style="display:none;">
+          <div class="safety-hud-pill danger" id="pillPower"><span class="status-dot danger" id="dotPower"></span><span id="textPower">ПИТАНИЕ: 380V ON</span></div>
+          <div class="safety-hud-pill danger" id="pillPressure"><span class="status-dot danger" id="dotPressure"></span><span id="textPressure">ДАВЛЕНИЕ: 8.5 БАР</span></div>
+          <div class="safety-hud-pill warning" id="pillPPE"><span class="status-dot warning" id="dotPPE"></span><span id="textPPE">СИЗ: НЕ НАДЕТЫ</span></div>
+          <div class="safety-hud-pill warning" id="pillLOTO"><span class="status-dot warning" id="dotLOTO"></span><span id="textLOTO">LOTO: НЕТ</span></div>
+        </div>
+      </div>
+
+      <div class="vr-status-right">
+        <div class="device-switcher" style="background: rgba(15, 23, 42, 0.88); border-color: var(--border-dark);">
+          <button class="device-btn" id="gameBtnModeDesktop" onclick="setDeviceMode('desktop')" style="color:#FFF;">ПК</button>
+          <button class="device-btn" id="gameBtnModeMobile" onclick="setDeviceMode('mobile-frame')" style="color:#FFF;">Телефон</button>
+          <button class="device-btn" onclick="toggleFullScreen()" style="color:#FFF;">⛶</button>
+        </div>
+        <button class="btn-exit-vr" onclick="exitToHome()" title="Выйти в меню">✕</button>
+      </div>
+    </div>
+
+    <!-- 3D FIRST-PERSON VIEWPORT -->
+    <div class="fps-viewport-wrap" id="viewportWrap">
+      <!-- Object labels & off-screen target pointer -->
+      <div class="label-layer" id="labelLayer"></div>
+      <div class="offscreen-pointer" id="offscreenPointer">
+        <span class="op-arrow" id="offscreenPointerArrow">➜</span>
+        <span id="offscreenPointerText"></span>
+      </div>
+
+      <!-- Step-by-step guide -->
+      <div class="guide-panel visible" id="guidePanel">
+        <div class="guide-head">
+          <span class="guide-label" id="guideStepCount">Гид</span>
+          <button class="guide-hide" onclick="toggleGuide()" title="Скрыть гида (H)">Скрыть · H</button>
+        </div>
+        <div class="guide-current">
+          <div class="guide-task" id="guideTask"></div>
+          <div class="guide-how" id="guideHow"></div>
+          <div class="guide-why" id="guideWhy"></div>
+        </div>
+        <div class="guide-progress"><div class="guide-progress-fill" id="guideProgressFill"></div></div>
+        <ul class="guide-steps" id="guideSteps"></ul>
+      </div>
+      <button class="guide-toggle-btn" id="guideToggleBtn" onclick="toggleGuide()">💡 Гид · H</button>
+
+      <div class="guide-toast" id="guideToast"></div>
+
+      <!-- Intro briefing -->
+      <div class="intro-overlay" id="introOverlay">
+        <div class="intro-card">
+          <span class="eyebrow">Перед началом</span>
+          <h2 id="introTitle"></h2>
+          <p class="intro-goal" id="introGoal"></p>
+          <ol class="intro-plan" id="introPlan"></ol>
+          <div class="intro-controls">
+            <div class="control-item"><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>Ходить</div>
+            <div class="control-item"><span class="keys"><kbd>Мышь</kbd></span>Смотреть</div>
+            <div class="control-item"><span class="keys"><kbd>E</kbd></span>Действие</div>
+            <div class="control-item"><span class="keys"><kbd>H</kbd></span>Гид</div>
+            <div id="introExtraKeys" style="display:contents;"></div>
+          </div>
+          <div class="intro-actions">
+            <button class="btn-start" onclick="closeIntro()">Понятно, начать</button>
+            <label class="intro-skip"><input type="checkbox" id="introSkip"> Больше не показывать</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="pointer-lock-badge" id="pointerLockBadge">
+        <span>🟢</span> Курсор мыши зафиксирован (FPS). Нажмите [ESC] для освобождения
+      </div>
+
+      <div class="desktop-aim-hint" id="desktopAimHint">
+        <span>🖱️</span> Кликните по сцене, чтобы управлять мышью
+      </div>
+
+      <div class="crosshair" id="mainCrosshair">
+        <div class="crosshair-dot"></div>
+      </div>
+
+      <div id="hoverTooltip" class="fps-hover-tooltip">
+        <span id="tooltipIcon">👉</span>
+        <span id="tooltipText">Нажмите [E] для взаимодействия</span>
+      </div>
+
+      <!-- Real-time Telemetry Log Console (Dart Bridge) -->
+      <div id="telemetryLogPanel" class="telemetry-log-panel">
+        <div class="telemetry-log-title">
+          <span>📡 DART BRIDGE TELEMETRY</span>
+          <span id="telemetryStatusBadge" style="color:#10B981;">CONNECTED</span>
+        </div>
+        <div id="telemetryLogList" class="telemetry-log-list">
+          <div class="telemetry-log-entry ok">• [00:00] Модуль ТБ SynapKor активен</div>
+        </div>
+      </div>
+
+      <!-- Multimeter Floating Digital LCD Display -->
+      <div id="multimeterHud" class="multimeter-hud-panel">
+        <div class="multimeter-header">
+          <span>⚡ FLUKE-87V TRUE RMS</span>
+          <button onclick="toggleMultimeterTool(false)" style="background:none; border:none; color:#94A3B8; cursor:pointer; font-weight:bold; font-size:14px;">✕</button>
+        </div>
+        <div class="multimeter-lcd">
+          <div class="lcd-subline">
+            <span>VAC ~ 50Hz</span>
+            <span>AUTO-RANGE</span>
+          </div>
+          <div class="lcd-main-digits" id="lcdDigits">380.4</div>
+          <div class="lcd-subline">
+            <span>HOLD</span>
+            <span id="lcdUnits">VOLTS RMS</span>
+          </div>
+        </div>
+        <div id="multimeterStatusTag" class="multimeter-status-tag danger">⚡ ОПАСНОЕ НАПРЯЖЕНИЕ</div>
+        <button class="btn-action" style="padding:6px; font-size:11px; width:100%;" onclick="testVoltageWithMultimeter()">
+          Замер на шинах щита [E]
+        </button>
+      </div>
+
+      <!-- Safety Violation Alert Banner -->
+      <div id="safetyAlertBanner" class="safety-alert-banner">
+        <span style="font-size:22px;">⚠️</span>
+        <span id="safetyAlertText">ОШИБКА БЕЗОПАСНОСТИ!</span>
+      </div>
+
+      <!-- Player Safety Inventory Quick Dock -->
+      <div id="safetyInventoryBar" class="safety-inventory-bar">
+        <div class="safety-inv-slot" id="invPPE" onclick="togglePPE()" title="[1] Надеть диэлектрические перчатки и щиток">
+          <div class="safety-slot-num">1</div>
+          <span>🧤 СИЗ (Перчатки)</span>
+        </div>
+        <div class="safety-inv-slot" id="invMultimeter" onclick="selectInventoryTool('multimeter')" title="[2] Взять мультиметр True RMS">
+          <div class="safety-slot-num">2</div>
+          <span>⚡ Мультиметр</span>
+        </div>
+        <div class="safety-inv-slot" id="invLOTO" onclick="selectInventoryTool('loto')" title="[3] Взять блокировочный замок LOTO">
+          <div class="safety-slot-num">3</div>
+          <span>🔒 Замок LOTO</span>
+        </div>
+      </div>
+
+      <!-- Action Progress Bar Overlay -->
+      <div id="actionProgress" class="action-progress-wrap">
+        <span id="actionProgressTitle" class="action-progress-title">ПРОЛИВ ЭСПРЕССО...</span>
+        <div class="action-progress-track">
+          <div id="actionProgressFill" class="action-progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Combo Text Effect Popup -->
+      <div id="comboPopup" class="combo-popup">✨ Идеальная экстракция +150 XP</div>
+
+      <!-- EPIC VICTORY MODAL OVERLAY -->
+      <div id="victoryModal" class="victory-modal-overlay">
+        <div class="victory-card">
+          <div style="font-size: 40px; margin-bottom: 10px;">🏆</div>
+          <h2 id="victoryTitle" style="font-size: 19px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
+            Симуляция успешно пройдена!
+          </h2>
+          <p id="victoryText" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
+            Вы приготовили напиток по стандарту, грамотно разрешили конфликт с гостем и рассчитали бюджет сырья.
+          </p>
+          <button class="btn-action" onclick="showAIReportScreen()" style="width: 100%;">
+            Посмотреть отчёт по навыкам
+          </button>
+        </div>
+      </div>
+
+      <!-- Virtual D-Pad for Mobile Movement -->
+      <div class="virtual-dpad" id="virtualDpad">
+        <button class="dpad-btn" data-dir="w" onmousedown="setMoveKey('KeyW', true)" onmouseup="setMoveKey('KeyW', false)" onmouseleave="setMoveKey('KeyW', false)">▲</button>
+        <div class="dpad-mid">
+          <button class="dpad-btn" data-dir="a" onmousedown="setMoveKey('KeyA', true)" onmouseup="setMoveKey('KeyA', false)" onmouseleave="setMoveKey('KeyA', false)">◀</button>
+          <button class="dpad-btn dpad-action-center" style="background:var(--primary); border-color:var(--primary);" onclick="triggerCenterInteraction()">E</button>
+          <button class="dpad-btn" data-dir="d" onmousedown="setMoveKey('KeyD', true)" onmouseup="setMoveKey('KeyD', false)" onmouseleave="setMoveKey('KeyD', false)">▶</button>
+        </div>
+        <button class="dpad-btn" data-dir="s" onmousedown="setMoveKey('KeyS', true)" onmouseup="setMoveKey('KeyS', false)" onmouseleave="setMoveKey('KeyS', false)">▼</button>
+      </div>
+
+      <!-- Mobile Quick Action Button -->
+      <button class="mobile-action-trigger" id="mobileActionTrigger" onclick="triggerCenterInteraction()" title="Действие [E]">
+        E
+      </button>
+
+      <div id="threeCanvas"></div>
+    </div>
+
+    <!-- BOTTOM FPS HUD DOCK -->
+    <div class="fps-hud-bottom" id="hudBottom">
+      <div class="hud-dock-inner" id="hudDockInner">
+        <!-- Injected dynamically via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 3: AI RESULTS DASHBOARD ================= -->
+  <div id="resultScreen" class="screen">
+    <div class="top-bar">
+      <div class="logo">
+        <span class="logo-brand">SYNAPK<span class="logo-eye-wrap"><svg class="logo-eye-svg" viewBox="0 0 24 24" fill="none"><path d="M1 12C3.2 6.8 7.2 3.8 12 3.8C16.8 3.8 20.8 6.8 23 12C20.8 17.2 16.8 20.2 12 20.2C7.2 20.2 3.2 17.2 1 12Z" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="4.5" fill="#FFFFFF" stroke="var(--primary)" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="var(--primary)"/></svg></span>R</span>
+        <span class="vr-badge" style="background:var(--primary);">ОТЧЁТ</span>
+      </div>
+      <div class="top-bar-controls">
+        <div class="xp-badge" id="resTotalXp">⚡ +950 XP</div>
+      </div>
+    </div>
+
+    <div class="result-content-wrap">
+      <div class="result-grid-layout">
+        <!-- Left Column: Fit Score Card & Actions -->
+        <div class="report-card" style="text-align: center;">
+          <div style="display:inline-block; padding:4px 12px; background:var(--emerald-bg); border:1px solid var(--emerald-border); border-radius:20px; font-size:11px; font-weight:700; color:var(--emerald-text); margin-bottom:12px;">
+            <span id="resVerdictBadge">ВЕРДИКТ: РЕКОМЕНДОВАН</span>
+          </div>
+          <h2 style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;" id="resPraiseTitle">
+            Отличный результат симуляции
+          </h2>
+
+          <div class="score-circle-clean">
+            <div class="score-number" id="resFitScore">0%</div>
+            <div class="score-label">JOB FIT SCORE</div>
+          </div>
+          <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;" id="resVerdictGrade">Senior Barista / Shift Supervisor</h3>
+          <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 18px;" id="resVerdictDesc">Исключительная моторика рук, строгое соблюдение техкарты и грамотная деэскалация конфликта с клиентом.</p>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn-action" onclick="restartCurrentSimulation()" style="width:100%;">
+              🔄 Повторить симуляцию
+            </button>
+            <button class="btn-secondary" onclick="exitToHome()" style="width:100%;">
+              🏠 В главное меню
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Metrics & Competencies -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="report-card">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+              Метрики эффективности и телеметрии
+            </div>
+            
+            <div class="stat-table">
+              <div class="stat-row">
+                <span class="stat-label" id="statHardLabel">Точность технологии (Hard Skills)</span>
+                <span class="stat-val" style="color: var(--primary);" id="statHard">98%</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label" id="statHandsLabel">Лишние действия (промахи)</span>
+                <span class="stat-val" style="color: var(--emerald-text);" id="statHands">0</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label" id="statSoftLabel">Стрессоустойчивость и эмпатия (Soft Skills)</span>
+                <span class="stat-val" style="color: var(--primary);" id="statSoft">100%</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label" id="statTimeLabel">Время полного цикла приготовления</span>
+                <span class="stat-val" id="statTime">42 сек</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI feedback from backend (Claude) -->
+          <div class="report-card ai-card" id="aiFeedbackCard" style="display:none;">
+            <div class="ai-card-head">
+              <span class="ai-card-title">Комментарий ИИ</span>
+              <span class="ai-card-source" id="aiFeedbackSource"></span>
+            </div>
+            <div class="ai-card-body" id="aiFeedbackBody"></div>
+          </div>
+
+          <!-- Recommendations -->
+          <div class="report-card">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">💡 Ключевые подтвержденные компетенции:</div>
+            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;" id="resCompetencies">
+              • Соблюдение рабочего давления 9 бар и правильный расчет граммовки (18г)<br>
+              • Быстрая деэскалация конфликтной ситуации с предложением комплимента<br>
+              • Точный расчет закупки сырья на 35 кг без дефицита и перерасхода бюджета
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- App scripts (classic scripts share one global scope; order matters) -->
+<script src="js/config.js"></script>
+<script src="js/telemetry.js"></script>
+<script src="js/safety.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/guide.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/barista.js"></script>
+<script src="js/report.js"></script>
+<script src="js/ui.js"></script>
+
+</body>
+</html>

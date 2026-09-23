@@ -3,73 +3,64 @@ import 'package:http/http.dart' as http;
 import '../models/ai_report_model.dart';
 import '../models/fps_telemetry_model.dart';
 
+/// Builds the skill report for a finished session.
+///
+/// The score and skill radar come from transparent local rules. When [apiBaseUrl] points to the
+/// SynapKor backend, the text part (summary, strengths, growth areas, career advice) is written by
+/// Claude on the server; the API key never ships inside the app.
 class AiAnalysisService {
-  final String? apiKey;
+  final String apiBaseUrl;
+  final http.Client _client;
 
-  AiAnalysisService({this.apiKey});
+  AiAnalysisService({this.apiBaseUrl = '', http.Client? client}) : _client = client ?? http.Client();
 
   Future<AiReportModel> analyzeFpsSimulation(FpsTelemetrySession telemetry) async {
-    // If an API key is available, attempt real Gemini API query
-    if (apiKey != null && apiKey!.isNotEmpty) {
-      try {
-        final prompt = """
-Проанализируй симуляцию бариста ОТ ПЕРВОГО ЛИЦА (FPS 3D VR).
-Телеметрия игрока:
-${jsonEncode(telemetry.toJson())}
-
-Оцени точность и последовательность действий в 3D, стрессоустойчивость при личном контакте с клиентом и умение работать с кассой.
-Верни ТОЛЬКО валидный JSON со следующими полями:
-{
-  "fit_score": 94,
-  "grade_level": "Senior Barista Specialist",
-  "career_verdict": "...",
-  "summary": "...",
-  "strengths": ["...", "..."],
-  "growth_areas": ["...", "..."],
-  "radar": {
-    "motor_skills": 94,
-    "tech_discipline": 98,
-    "stress_resistance": 90,
-    "business_management": 92,
-    "reaction_speed": 95
-  },
-  "xp_earned": 950
-}
-""";
-
-        final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey',
-        );
-
-        final response = await http.post(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            "contents": [
-              {
-                "parts": [{"text": prompt}]
-              }
-            ]
-          }),
-        ).timeout(const Duration(seconds: 8));
-
-        if (response.statusCode == 200) {
-          final resData = jsonDecode(response.body);
-          final text = resData['candidates']?[0]?['content']?['parts']?[0]?['text'] as String?;
-          if (text != null) {
-            final cleanedJson = text.replaceAll('```json', '').replaceAll('```', '').trim();
-            final jsonMap = jsonDecode(cleanedJson);
-            return AiReportModel.fromJson(jsonMap);
-          }
-        }
-      } catch (_) {
-        // Fallback to offline scoring engine
-      }
+    final local = _generateLocalScoring(telemetry);
+    if (apiBaseUrl.isEmpty) {
+      await Future.delayed(const Duration(milliseconds: 600));
+      return local;
     }
 
-    // Offline rule-based scoring (used when no API key is configured or the request fails)
-    await Future.delayed(const Duration(milliseconds: 1400));
-    return _generateLocalScoring(telemetry);
+    try {
+      final response = await _client
+          .post(
+            Uri.parse('$apiBaseUrl/api/report'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(_backendPayload(telemetry, local.fitScore)),
+          )
+          .timeout(const Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        return local.withFeedback(
+          source: data['source'] as String? ?? 'rules',
+          summary: data['summary'] as String? ?? local.summary,
+          strengths: (data['strengths'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? local.strengths,
+          growthAreas: (data['growth_areas'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? local.growthAreas,
+          careerAdvice: data['career_advice'] as String? ?? local.careerVerdict,
+        );
+      }
+    } catch (_) {
+      // Backend unreachable or bad response: keep the local report
+    }
+    return local;
+  }
+
+  Map<String, dynamic> _backendPayload(FpsTelemetrySession t, int score) {
+    final choice = t.softSkills.conflictResolutionChoice;
+    return {
+      'module': 'barista',
+      'score': score,
+      'metrics': {
+        'step_accuracy_percent': t.fpsMetrics.stepAccuracyPercent,
+        'wrong_clicks': ((100 - t.fpsMetrics.stepAccuracyPercent) / 2).round(),
+        'total_time_sec': t.fpsMetrics.totalPreparationTimeSec,
+        'conflict_choice': choice,
+        'conflict_response_sec': t.softSkills.responseTimeSec,
+        'budget_choice': t.management.inventoryCalcAccuracy >= 100 ? 'optimal' : 'not_optimal',
+      },
+      'events': <Map<String, dynamic>>[],
+    };
   }
 
   AiReportModel _generateLocalScoring(FpsTelemetrySession t) {
