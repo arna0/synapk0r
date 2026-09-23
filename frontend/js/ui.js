@@ -211,6 +211,7 @@ function exitToHome() {
   const multimeterHud = document.getElementById('multimeterHud');
   if (multimeterHud) multimeterHud.style.display = 'none';
   showScreen('homeScreen');
+  if (typeof renderCareerProfile === 'function') renderCareerProfile();
 }
 
 // Initial responsive check on load
