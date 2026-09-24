@@ -170,6 +170,12 @@ function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 }
 
+function showAiOfflineNote(card, source, body) {
+  card.style.display = 'block';
+  source.innerText = 'демо-версия без сервера';
+  body.innerHTML = '<p>Персональный разбор пишет Claude на нашем бэкенде. В этой статической демо-версии сервера нет — запустите <b>backend</b> по инструкции в README (раздел 6), и здесь появится разбор ваших действий.</p>';
+}
+
 async function requestAiFeedback(report) {
   if (typeof showCareerBlock === 'function') showCareerBlock(report);
   if (typeof showSurvey === 'function') showSurvey(report);
@@ -177,10 +183,8 @@ async function requestAiFeedback(report) {
   const body = document.getElementById('aiFeedbackBody');
   const source = document.getElementById('aiFeedbackSource');
   const apiBase = getApiBase();
-  if (!card || apiBase === null) {
-    if (card) card.style.display = 'none';
-    return;
-  }
+  if (!card) return;
+  if (apiBase === null) { showAiOfflineNote(card, source, body); return; }
   const seq = ++aiRequestSeq;
   card.style.display = 'block';
   source.innerText = '';
@@ -203,8 +207,8 @@ async function requestAiFeedback(report) {
       ${data.career_advice ? `<div><h5>Совет по профессии</h5><p>${escapeHtml(data.career_advice)}</p></div>` : ''}
     `;
   } catch (e) {
-    // Static hosting (e.g. GitHub Pages) has no backend - hide the card quietly
-    if (seq === aiRequestSeq) card.style.display = 'none';
+    // Static hosting (e.g. GitHub Pages) has no backend: explain instead of silently hiding
+    if (seq === aiRequestSeq) showAiOfflineNote(card, source, body);
     console.info('[SynapKor] AI feedback unavailable:', e.message);
   }
 }
