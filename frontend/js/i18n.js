@@ -1,7 +1,7 @@
-// SynapKor — Kazakh / Russian interface switch (home, intro, report, career path, survey).
-// Russian is the source language. Kazakh strings are looked up by the exact Russian text,
+// SynapKor — Russian / Kazakh / English interface switch (home, intro, report, career path, survey).
+// Russian is the source language. Kazakh (KK) and English (EN, in i18n-en.js) strings are looked up by the exact Russian text,
 // so modules keep writing Russian and the translation is applied to what appears on screen.
-// In-game guide and HUD stay in Russian for now. ?lang=kk opens the Kazakh version directly.
+// In-game guide and HUD stay in Russian for now. ?lang=kk or ?lang=en opens that version directly.
 
 const I18N_KEY = 'synapkor_lang';
 const I18N_ROOTS = ['#homeScreen', '#introOverlay', '#resultScreen', '#victoryModal'];
@@ -250,17 +250,23 @@ const KK_PATTERNS = [
   [/^(\d+) сек$/, (m) => `${m[1]} сек`]
 ];
 
+const DICTS = { kk: KK, en: typeof EN !== 'undefined' ? EN : {} };
+const PATTERNS = { kk: KK_PATTERNS, en: typeof EN_PATTERNS !== 'undefined' ? EN_PATTERNS : [] };
+const LANGS = ['ru', 'kk', 'en'];
+
 let currentLang = 'ru';
 const originalText = new WeakMap();
 
 function translateString(ru) {
+  const dict = DICTS[currentLang];
+  if (!dict) return null;
   const trimmed = ru.trim();
   if (!trimmed) return null;
-  if (KK[trimmed]) return ru.replace(trimmed, KK[trimmed]);
+  if (dict[trimmed]) return ru.replace(trimmed, dict[trimmed]);
   // leading emoji, bullets, icons: "🔄 Повторить симуляцию", "• Компетенция"
   const m = trimmed.match(/^([^A-Za-zА-Яа-яЁёӘәҒғҚқҢңӨөҰұҮүҺһІі0-9]+)(.+)$/u);
-  if (m && KK[m[2].trim()]) return ru.replace(m[2].trim(), KK[m[2].trim()]);
-  for (const [re, fn] of KK_PATTERNS) {
+  if (m && dict[m[2].trim()]) return ru.replace(m[2].trim(), dict[m[2].trim()]);
+  for (const [re, fn] of PATTERNS[currentLang]) {
     const mm = trimmed.match(re);
     if (mm) return ru.replace(trimmed, fn(mm));
   }
@@ -270,15 +276,18 @@ function translateString(ru) {
 function translateNode(node) {
   if (node.nodeType === Node.TEXT_NODE) {
     const saved = originalText.get(node);
-    if (currentLang === 'kk') {
-      // the page changed this text since we translated it: treat the new value as Russian
-      const source = saved && node.nodeValue === saved.kk ? saved.ru : node.nodeValue;
-      const kk = translateString(source);
-      if (kk !== null && kk !== node.nodeValue) {
-        originalText.set(node, { ru: source, kk });
-        node.nodeValue = kk;
+    // if the page changed this text since we translated it, treat the new value as Russian
+    const source = saved && node.nodeValue === saved.out ? saved.ru : node.nodeValue;
+    if (currentLang !== 'ru') {
+      const out = translateString(source);
+      if (out !== null && out !== node.nodeValue) {
+        originalText.set(node, { ru: source, out });
+        node.nodeValue = out;
+      } else if (out === null && saved && node.nodeValue === saved.out) {
+        node.nodeValue = saved.ru;
+        originalText.delete(node);
       }
-    } else if (saved && node.nodeValue === saved.kk) {
+    } else if (saved && node.nodeValue === saved.out) {
       node.nodeValue = saved.ru;
       originalText.delete(node);
     }
@@ -288,7 +297,8 @@ function translateNode(node) {
   if (node.placeholder) {
     if (!node.dataset.ruPlaceholder) node.dataset.ruPlaceholder = node.placeholder;
     const ru = node.dataset.ruPlaceholder;
-    node.placeholder = currentLang === 'kk' ? (KK[ru] || ru) : ru;
+    const dict = DICTS[currentLang];
+    node.placeholder = dict && dict[ru] ? dict[ru] : ru;
   }
   node.childNodes.forEach(translateNode);
 }
@@ -298,9 +308,9 @@ function translateRoots() {
 }
 
 function setLanguage(lang) {
-  currentLang = lang === 'kk' ? 'kk' : 'ru';
+  currentLang = LANGS.includes(lang) ? lang : 'ru';
   try { localStorage.setItem(I18N_KEY, currentLang); } catch (e) {}
-  document.documentElement.lang = currentLang === 'kk' ? 'kk' : 'ru';
+  document.documentElement.lang = currentLang;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
   translateRoots();
 }
@@ -312,7 +322,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (!lang) { try { lang = localStorage.getItem(I18N_KEY); } catch (e) {} }
   // Content rendered later (intro, report, career block, survey) is translated as it appears
   const observer = new MutationObserver(records => {
-    if (currentLang !== 'kk') return;
+    if (currentLang === 'ru') return;
     records.forEach(r => {
       const inRoot = I18N_ROOTS.some(sel => { const root = document.querySelector(sel); return root && root.contains(r.target); });
       if (!inRoot) return;

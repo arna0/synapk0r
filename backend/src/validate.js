@@ -46,7 +46,7 @@ export function validateReport(body) {
         .filter(e => e.action)
     : [];
 
-  const lang = body.lang === 'kk' ? 'kk' : 'ru';
+  const lang = ['kk', 'en'].includes(body.lang) ? body.lang : 'ru';
   return { ok: true, report: { module, score: Math.round(score), metrics: cleanMetrics, events: cleanEvents, lang } };
 }
 
