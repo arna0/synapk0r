@@ -1,160 +1,162 @@
-# SynapKor — 3D-симулятор профессий с оценкой навыков
+# SynapKor: a 3D career simulator with skills assessment
 
-**VentureHack 2026 · Трек 2 — EduTech и образование будущего**
-Направления трека: *профориентация и исследование карьерных траекторий · развитие навыков и профессиональное обучение · интерактивные практико-ориентированные среды · оценивание и обратная связь*.
+**VentureHack 2026 · Track 2: EdTech and the future of education**
+Track focus areas: *career guidance and exploring career paths · skills development and vocational training · interactive hands-on environments · assessment and feedback*.
 
-- **Демо (работает в браузере, без установки):** https://arna0.github.io/synapk0r/
-  - сразу в модуль: [IT-инженер](https://arna0.github.io/synapk0r/frontend/?module=it) · [Врач](https://arna0.github.io/synapk0r/frontend/?module=doctor) · [Инженер ТБ](https://arna0.github.io/synapk0r/frontend/?module=safety) · [Бариста](https://arna0.github.io/synapk0r/frontend/?module=barista) · [на казахском](https://arna0.github.io/synapk0r/?lang=kk)
-  - на GitHub Pages нет сервера, поэтому текстовый разбор строится по правилам; разбор от Claude работает при запуске `backend/` (раздел 6)
-- **Код:** https://github.com/arna0/synapk0r
-- **Видео демо (60 секунд, с озвучкой):** [docs/demo.mp4](docs/demo.mp4) — IT-модуль от алерта до отчёта, казахский интерфейс, путь в профессию
+🇬🇧 English · [🇷🇺 Русский](README.ru.md)
+
+- **Live demo (runs in the browser, nothing to install):** https://arna0.github.io/synapk0r/
+  - jump straight into a module: [IT engineer](https://arna0.github.io/synapk0r/frontend/?module=it) · [Doctor](https://arna0.github.io/synapk0r/frontend/?module=doctor) · [Safety engineer](https://arna0.github.io/synapk0r/frontend/?module=safety) · [Barista](https://arna0.github.io/synapk0r/frontend/?module=barista) · [in Kazakh](https://arna0.github.io/synapk0r/?lang=kk)
+  - GitHub Pages has no server, so the written debrief there is rule-based. The Claude debrief works when you run `backend/` (section 6)
+- **Code:** https://github.com/arna0/synapk0r
+- **Demo video (60 seconds, narrated):** [docs/demo.mp4](docs/demo.mp4): the IT module from the alert to the report, the Kazakh interface, and the career path
 
 ---
 
-## 1. Проблема
+## 1. Problem
 
-Выбирая профессию, школьник или студент обычно опирается на описания, тесты и рассказы. Что это за работа руками, он узнаёт, только когда уже потратил годы на учёбу или устроился на работу.
+When choosing a career, a school or university student usually relies on descriptions, tests and other people's stories. They only find out what the job is actually like once they have already spent years studying or have started working.
 
-У работодателей обратная сторона той же проблемы:
-- **Онбординг дорогой и рискованный.** Новичок учится на реальном оборудовании и реальных клиентах: портит сырьё, ошибается с гостями, а в промышленности нарушает технику безопасности.
-- **Проверка навыков до найма субъективна.** Собеседование показывает, как человек говорит о работе, а не как он её делает.
-- **Инструктажи по ТБ часто формальные.** Человек расписался в журнале, но последовательность действий (например, LOTO — блокировка оборудования перед ремонтом) на практике ни разу не выполнял.
+Employers face the other side of the same problem:
+- **Onboarding is expensive and risky.** A newcomer learns on real equipment and real customers: they waste materials, make mistakes with guests, and in industry they break safety rules.
+- **Checking skills before hiring is subjective.** An interview shows how a person talks about the work, not how they do it.
+- **Safety briefings are often a formality.** The person signs the logbook but has never actually performed the sequence of steps in practice (for example, LOTO: locking out equipment before repair).
 
-**Что говорят данные (кабинетное исследование):**
-- По данным ОЭСР (PISA 2018, доклад *Dream Jobs?*), **47 % юношей и 53 % девушек** в 15 лет хотят работать в одной из всего **10 профессий**: представления о мире работы узкие ([OECD / Kappan](https://kappanonline.org/teenagers-dream-jobs-career-oecd/)).
-- В Казахстане, по данным Министерства науки и высшего образования, доля выпускников-инженеров, работающих по специальности, снижается третий год подряд: **75 % → 72 % → 69 %** (2023–2025) ([BES.media, 2026](https://bes.media/news/dolya-rabotayuschih-po-spetsialnosti-vypusknikov-inzhenerov-snizhaetsya-tretiy-god-podryad/)).
-- По исследованию НПП «Атамекен» (2018), около **35 %** выпускников вузов работают не по специальности ([informburo.kz](https://informburo.kz/stati/60-vypusknikov-vuzov-ne-rabotayut-po-professii-pochemu-tak-proishodit.html)).
+**What the data says (desk research):**
+- According to the OECD (PISA 2018, the *Dream Jobs?* report), **47% of boys and 53% of girls** aged 15 expect to work in one of just **10 occupations**: their picture of the world of work is narrow ([OECD / Kappan](https://kappanonline.org/teenagers-dream-jobs-career-oecd/)).
+- In Kazakhstan, according to the Ministry of Science and Higher Education, the share of engineering graduates working in their field has fallen for the third year in a row: **75% → 72% → 69%** (2023–2025) ([BES.media, 2026](https://bes.media/news/dolya-rabotayuschih-po-spetsialnosti-vypusknikov-inzhenerov-snizhaetsya-tretiy-god-podryad/)).
+- According to a study by the Atameken National Chamber of Entrepreneurs (2018), about **35%** of university graduates do not work in their field ([informburo.kz](https://informburo.kz/stati/60-vypusknikov-vuzov-ne-rabotayut-po-professii-pochemu-tak-proishodit.html)).
 
-**Тест на людях (23–24.09.2026, 7 участников):** 86 % прошли симуляцию без помощи, 100 % узнали новое о профессии, все 7 хотят попробовать другие профессии; понятность — 4,86 из 5. Гипотеза «плохо представляют работу до игры» на этой выборке не подтвердилась (43 % при пороге 60 %) — почти половина участников уже студенты. Подробности и скриншоты — в [docs/VALIDATION.md](docs/VALIDATION.md).
+**User test (23–24 Sept 2026, 7 participants):** 86% completed the simulation without help, 100% learned something new about the profession, all 7 want to try other professions; clarity was rated 4.86 out of 5. The hypothesis "people have a poor idea of the job before playing" was not confirmed on this sample (43% against a 60% threshold), since almost half of the participants were already university students. Details and screenshots are in [docs/VALIDATION.md](docs/VALIDATION.md).
 
-## 2. Целевая аудитория
+## 2. Target audience
 
-| Сегмент | Что получает |
+| Segment | What they get |
 |---|---|
-| **Школьники 8–11 классов и студенты колледжей** | Пробуют профессию «изнутри» за 5 минут и получают понятный отчёт о своих сильных сторонах |
-| **Школьные психологи, центры профориентации, колледжи** | Практический инструмент для профориентационных занятий вместо одних только тестов |
-| **Работодатели (HoReCa, производство)** | Тренировка и проверка базовых навыков новичков до выхода на смену |
+| **School students in grades 8–11 and college students** | Try a profession "from the inside" in 5 minutes and get a clear report on their strengths |
+| **School psychologists, career guidance centres, colleges** | A hands-on tool for career guidance lessons instead of tests alone |
+| **Employers (HoReCa, manufacturing)** | Training and checking newcomers' basic skills before their first shift |
 
-## 3. Решение
+## 3. Solution
 
-SynapKor — браузерный 3D-симулятор от первого лица. Пользователь выполняет настоящие рабочие задачи, а система записывает его действия и строит отчёт по навыкам.
+SynapKor is a first-person 3D simulator that runs in the browser. The user performs real work tasks, and the system records their actions and builds a skills report.
 
-**Модуль 1. Инженер по технике безопасности (LOTO, щит 380 В)**
-Нужно подготовить оборудование к ремонту в правильном порядке:
-1. надеть СИЗ;
-2. отключить рубильник;
-3. повесить замок LOTO;
-4. проверить мультиметром, что напряжения нет;
-5. сбросить давление двумя клапанами.
+**Module 1. Safety engineer (LOTO, 380 V switchboard)**
+Prepare the equipment for repair in the correct order:
+1. put on PPE;
+2. switch off the breaker;
+3. attach the LOTO lock;
+4. check with a multimeter that there is no voltage;
+5. release the pressure with two valves.
 
-Нарушение порядка (например, тронуть рубильник без перчаток) засчитывается как ошибка ТБ.
+Breaking the order (for example, touching the breaker without gloves) counts as a safety violation.
 
-**Модуль 2. Бариста (HoReCa)**
-Три задания проверяют три вида навыков:
-- **Hard skills:** Iced Oat Latte по техкарте в 6 шагов.
-- **Soft skills:** ответ недовольному гостю.
-- **Management:** расчёт недельной закупки зерна.
+**Module 2. Barista (HoReCa)**
+Three tasks test three kinds of skills:
+- **Hard skills:** an Iced Oat Latte following a 6-step recipe card.
+- **Soft skills:** responding to an unhappy guest.
+- **Management:** calculating the weekly coffee bean order.
 
-**Модуль 3. IT-инженер (дежурство, серверная)**
-Интернет-магазин перестал открываться. Нужно:
-1. разобрать инцидент в 6 шагов: алерт в мониторинге → логи → сервер db-01 → подключить выпавший кабель → перезапустить сервис → проверить метрики;
-2. **Hard skills:** найти баг в коде (`ZeroDivisionError` при пустом списке) и выбрать правильное исправление;
-3. **Soft skills:** объяснить сбой руководителю магазина без жаргона.
+**Module 3. IT engineer (on call, server room)**
+The online store has stopped loading. You need to:
+1. work through the incident in 6 steps: monitoring alert → logs → server db-01 → plug back the disconnected cable → restart the service → check the metrics;
+2. **Hard skills:** find a bug in the code (`ZeroDivisionError` on an empty list) and choose the correct fix;
+3. **Soft skills:** explain the outage to the store manager without jargon.
 
-**Модуль 4. Врач-терапевт (приём пациента)**
-Пациент с кашлем и температурой. Нужно:
-1. провести осмотр в 6 шагов: карта и жалобы → гигиена рук → температура → сатурация → давление → аускультация лёгких (показатели появляются на мониторе в кабинете);
-2. **Hard skills:** принять клиническое решение (направить на рентген и анализ крови, а не отпустить домой или назначить антибиотик вслепую);
-3. **Soft skills:** ответить встревоженному пациенту честно и бережно.
+**Module 4. General practitioner (patient appointment)**
+A patient with a cough and fever. You need to:
+1. examine the patient in 6 steps: medical record and complaints → hand hygiene → temperature → oxygen saturation → blood pressure → listening to the lungs (readings appear on the monitor in the office);
+2. **Hard skills:** make a clinical decision (refer for an X-ray and blood test, rather than send the patient home or prescribe antibiotics blindly);
+3. **Soft skills:** answer the worried patient honestly and with care.
 
-Сценарий учебный и упрощённый, это не медицинская рекомендация.
+The scenario is simplified and for learning only. It is not medical advice.
 
-**Встроенный гид для новичков**
-- вводный экран: цель и план;
-- панель «что сделать сейчас / как / зачем»;
-- подписи над предметами и стрелка над нужным объектом;
-- указатель на краю экрана, если цель вне поля зрения;
-- подсказка, если выбран не тот предмет.
+**Built-in guide for beginners**
+- intro screen: the goal and the plan;
+- a "what to do now / how / why" panel;
+- labels above objects and an arrow above the right one;
+- an edge-of-screen pointer when the target is out of view;
+- a hint when the wrong object is selected.
 
-**Анкета для валидации** (после отчёта, 1 минута)
-- 8 вопросов по гипотезам H1–H3 из [docs/VALIDATION.md](docs/VALIDATION.md);
-- ответы сохраняются на устройстве и, если есть бэкенд, в `backend/data/survey.jsonl` (`POST /api/survey`);
-- сводка для команды: `index.html?survey=results` (на устройстве) или `GET /api/survey/summary` (на сервере).
+**Validation survey** (after the report, 1 minute)
+- 8 questions on hypotheses H1–H3 from [docs/VALIDATION.md](docs/VALIDATION.md);
+- answers are saved on the device and, if a backend is running, in `backend/data/survey.jsonl` (`POST /api/survey`);
+- summary for the team: `index.html?survey=results` (on the device) or `GET /api/survey/summary` (on the server).
 
-**Отчёт по навыкам**
-- итоговый балл Job Fit Score;
-- метрики: точность, ошибки ТБ, лишние действия, время;
-- подтверждённые компетенции и зоны роста.
+**Skills report**
+- an overall Job Fit Score;
+- metrics: accuracy, safety violations, extra actions, time;
+- confirmed competencies and areas to grow.
 
-**Интерфейс на казахском языке**
-- переключатель «Рус / Қаз» на главной или ссылка `?lang=kk`;
-- переведены главная, вводные экраны, отчёт, путь в профессию и анкета; ИИ-разбор Claude пишет на выбранном языке;
-- гид внутри 3D-сцены пока на русском.
+**Kazakh-language interface**
+- a "Рус / Қаз" switch on the home page, or the `?lang=kk` link;
+- the home page, intro screens, report, career path and survey are translated; the Claude debrief is written in the selected language;
+- the guide inside the 3D scene is still in Russian.
 
-**Путь в профессию в Казахстане и профиль ученика**
-- в отчёте: профильные предметы ЕНТ, группы программ в вузах, путь через колледж и факт о рынке труда РК;
-- на главной: «Ваш профиль профессий» — результаты по всем пройденным модулям и подсказка, что попробовать ещё.
+**Career path in Kazakhstan and student profile**
+- in the report: the UNT (national exam) subjects for the profession, university programme groups, the college route, and a fact about the Kazakhstan labour market;
+- on the home page: "Your profession profile", with results across all completed modules and a suggestion of what to try next.
 
-### Чем отличается от аналогов
-- **Тесты профориентации** спрашивают о предпочтениях. Здесь человек **выполняет** работу.
-- **[Transfr Trek](https://transfrinc.com/products/career-exploration)** (50+ VR-симуляций) требует шлем Meta Quest / Pico. Здесь хватает браузера на школьном ПК или телефоне.
-- **[Forage](https://www.theforage.com/)** (9 млн+ студентов) — текстовые задания для студентов на английском. Здесь 3D от первого лица для школьников, на русском и с контекстом Казахстана.
-- **[ctest.enbek.kz](https://ctest.enbek.kz/ru)** — профстандарты и признание квалификаций, но попробовать работу нельзя.
-- **Видеокурсы** не проверяют навык. Здесь каждое действие фиксируется и оценивается.
+### How it differs from alternatives
+- **Career aptitude tests** ask about preferences. Here the person **does** the work.
+- **[Transfr Trek](https://transfrinc.com/products/career-exploration)** (50+ VR simulations) requires a Meta Quest / Pico headset. Here a browser on a school PC or a phone is enough.
+- **[Forage](https://www.theforage.com/)** (9M+ students) offers text-based tasks for university students in English. Here it's first-person 3D for school students, in Russian and Kazakh, with Kazakhstan context.
+- **[ctest.enbek.kz](https://ctest.enbek.kz/ru)** covers professional standards and recognition of qualifications, but you can't try the work.
+- **Video courses** don't check skills. Here every action is recorded and assessed.
 
-### Рынок в Казахстане
-- **8 048 школ и более 4,1 млн школьников** в 2026/27 учебном году ([Бюро нацстатистики, Минпросвещения](https://www.zakon.kz/obshestvo/6530002-skolko-shkol-otkroyut-dveri-dlya-uchenikov-v-kazakhstane-1-sentyabrya-2026-goda.html)).
-- Государство усиливает профориентацию: новая концепция, «Атлас новых профессий», профильные классы в 1 000 школ ([Казправда](https://kazpravda.kz/n/novuyu-kontseptsiyu-professionalnoy-orientatsii-zapustyat-v-kazahstane/)).
-- Работодателям нужны кадры и безопасность: дефицит врачей и программистов ([Минтруда, май 2026](https://orda.kz/kazahstan-ne-mozhet-zakryt-deficit-vrachej-i-ajtishnikov-414775/)); 133 погибших на производстве за 9 месяцев 2025 года ([Kapital.kz](https://kapital.kz/gosudarstvo/141656/v-etom-godu-na-proizvodstve-v-kazahstane-pogibli-133-cheloveka.html)).
+### The market in Kazakhstan
+- **8,048 schools and more than 4.1 million school students** in the 2026/27 school year ([Bureau of National Statistics, Ministry of Education](https://www.zakon.kz/obshestvo/6530002-skolko-shkol-otkroyut-dveri-dlya-uchenikov-v-kazakhstane-1-sentyabrya-2026-goda.html)).
+- The state is strengthening career guidance: a new concept, the "Atlas of New Professions", and specialised classes in 1,000 schools ([Kazpravda](https://kazpravda.kz/n/novuyu-kontseptsiyu-professionalnoy-orientatsii-zapustyat-v-kazahstane/)).
+- Employers need staff and safety: there is a shortage of doctors and programmers ([Ministry of Labour, May 2026](https://orda.kz/kazahstan-ne-mozhet-zakryt-deficit-vrachej-i-ajtishnikov-414775/)); 133 people died at work in the first 9 months of 2025 ([Kapital.kz](https://kapital.kz/gosudarstvo/141656/v-etom-godu-na-proizvodstve-v-kazahstane-pogibli-133-cheloveka.html)).
 
-## 4. Как устроена оценка и где ИИ
+## 4. How assessment works and where the AI is
 
-Оценка состоит из двух частей.
+Assessment has two parts.
 
-**1. Балл и метрики считаются по правилам.** Они прозрачны и воспроизводимы, считаются на клиенте из фактических действий игрока.
+**1. The score and metrics are calculated by rules.** They are transparent and reproducible, and are calculated on the client from the player's actual actions.
 
-| Метрика | Как измеряется |
+| Metric | How it is measured |
 |---|---|
-| Ошибки ТБ | Действие не в том порядке: рубильник без СИЗ, замок LOTO на включённый рубильник, замер под напряжением |
-| Точность техкарты | 100 % − 2 % за каждый клик не по тому предмету |
-| Лишние действия | Клики не по тому предмету |
-| Время | Секунды от старта (после вводного экрана) до завершения |
-| Soft skills | Выбранный ответ гостю и время ответа (от жалобы до выбора) |
-| Management | Верно ли рассчитана закупка: 35 кг в пределах бюджета |
+| Safety violations | An action out of order: breaker without PPE, LOTO lock on a live breaker, measuring under voltage |
+| Recipe accuracy | 100% − 2% for each click on the wrong object |
+| Extra actions | Clicks on the wrong object |
+| Time | Seconds from the start (after the intro screen) to completion |
+| Soft skills | The chosen answer to the guest and response time (from complaint to choice) |
+| Management | Whether the order is calculated correctly: 35 kg within budget |
 
-- **Безопасность:** `Fit Score = max(20, 99 − 12 × ошибки ТБ)`.
-- **Бариста:** базовые 84 балла плюс бонусы:
-  - +10 без промахов или +5, если промахов не больше 2;
-  - +8 за ответ с извинением и решением;
-  - +5 за оптимальную закупку;
-  - максимум 99.
-- **IT-инженер и Врач** (общий движок сценариев `scenario.js`):
-  - точность шагов = 100 % − 5 % за каждый клик не по тому предмету;
-  - Fit Score = 35 % точности шагов + 40 % hard-решения + 25 % soft-решения, от 20 до 99;
-  - за каждый вариант ответа задан балл (лучший — 100, частично верный — 40–60, ошибочный — 0–30).
+- **Safety:** `Fit Score = max(20, 99 − 12 × safety violations)`.
+- **Barista:** a base of 84 points plus bonuses:
+  - +10 with no misses, or +5 with at most 2 misses;
+  - +8 for an answer that apologises and offers a solution;
+  - +5 for the optimal order;
+  - maximum 99.
+- **IT engineer and Doctor** (shared scenario engine `scenario.js`):
+  - step accuracy = 100% − 5% for each click on the wrong object;
+  - Fit Score = 35% step accuracy + 40% hard-skill decision + 25% soft-skill decision, from 20 to 99;
+  - each answer option has a set score (best: 100, partly correct: 40–60, wrong: 0–30).
 
-**2. Текстовый разбор пишет ИИ (Claude API).** По итогам сессии клиент отправляет на бэкенд балл, метрики и журнал действий (`POST /api/report`). Бэкенд просит Claude (`claude-opus-5`) написать короткий персональный разбор:
-- что получилось;
-- над чем поработать, со ссылкой на реальные ошибки из журнала;
-- подходит ли профессия и какой следующий шаг.
+**2. The written debrief is generated by AI (Claude API).** At the end of a session the client sends the score, metrics and action log to the backend (`POST /api/report`). The backend asks Claude (`claude-opus-5`) to write a short personal debrief:
+- what went well;
+- what to work on, referring to real mistakes from the log;
+- whether the profession is a good fit and what the next step is.
 
-Как это устроено:
-- **Формат ответа** строго задан JSON-схемой (structured outputs).
-- **Балл ИИ не меняет:** он только объясняет результат простыми словами.
-- **Ключ API хранится только на сервере,** его нет ни во фронтенде, ни в мобильном приложении.
-- **Без ключа или при ошибке API** бэкенд возвращает разбор по правилам, а интерфейс помечает, какой источник использован.
+How it is built:
+- **The response format** is strictly defined by a JSON schema (structured outputs).
+- **The AI doesn't change the score:** it only explains the result in plain words.
+- **The API key is stored only on the server;** it is not in the frontend or the mobile app.
+- **Without a key, or if the API fails,** the backend returns a rule-based debrief, and the interface shows which source was used.
 
-## 5. Архитектура
+## 5. Architecture
 
 ```
- ┌───────────── frontend/ (браузер) ─────────────┐        ┌──────────── backend/ (Node.js) ───────────┐
+ ┌───────────── frontend/ (browser) ──────────────┐        ┌──────────── backend/ (Node.js) ───────────┐
  │ index.html + css/ + js/                        │  POST  │ Express                                   │
- │  ui · guide · controls   ← UI и гид            │ /api/  │  validate.js  — проверка входных данных    │
- │  engine (Three.js)       ← 3D, свет, raycast   │ report │  feedback.js  — Claude API (JSON-схема)    │──► Claude API
- │  safety · barista · it · doctor ← модули       │ ─────► │  rules.js     — запасной разбор по правилам│
- │  report · telemetry      ← оценка, журнал      │ ◄───── │  server.js    — /api/*, лимит запросов,    │
- └────────────────────────────────────────────────┘        │                 раздача frontend/          │
-            ▲ ассет (копия через scripts/)                 └────────────────────────────────────────────┘
+ │  ui · guide · controls   ← UI and guide        │ /api/  │  validate.js  — input validation           │
+ │  engine (Three.js)       ← 3D, lighting, ray   │ report │  feedback.js  — Claude API (JSON schema)   │──► Claude API
+ │  safety · barista · it · doctor ← modules      │ ─────► │  rules.js     — rule-based fallback        │
+ │  report · telemetry      ← scoring, log        │ ◄───── │  server.js    — /api/*, rate limit,        │
+ └────────────────────────────────────────────────┘        │                 serves frontend/           │
+            ▲ asset (copied by scripts/)                   └────────────────────────────────────────────┘
  ┌───────────── mobile/ (Flutter) ────────────────┐                ▲
  │ SimView: WebView (Android/iOS) / iframe (Web)  │  POST /api/report (--dart-define=API_BASE_URL)
  │ GameProvider → AiAnalysisService ──────────────┼────────────────┘
@@ -162,188 +164,187 @@ SynapKor — браузерный 3D-симулятор от первого ли
  └────────────────────────────────────────────────┘
 ```
 
-| Часть | Технологии | Ответственность |
+| Part | Technologies | Responsibility |
 |---|---|---|
-| `frontend/` | HTML, CSS, JavaScript, Three.js r128 | 3D-сцены, управление, логика модулей, гид, расчёт балла, отчёт |
-| `backend/` | Node.js 20+, Express 5, `@anthropic-ai/sdk` | API ИИ-разбора, валидация, лимит запросов, раздача фронтенда |
-| `mobile/` | Flutter 3.x (Dart), provider, webview_flutter, web | Мобильное и веб-приложение, встраивающее симулятор; экран отчёта |
+| `frontend/` | HTML, CSS, JavaScript, Three.js r128 | 3D scenes, controls, module logic, guide, scoring, report |
+| `backend/` | Node.js 20+, Express 5, `@anthropic-ai/sdk` | AI debrief API, validation, rate limiting, serving the frontend |
+| `mobile/` | Flutter 3.x (Dart), provider, webview_flutter, web | Mobile and web app that embeds the simulator; report screen |
 
-**Протокол клиент → хост.** Симулятор отправляет JSON-сообщения `{type: "action" | "session_complete", ...}` через `window.FlutterChannel` (WebView) и `window.parent.postMessage` (iframe).
+**Client → host protocol.** The simulator sends JSON messages `{type: "action" | "session_complete", ...}` via `window.FlutterChannel` (WebView) and `window.parent.postMessage` (iframe).
 
-### Что сделано нами, а что — сторонние технологии (п. 5.3 Положения)
+### What we built vs. third-party technology (clause 5.3 of the rules)
 
-| Своё | Стороннее |
+| Ours | Third-party |
 |---|---|
-| 3D-сцены всех четырёх модулей: геометрия из примитивов, процедурные текстуры | [Three.js r128](https://threejs.org/) (рендер, MIT; копия в `frontend/vendor/`, чтобы демо работало без интернета) |
-| Управление от первого лица: мышь, WASD, мультитач, D-pad | Шрифты Google Fonts |
-| Логика сценариев и общий движок `scenario.js`, проверка порядка действий, ошибки ТБ | Express (HTTP-сервер) |
-| Гид, подписи, указатели на цель | Claude API через `@anthropic-ai/sdk` (текст разбора) |
-| Правила оценки, журнал действий, протокол клиент-хост | Flutter, provider, webview_flutter, http, google_fonts, web |
-| Бэкенд: промпт, JSON-схема ответа, валидация, запасные правила, тесты | |
-| Процедурные звуки на WebAudio | ИИ-ассистент Claude (инструмент разработки): использовался при создании модулей «IT-инженер», «Врач-терапевт» и движка `scenario.js` |
+| 3D scenes for all four modules: geometry from primitives, procedural textures | [Three.js r128](https://threejs.org/) (rendering, MIT; a copy in `frontend/vendor/` so the demo works offline) |
+| First-person controls: mouse, WASD, multitouch, D-pad | Google Fonts |
+| Scenario logic and the shared `scenario.js` engine, action-order checks, safety violations | Express (HTTP server) |
+| Guide, labels, target pointers | Claude API via `@anthropic-ai/sdk` (debrief text) |
+| Scoring rules, action log, client–host protocol | Flutter, provider, webview_flutter, http, google_fonts, web |
+| Backend: prompt, response JSON schema, validation, fallback rules, tests | |
+| Procedural sounds with WebAudio | Claude AI assistant (development tool): used to build the "IT engineer" and "General practitioner" modules and the `scenario.js` engine |
 
-### Данные и приватность
-- Нет регистрации и персональных данных: ни имени, ни почты, ни телефона.
-- Журнал действий и ответы анкеты анонимны; анкета хранится на устройстве и, если запущен сервер, в `backend/data/survey.jsonl` (файл не попадает в git).
-- Ключ Claude API только на сервере; входные данные проверяются, есть лимит запросов и защитные HTTP-заголовки.
+### Data and privacy
+- No sign-up and no personal data: no name, email or phone number.
+- The action log and survey answers are anonymous; the survey is stored on the device and, if the server is running, in `backend/data/survey.jsonl` (the file is not committed to git).
+- The Claude API key is only on the server; input is validated, requests are rate-limited, and security HTTP headers are set.
 
-Шпаргалка по архитектуре и вопросам жюри — [docs/QA.md](docs/QA.md).
+Architecture cheat sheet and answers to jury questions: [docs/QA.md](docs/QA.md).
 
-## 6. Как запустить
+## 6. How to run
 
-**1. Вся система локально (фронтенд + бэкенд + ИИ):**
+**1. The whole system locally (frontend + backend + AI):**
 ```bash
 cd backend
 npm install
-cp .env.example .env    # впишите ANTHROPIC_API_KEY
+cp .env.example .env    # add your ANTHROPIC_API_KEY
 npm start               # http://localhost:8787
 ```
-Без ключа всё работает, но разбор будет по правилам.
-Тесты бэкенда:
+Everything works without a key, but the debrief will be rule-based.
+Backend tests:
 ```bash
 npm test
 ```
 
-**2. Только фронтенд (без ИИ).** Работает и без интернета: Three.js лежит в `frontend/vendor/`. Подойдёт любой статический сервер:
+**2. Frontend only (no AI).** Works offline too: Three.js is in `frontend/vendor/`. Any static server will do:
 ```bash
 python -m http.server 8080 --directory frontend
 ```
-На GitHub Pages используется корневой `index.html`, он переадресует на `frontend/`. Бэкенда там нет, поэтому в карточке ИИ показывается разбор по правилам с пометкой об этом. Если бэкенд развёрнут отдельно, его адрес можно передать параметром: `frontend/?api=https://ваш-бэкенд`.
+GitHub Pages uses the root `index.html`, which redirects to `frontend/`. There is no backend there, so the AI card shows a rule-based debrief and says so. If the backend is deployed separately, pass its address as a parameter: `frontend/?api=https://your-backend`.
 
-**3. Мобильное и веб-приложение (Flutter 3.22+):**
+**3. Mobile and web app (Flutter 3.22+):**
 ```bash
-node scripts/sync-frontend.mjs          # копирует frontend/ в mobile/assets/sim/
+node scripts/sync-frontend.mjs          # copies frontend/ into mobile/assets/sim/
 cd mobile
-flutter create . --platforms=android,ios,web --project-name synapkor   # один раз: служебные файлы платформ
+flutter create . --platforms=android,ios,web --project-name synapkor   # once: platform scaffolding
 flutter pub get
 flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8787
-flutter build web --dart-define=API_BASE_URL=https://ваш-бэкенд
-flutter build apk --dart-define=API_BASE_URL=https://ваш-бэкенд
+flutter build web --dart-define=API_BASE_URL=https://your-backend
+flutter build apk --dart-define=API_BASE_URL=https://your-backend
 ```
-Для эмулятора Android адрес локального бэкенда — `http://10.0.2.2:8787`.
+For the Android emulator, the local backend address is `http://10.0.2.2:8787`.
 
-**Управление:** `WASD` — ходить, мышь — осматриваться, `E` / клик — действие, `H` — показать или скрыть гида, `1/2/3` — инструменты в модуле ТБ и выбор ответа в модулях «IT-инженер» и «Врач». На телефоне — джойстик и кнопка `E`.
+**Controls:** `WASD` to walk, mouse to look around, `E` / click to act, `H` to show or hide the guide, `1/2/3` for tools in the safety module and for choosing answers in the IT engineer and Doctor modules. On a phone: joystick and the `E` button.
 
-## 7. Практическая реализуемость
+## 7. Feasibility
 
-- **Внедрение без железа.** Нужны только браузер и ссылка, так что симулятор можно запускать на школьных компьютерах и телефонах учеников.
-- **Масштабирование на новые профессии.** Модуль — это сцена, список шагов с правилами проверки и тексты гида. Следующие кандидаты: повар, автомеханик, фармацевт, оператор ЧПУ.
-- **Модель монетизации (гипотеза):**
-  - бесплатно для школьников (базовые модули);
-  - подписка для школ и центров профориентации: кабинет учителя, отчёты по классу;
-  - B2B-лицензия для работодателей: собственные сценарии, интеграция с HR-системой.
-- **Ограничения MVP:**
-  - аккаунтов нет: профиль профессий и анкета хранятся только в браузере ученика;
-  - оценка основана на правилах и ещё не откалибрована на реальных специалистах;
-  - четыре модуля; мобильное приложение пока запускает только «Бариста» (остальные доступны в браузере и по ссылке `?module=`);
-  - сценарий «Врач» учебный и не проверен практикующим врачом.
+- **No hardware needed.** All it takes is a browser and a link, so the simulator runs on school computers and students' phones.
+- **Scaling to new professions.** A module is a scene, a list of steps with checking rules, and guide texts. Next candidates: cook, car mechanic, pharmacist, CNC operator.
+- **Business model (hypothesis):**
+  - free for school students (basic modules);
+  - a subscription for schools and career guidance centres: a teacher dashboard, class reports;
+  - a B2B licence for employers: custom scenarios, integration with HR systems.
+- **MVP limitations:**
+  - no accounts: the profession profile and survey are stored only in the student's browser;
+  - scoring is rule-based and not yet calibrated against real professionals;
+  - four modules; the mobile app currently only launches "Barista" (the others are available in the browser and via the `?module=` link);
+  - the "Doctor" scenario is for learning and has not been reviewed by a practising doctor.
 
-## 8. Разработка во время хакатона
+## 8. Work done during the hackathon
 
-Базовый прототип создан до старта отборочного этапа: коммиты от 14–16.09.2026 видны в истории репозитория, мы её не переписывали. **Во время отборочного этапа (22–24.09.2026)** сделано следующее:
+The base prototype was created before the qualifying stage started: the commits from 14–16 Sept 2026 are visible in the repository history, and we did not rewrite it. **During the qualifying stage (22–24 Sept 2026)** we did the following:
 
-- **Модуль «Инженер по ТБ»:**
-  - исправлена логика LOTO, например замок нельзя было повесить;
-  - добавлены проверки порядка действий;
-  - добавлен отдельный отчёт.
-- **Исправлены критические ошибки:**
-  - сцены модулей смешивались;
-  - клики по интерфейсу срабатывали как действия в сцене;
-  - на телефоне было двойное срабатывание;
-  - часть объектов была недоступна.
-- **Новая главная страница и переработанная графика:**
-  - сбалансированный свет и отражения;
-  - контрастные материалы;
-  - подписи объектов.
-- **Гид для новичков:**
-  - вводный экран, пошаговая панель;
-  - стрелка над целью, указатель на цель за краем экрана;
-  - подсказки при ошибках.
-- **Честные метрики:**
-  - вместо фиктивных «тремора» и «зрительного контакта» — реально измеряемые «лишние действия» и «время ответа»;
-  - расчёт оценки описан открыто.
-- **Архитектура:**
-  - монолитный HTML на 5600 строк разделён на `frontend/` (HTML, CSS и 10 JS-модулей);
-  - появились `backend/` и `mobile/`.
-- **ИИ через бэкенд:**
-  - Node.js + Express, эндпоинт `/api/report`;
-  - текст разбора пишет Claude API, ответ строго по JSON-схеме;
-  - проверка входных данных, лимит запросов, запасные правила, автотесты;
-  - в интерфейсе появилась карточка «Комментарий ИИ».
+- **"Safety engineer" module:**
+  - fixed the LOTO logic (for example, the lock could not be attached);
+  - added action-order checks;
+  - added a separate report.
+- **Fixed critical bugs:**
+  - module scenes were mixing together;
+  - clicks on the interface were registering as actions in the scene;
+  - actions fired twice on phones;
+  - some objects could not be reached.
+- **New home page and reworked graphics:**
+  - balanced lighting and reflections;
+  - high-contrast materials;
+  - object labels.
+- **Beginner guide:**
+  - intro screen, step-by-step panel;
+  - an arrow above the target, a pointer to off-screen targets;
+  - hints on mistakes.
+- **Honest metrics:**
+  - instead of made-up "tremor" and "eye contact", genuinely measurable "extra actions" and "response time";
+  - the scoring formula is documented openly.
+- **Architecture:**
+  - a 5,600-line monolithic HTML file was split into `frontend/` (HTML, CSS and 10 JS modules);
+  - `backend/` and `mobile/` were added.
+- **AI through the backend:**
+  - Node.js + Express, the `/api/report` endpoint;
+  - the debrief text is written by the Claude API, strictly following a JSON schema;
+  - input validation, rate limiting, fallback rules, automated tests;
+  - an "AI comment" card in the interface.
 - **Flutter:**
-  - симулятор встроен как asset: WebView на Android/iOS, iframe во Flutter Web (раньше грузился с localhost);
-  - ИИ-разбор идёт через бэкенд, прямой вызов Gemini с ключом в приложении убран;
-  - телеметрия из WebView завершает сессию;
-  - исправлен двойной переход на экран результата;
-  - удалён неработающий код.
+  - the simulator is embedded as an asset: WebView on Android/iOS, iframe in Flutter Web (previously it loaded from localhost);
+  - the AI debrief goes through the backend; the direct Gemini call with a key inside the app was removed;
+  - telemetry from the WebView ends the session;
+  - fixed a double navigation to the results screen;
+  - removed dead code.
+- **Two new professions and a scenario engine:**
+  - "IT engineer": a server-room incident, fixing a bug in code, talking to the client;
+  - "General practitioner": examining a patient, a clinical decision, talking to the patient;
+  - the shared `scenario.js` engine: a new profession is described in a single file (scene, steps, decisions, report texts);
+  - the backend accepts reports from the new modules; debrief rules and automated tests were added.
+- **Kazakh-language interface:** a "Рус / Қаз" switch; the home page, intro screens, report and survey are translated.
+- **Career guidance for Kazakhstan:** a "Career path" block (UNT, university programmes, college, Kazakhstan labour market data) and a student profile across all modules.
+- **Validation and quality:**
+  - the testing survey is built into the report, and the H1–H3 hypothesis summary is calculated automatically;
+  - `POST /api/survey` and `GET /api/survey/summary` endpoints with input validation and a test;
+  - CI in GitHub Actions: backend tests and a check of every frontend JS file on each push.
 
-- **Две новые профессии и движок сценариев:**
-  - «IT-инженер»: инцидент в серверной, исправление бага в коде, разговор с заказчиком;
-  - «Врач-терапевт»: осмотр пациента, клиническое решение, разговор с пациентом;
-  - общий движок `scenario.js`: новая профессия описывается одним файлом (сцена, шаги, решения, тексты отчёта);
-  - бэкенд принимает отчёты новых модулей, добавлены правила разбора и автотесты.
-- **Казахский язык интерфейса:** переключатель «Рус / Қаз», перевод главной, вводных экранов, отчёта и анкеты.
-- **Профориентация для Казахстана:** блок «Путь в профессию» (ЕНТ, программы вузов, колледж, данные рынка труда РК) и профиль ученика по всем модулям.
-- **Валидация и качество:**
-  - анкета для тестирования встроена в отчёт, сводка по гипотезам H1–H3 считается автоматически;
-  - эндпоинты `POST /api/survey` и `GET /api/survey/summary` с проверкой входных данных и тестом;
-  - CI в GitHub Actions: тесты бэкенда и проверка всех JS-файлов фронтенда на каждый push.
-
-## 9. Структура репозитория
+## 9. Repository structure
 
 ```
-├── frontend/                     # Веб-клиент (MVP): открывается в браузере
+├── frontend/                     # Web client (MVP): opens in the browser
 │   ├── index.html
 │   ├── css/styles.css
 │   └── js/
-│       ├── config.js             # адрес API
-│       ├── telemetry.js          # состояние сессии, журнал действий, мост с хостом
-│       ├── safety.js             # модуль «Инженер по ТБ»: сцена цеха и логика LOTO
-│       ├── barista.js            # модуль «Бариста»: 3 задания
-│       ├── scenario.js           # общий движок сценариев: шаги, решения, гид, отчёт
-│       ├── it.js                 # модуль «IT-инженер»: серверная и инцидент
-│       ├── doctor.js             # модуль «Врач-терапевт»: кабинет и осмотр
-│       ├── engine.js             # Three.js: рендер, свет, цикл, сцена кофейни
-│       ├── controls.js           # управление от первого лица, наведение
-│       ├── guide.js              # гид, подписи, указатели, вводный экран
-│       ├── effects.js            # анимации и всплывающие сообщения
-│       ├── audio.js              # процедурные звуки
-│       ├── report.js             # отчёт и запрос ИИ-разбора
-│       ├── survey.js             # анкета после отчёта и сводка ?survey=results
-│       ├── career.js             # путь в профессию в РК (ЕНТ, вузы) и профиль ученика
-│       ├── i18n.js               # переключатель русский / казахский
-│       └── ui.js                 # экраны, HUD, запуск модулей
-├── backend/                      # API ИИ-разбора (Node.js)
-│   ├── src/server.js             # Express: /api/health, /api/report, /api/survey, статика
-│   ├── src/feedback.js           # Claude API + JSON-схема ответа
-│   ├── src/rules.js              # запасной разбор по правилам
-│   ├── src/validate.js           # проверка входных данных
-│   ├── test/api.test.js          # автотесты (node --test)
+│       ├── config.js             # API address
+│       ├── telemetry.js          # session state, action log, bridge to the host
+│       ├── safety.js             # "Safety engineer" module: workshop scene and LOTO logic
+│       ├── barista.js            # "Barista" module: 3 tasks
+│       ├── scenario.js           # shared scenario engine: steps, decisions, guide, report
+│       ├── it.js                 # "IT engineer" module: server room and incident
+│       ├── doctor.js             # "General practitioner" module: office and examination
+│       ├── engine.js             # Three.js: rendering, lighting, loop, coffee shop scene
+│       ├── controls.js           # first-person controls, aiming
+│       ├── guide.js              # guide, labels, pointers, intro screen
+│       ├── effects.js            # animations and pop-up messages
+│       ├── audio.js              # procedural sounds
+│       ├── report.js             # report and AI debrief request
+│       ├── survey.js             # post-report survey and the ?survey=results summary
+│       ├── career.js             # career path in Kazakhstan (UNT, universities) and student profile
+│       ├── i18n.js               # Russian / Kazakh switch
+│       └── ui.js                 # screens, HUD, module launch
+├── backend/                      # AI debrief API (Node.js)
+│   ├── src/server.js             # Express: /api/health, /api/report, /api/survey, static files
+│   ├── src/feedback.js           # Claude API + response JSON schema
+│   ├── src/rules.js              # rule-based fallback debrief
+│   ├── src/validate.js           # input validation
+│   ├── test/api.test.js          # automated tests (node --test)
 │   └── .env.example
-├── mobile/                       # Flutter-приложение (Android / iOS / Web)
+├── mobile/                       # Flutter app (Android / iOS / Web)
 │   ├── lib/
 │   │   ├── config.dart           # API_BASE_URL
 │   │   ├── models/ · providers/ · screens/ · services/ · theme/
-│   │   └── widgets/sim_view/     # WebView / iframe с симулятором
+│   │   └── widgets/sim_view/     # WebView / iframe with the simulator
 │   ├── android/
 │   └── pubspec.yaml
-├── scripts/sync-frontend.mjs     # копирует frontend/ в mobile/assets/sim/
-├── docs/                         # VALIDATION.md (валидация), PITCH.md (план питча), QA.md (ответы жюри), demo.mp4
-├── .github/workflows/ci.yml      # CI: тесты бэкенда и проверка JS
-└── index.html                    # переадресация на frontend/ для GitHub Pages
+├── scripts/sync-frontend.mjs     # copies frontend/ into mobile/assets/sim/
+├── docs/                         # VALIDATION.md (validation), PITCH.md (pitch plan), QA.md (jury answers), demo.mp4
+├── .github/workflows/ci.yml      # CI: backend tests and JS checks
+└── index.html                    # redirect to frontend/ for GitHub Pages
 ```
 
-### Как добавить новую профессию
+### How to add a new profession
 
-1. Создайте `frontend/js/<id>.js` и вызовите в нём `registerScenario({...})`: 3D-сцена (`build`), 6 шагов (`steps`: какой предмет, подсказки гида, анимация), решения внизу экрана (`decisions`), тексты победы и отчёта. Пример: `it.js` или `doctor.js`, формат описан в начале `scenario.js`.
-2. Подключите файл в `frontend/index.html` после `scenario.js` и добавьте карточку с `onclick="startScenario('<id>')"`.
-3. Добавьте `<id>` в `MODULES` (`backend/src/validate.js`), описание в `MODULE_CONTEXT` (`backend/src/feedback.js`) и разбор по правилам в `backend/src/rules.js`.
+1. Create `frontend/js/<id>.js` and call `registerScenario({...})` in it: the 3D scene (`build`), 6 steps (`steps`: which object, guide hints, animation), on-screen decisions (`decisions`), and the win and report texts. See `it.js` or `doctor.js` for an example; the format is described at the top of `scenario.js`.
+2. Include the file in `frontend/index.html` after `scenario.js` and add a card with `onclick="startScenario('<id>')"`.
+3. Add `<id>` to `MODULES` (`backend/src/validate.js`), a description to `MODULE_CONTEXT` (`backend/src/feedback.js`), and a rule-based debrief to `backend/src/rules.js`.
 
-Прямая ссылка на модуль: `index.html?module=<id>` (`safety`, `barista`, `it`, `doctor`).
+Direct link to a module: `index.html?module=<id>` (`safety`, `barista`, `it`, `doctor`).
 
-## 10. Команда
+## 10. Team
 
-- Арнур
-- Койлыбай Магжан
-- Туралы Ермек
-- Ашим Рукнуддин
+- Arnur
+- Koilybay Magzhan
+- Turaly Yermek
+- Ashim Ruknuddin
