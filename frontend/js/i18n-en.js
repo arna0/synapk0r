@@ -24,6 +24,9 @@ const EN = {
   'Сайт интернет-магазина упал. Найдите причину по логам, почините сервер, исправьте баг в коде и объясните сбой заказчику.':
     'The online store is down. Find the cause in the logs, fix the server, fix the bug in the code and explain the outage to the client.',
   'Врач-терапевт': 'General practitioner',
+  'Бариста': 'Barista',
+  'IT-инженер': 'IT engineer',
+  'Медицина': 'Medicine',
   'Примите пациента с кашлем и температурой: осмотр по стандарту, решение о дальнейших шагах и разговор с встревоженным пациентом.':
     'See a patient with a cough and fever: a standard examination, a decision on next steps and a talk with a worried patient.',
   'Как это работает': 'How it works',
@@ -239,5 +242,6 @@ const EN = {
 
 const EN_PATTERNS = [
   [/^Пройдено (\d+) из (\d+)$/, (m) => `${m[1]} of ${m[2]} done`],
-  [/^(\d+) сек$/, (m) => `${m[1]} s`]
+  [/^(\d+) сек$/, (m) => `${m[1]} s`],
+  [/^(\d+)–(\d+) минут$/, (m) => `${m[1]}–${m[2]} min`]
 ];

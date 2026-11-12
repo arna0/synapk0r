@@ -6,7 +6,7 @@ Track focus areas: *career guidance and exploring career paths · skills develop
 🇬🇧 English · [🇷🇺 Русский](README.ru.md)
 
 - **Live demo (runs in the browser, nothing to install):** https://arna0.github.io/synapk0r/
-  - jump straight into a module: [IT engineer](https://arna0.github.io/synapk0r/frontend/?module=it) · [Doctor](https://arna0.github.io/synapk0r/frontend/?module=doctor) · [Safety engineer](https://arna0.github.io/synapk0r/frontend/?module=safety) · [Barista](https://arna0.github.io/synapk0r/frontend/?module=barista) · [in Kazakh](https://arna0.github.io/synapk0r/?lang=kk)
+  - jump straight into a module: [IT engineer](https://arna0.github.io/synapk0r/frontend/?module=it) · [Doctor](https://arna0.github.io/synapk0r/frontend/?module=doctor) · [Safety engineer](https://arna0.github.io/synapk0r/frontend/?module=safety) · [Barista](https://arna0.github.io/synapk0r/frontend/?module=barista) · [in English](https://arna0.github.io/synapk0r/?lang=en) · [in Kazakh](https://arna0.github.io/synapk0r/?lang=kk)
   - GitHub Pages has no server, so the written debrief there is rule-based. The Claude debrief works when you run `backend/` (section 6)
 - **Code:** https://github.com/arna0/synapk0r
 - **Demo video (60 seconds, narrated):** [docs/demo.mp4](docs/demo.mp4): the IT module from the alert to the report, the Kazakh interface, and the career path
