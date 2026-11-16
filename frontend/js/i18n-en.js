@@ -7,6 +7,8 @@ const EN = {
   'Выполните настоящие рабочие задачи от первого лица. Гид подскажет каждый шаг, а в конце вы получите отчёт: точность, ошибки, время и зоны роста.':
     'Do real work tasks in first person. A guide shows you every step, and at the end you get a report: accuracy, mistakes, time and what to improve.',
   'Выберите симуляцию': 'Choose a simulation',
+  'Выбрать профессию': 'Choose a profession',
+  'Листайте вниз': 'Scroll down',
   '4 профессии': '4 professions',
   'Промышленность': 'Industry',
   'Новое': 'New',
