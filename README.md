@@ -8,6 +8,7 @@ Track focus areas: *career guidance and exploring career paths · skills develop
 - **Live demo (runs in the browser, nothing to install):** https://arna0.github.io/synapk0r/
   - jump straight into a module: [IT engineer](https://arna0.github.io/synapk0r/frontend/?module=it) · [Doctor](https://arna0.github.io/synapk0r/frontend/?module=doctor) · [Safety engineer](https://arna0.github.io/synapk0r/frontend/?module=safety) · [Barista](https://arna0.github.io/synapk0r/frontend/?module=barista) · [in English](https://arna0.github.io/synapk0r/?lang=en) · [in Kazakh](https://arna0.github.io/synapk0r/?lang=kk)
   - GitHub Pages has no server, so the written debrief there is rule-based. The Claude debrief works when you run `backend/` (section 6)
+- **Android app:** [download SynapKor.apk](https://github.com/arna0/synapk0r/releases/download/android-latest/SynapKor.apk), all four professions, rebuilt automatically on every change
 - **Code:** https://github.com/arna0/synapk0r
 - **Demo video (60 seconds, narrated):** [docs/demo.mp4](docs/demo.mp4): the IT module from the alert to the report, the Kazakh interface, and the career path
 
@@ -88,10 +89,10 @@ The scenario is simplified and for learning only. It is not medical advice.
 - metrics: accuracy, safety violations, extra actions, time;
 - confirmed competencies and areas to grow.
 
-**Kazakh-language interface**
-- a "Рус / Қаз" switch on the home page, or the `?lang=kk` link;
+**Russian, Kazakh and English interface**
+- a "Рус / Қаз / Eng" switch on the home page, or the `?lang=kk` / `?lang=en` link;
 - the home page, intro screens, report, career path and survey are translated; the Claude debrief is written in the selected language;
-- the guide inside the 3D scene is still in Russian.
+- in English the whole game is translated, including the 3D guide, step bar, tooltips and text on 3D screens; in Kazakh the guide inside the 3D scene is still in Russian.
 
 **Career path in Kazakhstan and student profile**
 - in the report: the UNT (national exam) subjects for the profession, university programme groups, the college route, and a fact about the Kazakhstan labour market;
@@ -210,7 +211,7 @@ npm test
 ```bash
 python -m http.server 8080 --directory frontend
 ```
-GitHub Pages uses the root `index.html`, which redirects to `frontend/`. There is no backend there, so the AI card shows a rule-based debrief and says so. If the backend is deployed separately, pass its address as a parameter: `frontend/?api=https://your-backend`.
+GitHub Pages uses the root `index.html`, which redirects to `frontend/`. There is no backend there, so the AI card shows a rule-based debrief and says so. If the backend is deployed separately, pass its address as a parameter: `frontend/?api=https://your-backend`, after adding that origin to `ALLOWED_API_ORIGINS` in `frontend/js/config.js` (other addresses are ignored, so a crafted link cannot send a player's session somewhere else).
 
 **3. Mobile and web app (Flutter 3.22+):**
 ```bash
@@ -237,7 +238,7 @@ For the Android emulator, the local backend address is `http://10.0.2.2:8787`.
 - **MVP limitations:**
   - no accounts: the profession profile and survey are stored only in the student's browser;
   - scoring is rule-based and not yet calibrated against real professionals;
-  - four modules; the mobile app currently only launches "Barista" (the others are available in the browser and via the `?module=` link);
+  - four modules, all available in the browser and in the Android app; in the app, Barista uses the native results screen and the other three show the simulator's own report;
   - the "Doctor" scenario is for learning and has not been reviewed by a practising doctor.
 
 ## 8. Work done during the hackathon
