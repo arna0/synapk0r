@@ -2122,3 +2122,8 @@ html[lang="kk"] .obj-label.target::before { content: 'Осында · '; }
 .home-footer-brand { font-weight: 800; letter-spacing: 0.08em; color: #171512; }
 .home-footer a { margin-left: auto; color: #171512; font-weight: 600; text-decoration: none; border-bottom: 1.5px solid currentColor; }
 .home-footer a:hover { color: #d9431f; }
+
+/* column lines stay behind the content */
+#homeScreen::after { z-index: 0; }
+#homeScreen .home-main { position: relative; z-index: 1; }
+#homeScreen .home-nav { z-index: 30; background: rgba(244, 241, 234, 0.9); backdrop-filter: blur(10px); }
