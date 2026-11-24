@@ -1553,6 +1553,8 @@ kbd {
   box-shadow: 0 4px 14px rgba(0, 82, 255, 0.45);
 }
 .obj-label.target::before { content: 'Сюда · '; opacity: 0.85; }
+html[lang="en"] .obj-label.target::before { content: 'Here · '; }
+html[lang="kk"] .obj-label.target::before { content: 'Осында · '; }
 .offscreen-pointer {
   position: absolute;
   left: 0; top: 0;

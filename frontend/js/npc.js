@@ -286,21 +286,22 @@ function cafeCustomerArrive() {
 }
 
 // what he noticed while you worked
-const CAFE_REACT = {
+const CAFE_REACT = () => ({
   precision: [T('Вы кофе вообще взвешиваете?', 'Do you actually weigh the coffee?'), 'watery'],
   timing: [T('Хм, пахнет как-то… горьковато.', 'Hmm, that smells… a bit off.'), 'taste'],
   feel: [T('Молоко так шипит… это нормально?', 'The milk is screeching… is that normal?'), 'foam'],
-};
+});
 
 function cafeOnSkill(trait, score) {
   if (NPC.module !== 'barista' || NPC.state === 'hidden') return;
   if (score >= 85) {
     npcMood(0.06, 'nod');
     if (Math.random() < 0.5) npcSay(T('О, ловко у вас получается.', 'Oh, you’re good at this.'), 2600);
-  } else if (score < 60 && CAFE_REACT[trait]) {
+  } else if (score < 60 && CAFE_REACT()[trait]) {
     npcMood(-0.15, 'shake');
-    npcSay(CAFE_REACT[trait][0]);
-    cafe.issues.push(CAFE_REACT[trait][1]);
+    const r = CAFE_REACT()[trait];
+    npcSay(r[0]);
+    cafe.issues.push(r[1]);
   }
 }
 
@@ -430,17 +431,19 @@ function clinicPatientSeat() {
     });
 }
 
-const CLINIC_REACT = {
+const CLINIC_REACT = () => ({
   protocol: [T('Доктор, а руки вы точно обработали как следует?', 'Doctor, did you clean your hands properly?'), T('Спасибо, что руки обработали.', 'Thanks for cleaning your hands.')],
   attention: [T('Вы так долго смотрите на пульс… что-то не так?', 'You’re looking at my pulse for a long time… is something wrong?'), null],
   hearing: [T('Ай, манжета сильно давит… цифры точно верные?', 'Ow, the cuff is tight… are the numbers right?'), null],
   diagnosis: [T('Справа болит, когда кашляю… вы что-нибудь услышали?', 'It hurts on the right when I cough… did you hear anything?'), T('Значит, справа? Я так и чувствовал.', 'On the right, then? I could feel it.')],
-};
+});
 
 function clinicOnSkill(trait, score) {
-  if (NPC.module !== 'doctor' || NPC.state === 'hidden' || !CLINIC_REACT[trait]) return;
-  if (score >= 85) { npcMood(0.08, 'nod'); if (CLINIC_REACT[trait][1]) npcSay(CLINIC_REACT[trait][1], 3000); }
-  else if (score < 60) { npcMood(-0.14, 'shake'); npcSay(CLINIC_REACT[trait][0]); }
+  if (NPC.module !== 'doctor' || NPC.state === 'hidden') return;
+  const r = CLINIC_REACT()[trait];
+  if (!r) return;
+  if (score >= 85) { npcMood(0.08, 'nod'); if (r[1]) npcSay(r[1], 3000); }
+  else if (score < 60) { npcMood(-0.14, 'shake'); npcSay(r[0]); }
 }
 
 setInterval(() => {
