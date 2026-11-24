@@ -5,8 +5,23 @@
 //  - ?api=https://host in the URL, or window.SYNAPKOR_API_BASE set by the host app
 //  - file:// (bundled in the mobile app) without an injected base: AI feedback is skipped
 function getApiBase() {
-  const fromQuery = new URLSearchParams(location.search).get('api');
-  if (fromQuery) return fromQuery.replace(/\/$/, '');
+  const fromQuery = apiFromQuery();
+  if (fromQuery) return fromQuery;
   if (typeof window.SYNAPKOR_API_BASE === 'string') return window.SYNAPKOR_API_BASE.replace(/\/$/, '');
   return location.protocol.startsWith('http') ? '' : null;
+}
+
+// ?api= may only point at hosts listed here, so a crafted link can't send a player's
+// session log to someone else's server. Add your deployed backend's origin to this list.
+const ALLOWED_API_ORIGINS = ['http://localhost:8787', 'http://127.0.0.1:8787'];
+
+function apiFromQuery() {
+  const raw = new URLSearchParams(location.search).get('api');
+  if (!raw) return null;
+  try {
+    const origin = new URL(raw).origin;
+    if (ALLOWED_API_ORIGINS.includes(origin)) return origin;
+  } catch (e) { /* not a URL */ }
+  console.warn('[config] ?api= ignored: not in ALLOWED_API_ORIGINS');
+  return null;
 }

@@ -4,7 +4,7 @@
 import Anthropic, { APIConnectionError, APIError, AuthenticationError, RateLimitError } from '@anthropic-ai/sdk';
 import { ruleBasedFeedback } from './rules.js';
 
-const MODEL = process.env.CLAUDE_MODEL || 'claude-opus-5';
+const MODEL = process.env.CLAUDE_MODEL || 'claude-opus-5-5';
 
 const MODULE_CONTEXT = {
   safety:
@@ -64,6 +64,11 @@ let client = null;
 function getClient() {
   if (!client) client = new Anthropic({ timeout: 45_000, maxRetries: 1 });
   return client;
+}
+
+// Tests replace the Anthropic client with a fake one (no network, no key needed).
+export function setClientForTests(fake) {
+  client = fake;
 }
 
 function isValidFeedback(data) {

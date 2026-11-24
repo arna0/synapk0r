@@ -66,9 +66,35 @@ function setMoveKey(code, val) {
   if (player.keys.hasOwnProperty(code)) player.keys[code] = val;
 }
 
+function webglAvailable() {
+  try {
+    const c = document.createElement('canvas');
+    return Boolean(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
+  } catch (e) {
+    return false;
+  }
+}
+
+// Without WebGL the 3D scene cannot start: say so instead of leaving a blank screen.
+function showNoWebGL() {
+  if (document.getElementById('noWebglNotice')) return;
+  const box = document.createElement('div');
+  box.id = 'noWebglNotice';
+  box.style.cssText = 'position:absolute;inset:0;z-index:50;display:grid;place-items:center;background:rgba(15,23,42,.92);padding:24px';
+  box.innerHTML =
+    '<div style="max-width:420px;background:#fff;color:#0f172a;border-radius:16px;padding:24px;line-height:1.5">' +
+    '<h3 style="margin:0 0 8px">3D не запускается на этом устройстве</h3>' +
+    '<p style="margin:0 0 16px;color:#475569">Браузер не поддерживает WebGL или он выключен. Откройте симулятор в свежей версии Chrome, Edge или Firefox, либо включите аппаратное ускорение в настройках браузера.</p>' +
+    '<button type="button" style="border:0;border-radius:999px;padding:10px 18px;background:#ff5c39;color:#fff;font-weight:700;cursor:pointer">В главное меню</button>' +
+    '</div>';
+  box.querySelector('button').onclick = () => { box.remove(); showScreen('homeScreen'); };
+  (document.getElementById('gameScreen') || document.body).appendChild(box);
+}
+
 function initThreeFPS() {
   const container = document.getElementById('threeCanvas');
   if (!container || renderer) return;
+  if (!webglAvailable()) { showNoWebGL(); return; }
 
   const wrap = document.getElementById('viewportWrap');
   const width = wrap ? wrap.clientWidth : (container.clientWidth || 400);

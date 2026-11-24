@@ -4,7 +4,7 @@
 // In-game guide and HUD stay in Russian for now. ?lang=kk or ?lang=en opens that version directly.
 
 const I18N_KEY = 'synapkor_lang';
-const I18N_ROOTS = ['#homeScreen', '#introOverlay', '#resultScreen', '#victoryModal'];
+const I18N_ROOTS = ['#homeScreen', '#introOverlay', '#resultScreen', '#victoryModal', '#gameScreen'];
 
 const KK = {
   // ---------- home ----------
@@ -15,6 +15,9 @@ const KK = {
     'Нақты жұмыс тапсырмаларын бірінші тұлғадан орындаңыз. Гид әр қадамды көрсетеді, ал соңында есеп аласыз: дәлдік, қателер, уақыт және даму аймақтары.',
   'Выберите симуляцию': 'Симуляцияны таңдаңыз',
   'Выбрать профессию': 'Мамандықты таңдау',
+  '3D не запускается на этом устройстве': 'Бұл құрылғыда 3D іске қосылмайды',
+  'Браузер не поддерживает WebGL или он выключен. Откройте симулятор в свежей версии Chrome, Edge или Firefox, либо включите аппаратное ускорение в настройках браузера.':
+    'Браузер WebGL-ді қолдамайды немесе ол өшірулі. Симуляторды Chrome, Edge не Firefox-тың жаңа нұсқасында ашыңыз немесе браузер баптауларында аппараттық жеделдетуді қосыңыз.',
   'Листайте вниз': 'Төмен айналдырыңыз',
   '4 профессии': '4 мамандық',
   'Промышленность': 'Өнеркәсіп',
@@ -257,6 +260,22 @@ const PATTERNS = { kk: KK_PATTERNS, en: typeof EN_PATTERNS !== 'undefined' ? EN_
 const LANGS = ['ru', 'kk', 'en'];
 
 let currentLang = 'ru';
+
+// Translation of one Russian string in the current language (used by patterns and canvas text)
+function trRu(ru) {
+  const dict = DICTS[currentLang];
+  return (dict && dict[ru]) || ru;
+}
+
+// Text drawn onto 3D canvases (signs, patient record, monitoring screen) never reaches the DOM,
+// so translate it at draw time. Scenes are built after the language is chosen.
+if (typeof CanvasRenderingContext2D !== 'undefined') {
+  const drawText = CanvasRenderingContext2D.prototype.fillText;
+  CanvasRenderingContext2D.prototype.fillText = function (text, ...rest) {
+    if (currentLang !== 'ru' && typeof text === 'string' && /[А-Яа-яЁё]/.test(text)) text = translateString(text) ?? text;
+    return drawText.call(this, text, ...rest);
+  };
+}
 const originalText = new WeakMap();
 
 function translateString(ru) {
@@ -296,6 +315,10 @@ function translateNode(node) {
     return;
   }
   if (node.nodeType !== Node.ELEMENT_NODE || node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
+  if (node.title && /[А-Яа-яЁё]/.test(node.dataset.ruTitle || node.title)) {
+    if (!node.dataset.ruTitle) node.dataset.ruTitle = node.title;
+    node.title = currentLang === 'ru' ? node.dataset.ruTitle : (translateString(node.dataset.ruTitle) ?? node.dataset.ruTitle);
+  }
   if (node.placeholder) {
     if (!node.dataset.ruPlaceholder) node.dataset.ruPlaceholder = node.placeholder;
     const ru = node.dataset.ruPlaceholder;
