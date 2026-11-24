@@ -349,3 +349,8 @@ Direct link to a module: `index.html?module=<id>` (`safety`, `barista`, `it`, `d
 - Koilybay Magzhan
 - Turaly Yermek
 - Ashim Ruknuddin
+
+## 3D model credits
+
+- Walking person: Renderpeople "Nathan" (animated), from rigmodels.com. Free for personal use by students; commercial use needs a licence from rigmodels.com.
+- Scanned hand: from rigmodels.com, same terms.
