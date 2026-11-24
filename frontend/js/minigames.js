@@ -485,7 +485,7 @@ function mgValve(idx, done) {
 
 // A colleague wants the lock off for a minute.
 function mgColleague(done) {
-  const p = mgPanel(T('Коллега подходит к щиту', 'A colleague comes to the panel'), T('«Мне на минуту нужно питание проверить мотор. Сними замок, я быстро!»', '“I need power for a minute to test a motor. Take the lock off, I’ll be quick!”'));
+  const p = mgPanel(T('Коллега подходит к щиту', 'A colleague comes to the panel'), (window.npcColleagueLine ? window.npcColleagueLine() : T('«Мне на минуту нужно питание проверить мотор. Сними замок, я быстро!»', '“I need power for a minute to test a motor. Take the lock off, I’ll be quick!”')));
   const opts = shuffle([
     { text: T('Отказать: замок снимает только тот, кто его повесил, и только после работ', 'Refuse: only the person who fitted the lock takes it off, and only after the job'), ok: true },
     { text: T('Снять замок на минуту, раз очень нужно', 'Take the lock off for a minute, since they really need it'), ok: false },

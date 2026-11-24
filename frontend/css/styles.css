@@ -2006,3 +2006,18 @@ kbd {
 #threeCanvas { position: relative; }
 #threeCanvas::after { content: ""; position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.36) 100%); }
+
+/* people in the rooms: name tag with mood, speech bubble */
+.npc-tag, .npc-bubble { position: absolute; z-index: 30; transform: translate(-50%, -100%); pointer-events: none; transition: opacity .2s; }
+.npc-tag { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; padding: 4px 10px; border-radius: 999px;
+  background: rgba(17, 24, 39, 0.82); color: #f3f5f9; font-size: 12px; line-height: 1.2; backdrop-filter: blur(4px); }
+.npc-tag b { font-weight: 700; }
+.npc-mood { color: #a3adbd; }
+.npc-dot { width: 8px; height: 8px; border-radius: 50%; background: #a3adbd; }
+.npc-tag[data-tone="ok"] .npc-dot { background: #34d399; }
+.npc-tag[data-tone="mid"] .npc-dot { background: #60a5fa; }
+.npc-tag[data-tone="warn"] .npc-dot { background: #fbbf24; }
+.npc-tag[data-tone="bad"] .npc-dot { background: #f87171; }
+.npc-bubble { width: max-content; max-width: min(300px, 70vw); padding: 10px 14px; border-radius: 14px; background: #fff; color: #111827;
+  font-size: 14px; font-weight: 500; line-height: 1.4; box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.45); animation: interrupt-in .2s ease; }
+.npc-bubble::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; margin-left: -6px; background: #fff; transform: rotate(45deg); }
