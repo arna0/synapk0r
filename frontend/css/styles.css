@@ -2127,3 +2127,4 @@ html[lang="kk"] .obj-label.target::before { content: 'Осында · '; }
 #homeScreen::after { z-index: 0; }
 #homeScreen .home-main { position: relative; z-index: 1; }
 #homeScreen .home-nav { z-index: 30; background: rgba(244, 241, 234, 0.9); backdrop-filter: blur(10px); }
+@media (max-width: 1023px) { #homeScreen .hero-scroll { display: none; } }
