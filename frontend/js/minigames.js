@@ -337,7 +337,7 @@ function mgHazardScan(done) {
     if (c.it.hazard) { found++; b.classList.add('is-right'); if (found === 4) end(); }
     else { wrong++; b.classList.add('is-wrong'); }
   }, 'is-grid');
-  p.body.appendChild(bar);
+  p.body.prepend(bar);
   const total = 20 / Math.min(1.3, adapt.level), start = performance.now();
   mgLoop(p, (dt, now) => {
     const left = 1 - (now - start) / (total * 1000);
@@ -426,7 +426,7 @@ function mgValve(idx, done) {
   const { c, ctx, w, h } = mgCanvas(p, 460, 190);
   c.style.touchAction = 'none';
   let angle = 0, turned = 0, speed = 0, lastA = null, dragging = false, keyHold = false, tooFast = 0, total = 0;
-  const need = Math.PI * 2 * 2.5;
+  const need = Math.PI * 2 * 1.5;
   const cx = 120, cy = 95, R = 70;
   const pos = (e) => { const r = c.getBoundingClientRect(); return [(e.clientX - r.left) * (w / r.width) - cx, (e.clientY - r.top) * (h / r.height) - cy]; };
   c.addEventListener('pointerdown', (e) => { dragging = true; c.setPointerCapture(e.pointerId); const [x, y] = pos(e); lastA = Math.atan2(y, x); });
@@ -444,7 +444,7 @@ function mgValve(idx, done) {
   mgKeys(p, () => { keyHold = true; }, () => { keyHold = false; });
   const limit = 9 * Math.min(1.25, Math.max(0.9, 1 / adapt.level + 0.3));
   mgLoop(p, (dt) => {
-    if (keyHold) { const d = dt * 3.2; turned += d; angle += d; speed += d * 12; }
+    if (keyHold) { const d = dt * 1.9; turned += d; angle += d; speed += d * 12; }
     speed *= Math.pow(0.04, dt);
     total += dt;
     const fast = speed > limit;
