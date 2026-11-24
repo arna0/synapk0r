@@ -10,7 +10,10 @@ import '../widgets/three_d_fps_viewport.dart';
 import 'result_screen.dart';
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+  const GameScreen({super.key, this.module = 'barista'});
+
+  /// barista uses the native results screen; it, doctor and safety show the simulator's own report
+  final String module;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -21,6 +24,7 @@ class _GameScreenState extends State<GameScreen> {
 
   /// Final telemetry posted by the WebView simulator (window.FlutterChannel).
   void _onWebViewMessage(String data) {
+    if (widget.module != 'barista') return;
     try {
       final decoded = jsonDecode(data);
       if (decoded is Map<String, dynamic> &&
@@ -137,6 +141,7 @@ class _GameScreenState extends State<GameScreen> {
               child: Stack(
                 children: [
                   ThreeDFpsViewport(
+                    module: widget.module,
                     onMessageReceived: _onWebViewMessage,
                   ),
                   if (game.status == GameStatus.analyzing)
@@ -181,7 +186,7 @@ class _GameScreenState extends State<GameScreen> {
             ),
 
             // FPS HUD Overlay (25%)
-            const FpsHudOverlay(),
+            if (widget.module == 'barista') const FpsHudOverlay(),
           ],
         ),
       ),

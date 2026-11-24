@@ -14,7 +14,7 @@ class SimView extends StatefulWidget {
     this.onMessage,
   });
 
-  /// 'barista' or 'safety'
+  /// 'barista', 'safety', 'it' or 'doctor'
   final String module;
   final String apiBaseUrl;
   final ValueChanged<String>? onMessage;
@@ -49,9 +49,13 @@ class _SimViewState extends State<SimView> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (_) {
-            final start = widget.module == 'safety' ? 'startSafetyVR' : 'startBaristaVR';
+            final module = jsonEncode(widget.module);
             final api = widget.apiBaseUrl.isEmpty ? '' : 'window.SYNAPKOR_API_BASE = ${jsonEncode(widget.apiBaseUrl)};';
-            _controller?.runJavaScript('$api if (window.$start) $start();');
+            // barista and safety have their own entry points; it and doctor run on the scenario engine
+            _controller?.runJavaScript('$api '
+                'if ($module === "barista" && window.startBaristaVR) startBaristaVR(); '
+                'else if ($module === "safety" && window.startSafetyVR) startSafetyVR(); '
+                'else if (window.startScenario) startScenario($module);');
             if (mounted) setState(() => _loading = false);
           },
           onWebResourceError: (_) {

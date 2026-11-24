@@ -29,3 +29,4 @@ flutter:
     - assets/sim/
     - assets/sim/css/
     - assets/sim/js/
+    - assets/sim/vendor/

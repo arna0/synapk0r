@@ -103,7 +103,7 @@ class HomeScreen extends StatelessWidget {
                           Icon(Icons.sports_esports_rounded, size: 13, color: Color(0xFF1D4ED8)),
                           SizedBox(width: 4),
                           Text(
-                            '3D FPS Simulation Engine',
+                            '3D-симуляция',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8)),
                           ),
                         ],
@@ -111,7 +111,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Barista Pro VR Edition',
+                      'Бариста',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -155,6 +155,16 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               const Text(
+                'ДРУГИЕ ПРОФЕССИИ',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.textSecondary, letterSpacing: 0.5),
+              ),
+              const SizedBox(height: 10),
+              _buildModuleTile(context, 'it', '🖥️', 'IT-инженер', 'Инцидент в серверной, баг в коде, разговор с заказчиком'),
+              _buildModuleTile(context, 'doctor', '🩺', 'Врач-терапевт', 'Осмотр пациента, клиническое решение, разговор'),
+              _buildModuleTile(context, 'safety', '⚡', 'Инженер по ТБ', 'Подготовка щита 380 В к ремонту по процедуре LOTO'),
+              const SizedBox(height: 20),
+
+              const Text(
                 'УПРАВЛЕНИЕ В СИМУЛЯТОРЕ',
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.textSecondary, letterSpacing: 0.5),
               ),
@@ -171,6 +181,48 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// IT, doctor and safety run fully inside the embedded simulator, which shows its own skills report.
+  Widget _buildModuleTile(BuildContext context, String module, String emoji, String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: AppTheme.surfaceWhite,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => GameScreen(module: module)),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.borderLight),
+            ),
+            child: Row(
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 22)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.35)),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: AppTheme.textSecondary),
+              ],
+            ),
           ),
         ),
       ),

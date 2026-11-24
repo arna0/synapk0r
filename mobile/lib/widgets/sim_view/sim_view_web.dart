@@ -14,7 +14,7 @@ class SimView extends StatefulWidget {
     this.onMessage,
   });
 
-  /// 'barista' or 'safety'
+  /// 'barista', 'safety', 'it' or 'doctor'
   final String module;
   final String apiBaseUrl;
   final ValueChanged<String>? onMessage;

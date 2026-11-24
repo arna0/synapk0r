@@ -19,8 +19,10 @@ function apiFromQuery() {
   const raw = new URLSearchParams(location.search).get('api');
   if (!raw) return null;
   try {
-    const origin = new URL(raw).origin;
-    if (ALLOWED_API_ORIGINS.includes(origin)) return origin;
+    const url = new URL(raw);
+    if (ALLOWED_API_ORIGINS.includes(url.origin)) return url.origin;
+    // Embedded in the SynapKor web app (Flutter iframe): the host app chose the backend
+    if (window.parent !== window && /^https?:$/.test(url.protocol)) return url.origin;
   } catch (e) { /* not a URL */ }
   console.warn('[config] ?api= ignored: not in ALLOWED_API_ORIGINS');
   return null;

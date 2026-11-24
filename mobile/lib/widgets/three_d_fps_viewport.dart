@@ -4,16 +4,17 @@ import '../config.dart';
 import '../theme/app_theme.dart';
 import 'sim_view/sim_view.dart';
 
-/// 3D barista simulator (web client from assets/sim) embedded into the app.
+/// 3D simulator (web client from assets/sim) embedded into the app.
 class ThreeDFpsViewport extends StatelessWidget {
   final ValueChanged<String>? onMessageReceived;
+  final String module;
 
-  const ThreeDFpsViewport({super.key, this.onMessageReceived});
+  const ThreeDFpsViewport({super.key, this.onMessageReceived, this.module = 'barista'});
 
   @override
   Widget build(BuildContext context) {
     return SimView(
-      module: 'barista',
+      module: module,
       apiBaseUrl: apiBaseUrl,
       onMessage: onMessageReceived,
       fallback: const _SimUnavailable(),
