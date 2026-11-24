@@ -1,8 +1,8 @@
 // SynapKor — real 3D models in the rooms.
 //  - models/hand.obj: a scanned hand with forearm, used as the first-person hand in every module.
 //  - models/walker.fbx: a person walking (Renderpeople "Nathan", rigmodels.com, free for students'
-//    personal use). Walks back and forth in the background of each room: a customer in the café,
-//    a colleague in the plant room, an engineer in the server room, a nurse in the clinic corridor.
+//    personal use). Walks back and forth in the background of each room on a path checked to be
+//    clear of furniture: a customer, a colleague, another engineer, a visitor.
 // Both load lazily after the room is ready; if anything fails, the simple shapes stay.
 
 // ---------------------------------------------------------------- first-person hand
@@ -18,13 +18,13 @@ async function loadHand() {
   const map = tl.load('models/hand_diffuse.jpg');
   map.encoding = THREE.sRGBEncoding;
   const normalMap = tl.load('models/hand_normal.jpg');
-  const mat = new THREE.MeshStandardMaterial({ map, normalMap, roughness: 0.6, metalness: 0 });
+  const mat = new THREE.MeshStandardMaterial({ map, normalMap, color: 0xd9c3b3, roughness: 0.72, metalness: 0 });
   obj.traverse((o) => { if (o.isMesh) { o.material = mat; o.castShadow = false; o.userData.gfxDone = true; } });
   MODELS.hand = obj;
   return obj;
 }
 
-const HAND_POSE = { scale: 0.17, rx: -Math.PI / 2 + 0.25, ry: 0.12, rz: 0.35, x: -0.02, y: 0.0, z: 0.08 };
+const HAND_POSE = { scale: 0.17, rx: -Math.PI / 2 + 0.25, ry: Math.PI + 0.12, rz: -0.35, x: -0.02, y: 0.0, z: 0.08 };
 
 // Keeps the old group (the hand animations move rightHand) and swaps the blocky shapes for the hand.
 async function useRealHand() {
@@ -45,10 +45,11 @@ async function useRealHand() {
 
 // ---------------------------------------------------------------- walking person
 const WALK_PATHS = {
-  barista: { a: [-3.2, -2.6], b: [3.2, -2.6] },
-  safety: { a: [-3.0, 2.6], b: [3.0, 2.6] },
-  it: { a: [-3.0, 2.4], b: [3.0, 2.4] },
-  doctor: { a: [-2.6, 1.8], b: [2.6, 1.8] },
+  // checked against each room's furniture: no desk, rack or machine on these lines
+  barista: { a: [-3.6, -2.2], b: [3.6, -2.2] },   // a customer walking past behind the counter
+  safety: { a: [4.0, 3.5], b: [4.0, -1.9] },     // a colleague along the right side of the plant room
+  it: { a: [-3.5, -1.9], b: [0.2, -1.9] },       // an engineer between the desks and the back wall
+  doctor: { a: [-3.2, 2.2], b: [-3.2, -1.9] },   // a visitor along the left wall
 };
 
 function loadWalker() {
@@ -60,6 +61,7 @@ function loadWalker() {
         if (o.isMesh) {
           o.castShadow = true; o.receiveShadow = true; o.userData.gfxDone = true;
           o.frustumCulled = false;
+          o.raycast = () => {};   // never blocks clicks on the equipment behind him
           const mats = Array.isArray(o.material) ? o.material : [o.material];
           mats.forEach((m) => { if (m.map) m.map.encoding = THREE.sRGBEncoding; if (m.shininess !== undefined) m.shininess = 8; });
         }
