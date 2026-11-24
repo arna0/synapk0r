@@ -284,6 +284,9 @@ function translateString(ru) {
   const trimmed = ru.trim();
   if (!trimmed) return null;
   if (dict[trimmed]) return ru.replace(trimmed, dict[trimmed]);
+  // same text with different spacing (canvas labels use double spaces as separators)
+  const squashed = trimmed.replace(/\s+/g, ' ');
+  if (squashed !== trimmed && dict[squashed]) return dict[squashed].replace(/ (\d) /g, '  $1 ');
   // leading emoji, bullets, icons: "🔄 Повторить симуляцию", "• Компетенция"
   const m = trimmed.match(/^([^A-Za-zА-Яа-яЁёӘәҒғҚқҢңӨөҰұҮүҺһІі0-9]+)(.+)$/u);
   if (m && dict[m[2].trim()]) return ru.replace(m[2].trim(), dict[m[2].trim()]);
@@ -338,6 +341,9 @@ function setLanguage(lang) {
   document.documentElement.lang = currentLang;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
   translateRoots();
+  const html = document.documentElement;
+  if (!html.dataset.ruTitle) html.dataset.ruTitle = document.title;
+  document.title = currentLang === 'ru' ? html.dataset.ruTitle : trRu(html.dataset.ruTitle);
 }
 
 function getLanguage() { return currentLang; }
