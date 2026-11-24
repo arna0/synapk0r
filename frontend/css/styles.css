@@ -1833,3 +1833,78 @@ kbd {
 .hero-scroll .mouse::after { content: ""; position: absolute; left: 50%; top: 4px; width: 2px; height: 5px; margin-left: -1px; border-radius: 2px; background: currentColor; }
 #homeScreen .btn-start { border-radius: 999px; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; }
 #homeScreen .btn-start svg { stroke: #fff; }
+
+/* ===================== Gameplay layer + calmer HUD (dynamics.js) ===================== */
+/* Basic rules: one instruction at a time, sentence case, readable sizes (≥13px body),
+   one accent colour per meaning (green = success, amber = time, red = error), consistent 12px radius. */
+#gameScreen { --ui-bg: rgba(17, 24, 39, 0.94); --ui-line: rgba(255, 255, 255, 0.1); --ui-text: #f3f5f9; --ui-muted: #a3adbd;
+  --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --accent: #60a5fa; }
+
+/* skill check */
+.skill-check {
+  position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%);
+  width: min(460px, calc(100% - 32px)); z-index: 40;
+  background: var(--ui-bg); color: var(--ui-text); border: 1px solid var(--ui-line); border-radius: 14px;
+  padding: 16px 18px; box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px);
+}
+.skill-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+.skill-track { position: relative; height: 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.skill-zone { position: absolute; top: 0; bottom: 0; background: rgba(52, 211, 153, 0.35); border-radius: 999px; transition: left .2s ease, width .2s ease; }
+.skill-sweet { position: absolute; left: 33.3%; width: 33.3%; top: 0; bottom: 0; background: rgba(52, 211, 153, 0.55); border-radius: 999px; }
+.skill-marker { position: absolute; top: -3px; width: 4px; height: 20px; margin-left: -2px; background: #fff; border-radius: 2px; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35); }
+.skill-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.skill-hint { font-size: 13px; color: var(--ui-muted); line-height: 1.4; }
+.skill-btn { flex-shrink: 0; border: 0; border-radius: 999px; padding: 10px 20px; background: #fff; color: #111827; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; cursor: pointer; }
+.skill-btn:active { transform: scale(0.97); }
+.skill-check.is-perfect { border-color: var(--ok); }
+.skill-check.is-perfect .skill-hint, .skill-check.is-good .skill-hint { color: var(--ok); font-weight: 600; }
+.skill-check.is-shake { animation: skill-shake .3s ease; border-color: var(--bad); }
+.skill-check.is-shake .skill-hint { color: var(--bad); }
+@keyframes skill-shake { 25% { transform: translateX(calc(-50% - 6px)); } 75% { transform: translateX(calc(-50% + 6px)); } }
+
+/* countdown (decisions, interruptions) */
+.countdown { height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); overflow: hidden; flex: 1; }
+.countdown-fill { height: 100%; width: 100%; background: var(--accent); transition: width .2s linear, background .2s; }
+.is-urgent .countdown-fill { background: var(--warn); }
+.decision-timer { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.decision-timer-text { font-size: 12px; font-weight: 600; color: var(--ui-muted); min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.decision-timer.is-urgent .decision-timer-text { color: var(--warn); }
+
+/* interruption */
+.interrupt-card {
+  position: absolute; top: 64px; right: 16px; width: min(360px, calc(100% - 32px)); z-index: 41;
+  background: var(--ui-bg); color: var(--ui-text); border: 1px solid var(--ui-line); border-left: 3px solid var(--warn);
+  border-radius: 14px; padding: 16px; box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.6); animation: interrupt-in .25s ease;
+}
+@keyframes interrupt-in { from { opacity: 0; transform: translateY(-8px); } }
+.interrupt-head { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ui-muted); }
+.interrupt-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); animation: pulse 1s infinite; }
+.interrupt-text { font-size: 15px; font-weight: 600; line-height: 1.45; margin: 8px 0 12px; }
+.interrupt-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.interrupt-option { display: flex; gap: 10px; align-items: flex-start; text-align: left; background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ui-line); color: var(--ui-text); border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 13.5px; font-weight: 500; line-height: 1.4; cursor: pointer; }
+.interrupt-option:hover { border-color: var(--accent); background: rgba(96, 165, 250, 0.1); }
+
+/* adaptive guide: confident players see only the task */
+#gameScreen.guide-minimal #guideHow, #gameScreen.guide-minimal #guideWhy { display: none; }
+
+/* calmer feedback */
+.combo-popup { font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 12px; display: inline-flex; align-items: center; gap: 10px;
+  background: var(--ui-bg, #111827); border: 1px solid rgba(52, 211, 153, 0.5); }
+.xp-badge { font-size: 11px; font-weight: 700; color: #052e1c; background: var(--ok, #34d399); border-radius: 999px; padding: 3px 8px; }
+.guide-toast { font-size: 14px; font-weight: 500; line-height: 1.4; max-width: min(440px, calc(100% - 32px)); text-align: center; border-radius: 12px; }
+
+/* bottom HUD: readable, sentence case, less noise */
+.step-pill { font-size: 12px; font-weight: 600; padding: 9px 6px; border-radius: 10px; }
+.scn-goal { border-radius: 12px; padding: 12px 16px; }
+.scn-goal-label { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; }
+.scn-goal-task { font-size: 15px; font-weight: 700; }
+.scn-goal-hint { font-size: 13px; }
+.dialog-option { font-size: 14px; line-height: 1.45; padding: 12px 14px; border-radius: 12px; }
+.dialog-tag { flex-shrink: 0; }
+.vr-status-pill { text-transform: none; letter-spacing: 0; font-weight: 600; }
+.action-progress-wrap { display: none !important; } /* replaced by the skill check */
+
+/* the developer-style event log is noise for players on small screens */
+@media (max-width: 1100px) { .telemetry-log-panel { display: none !important; } }
+@keyframes pulse { 50% { opacity: 0.35; } }
