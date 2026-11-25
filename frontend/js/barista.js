@@ -188,6 +188,7 @@ function startQuest2Conflict() {
 
 function handleConflictAnswer(opt) {
   state.conflictChoice = opt;
+  sessionEvents.push({ t: scenarioNow(), action: 'BARISTA_GUEST_' + opt, ok: opt === 'B' });
   state.conflictResponseSec = Math.round((Date.now() - state.quest2StartedAt) / 100) / 10;
   playSuccessChime();
   if (customerObj) customerObj.visible = false;
@@ -226,5 +227,6 @@ function startQuest3Management() {
 
 function handleBudgetAnswer(opt) {
   state.budgetChoice = opt;
+  sessionEvents.push({ t: scenarioNow(), action: 'BARISTA_STOCK_' + opt, ok: opt === 'optimal' });
   triggerEpicVictory();
 }

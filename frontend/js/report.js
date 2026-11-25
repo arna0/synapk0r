@@ -12,7 +12,7 @@ function triggerEpicVictory() {
 
   // Show Victory Overlay Modal (texts may have been replaced by the safety module)
   document.getElementById('victoryTitle').innerText = 'Симуляция успешно пройдена!';
-  document.getElementById('victoryText').innerText = 'Вы приготовили напиток по стандарту, грамотно разрешили конфликт с гостем и рассчитали бюджет сырья.';
+  document.getElementById('victoryText').innerText = 'Вы приготовили напиток и приняли два решения. В отчёте видно, как вы справились с каждым заданием.';
   const victoryModal = document.getElementById('victoryModal');
   if (victoryModal) victoryModal.style.display = 'flex';
 }
@@ -25,50 +25,34 @@ function setResultTexts(t) {
   if (handsEl) handsEl.style.color = 'var(--emerald-text)';
   set('statSoftLabel', t.softLabel); set('statSoft', t.soft);
   set('statTimeLabel', t.timeLabel); set('statTime', t.time);
-  set('resVerdictGrade', t.grade); set('resVerdictDesc', t.desc);
-  set('resPraiseTitle', t.praise); set('resVerdictBadge', t.badge);
+  set('resPraiseTitle', 'Результат сценария');
   set('resTotalXp', t.xp);
-  const comp = document.getElementById('resCompetencies');
-  if (comp) comp.innerHTML = t.competencies.map(c => '• ' + c).join('<br>');
 }
 
-function animateFitScore(score) {
-  let cur = 0;
-  const scoreEl = document.getElementById('resFitScore');
-  const scoreIntv = setInterval(() => {
-    cur += 2;
-    if (cur >= score) {
-      cur = score;
-      clearInterval(scoreIntv);
-    }
-    if (scoreEl) scoreEl.innerText = cur + '%';
-  }, 20);
+function renderScenarioScore(score) {
+  document.getElementById('resFitScore').textContent = score + '%';
+}
+
+// Recipe execution, communication and purchasing are separate parts of the run.
+function evaluateBaristaRun(misclicks, conflictChoice, budgetChoice) {
+  const procedure = Math.max(0, 100 - misclicks * 2);
+  const guest = { A: 0, B: 100, C: 50 }[conflictChoice] ?? 0;
+  const inventory = budgetChoice === 'optimal' ? 100 : 0;
+  return { procedure, guest, inventory, score: Math.round(procedure * 0.5 + guest * 0.25 + inventory * 0.25) };
 }
 
 function showSafetyReportScreen() {
   const errors = safetyState.errors;
   const score = Math.max(20, 99 - errors * 12);
-  const passed = errors === 0;
   setResultTexts({
     hardLabel: 'Соблюдение регламента LOTO', hard: Math.max(0, 100 - errors * 15) + '%',
     handsLabel: 'Нарушения ТБ', hands: String(errors),
     softLabel: 'Проверка отсутствия напряжения', soft: safetyState.voltageTested ? 'Выполнена' : 'Нет',
     timeLabel: 'Время подготовки оборудования', time: state.timer + ' сек',
-    grade: passed ? 'Инженер ТБ: допуск к работам' : (errors <= 2 ? 'Требуется повторный инструктаж' : 'Допуск не рекомендован'),
-    desc: passed
-      ? 'Правильная последовательность: СИЗ → отключение → LOTO → проверка напряжения → сброс давления.'
-      : 'Регламент выполнен, но с нарушениями ТБ. Повторите последовательность операций без ошибок.',
-    praise: passed ? 'Отличный результат симуляции' : 'Симуляция завершена с замечаниями',
-    badge: passed ? 'ВЕРДИКТ: РЕКОМЕНДОВАН' : 'ВЕРДИКТ: НУЖНА ДОРАБОТКА',
-    xp: '⚡ +' + Math.max(100, 750 - errors * 100) + ' XP',
-    competencies: [
-      'Использование диэлектрических СИЗ перед работой в электрощитовой',
-      'Отключение рубильника 380В и установка блокировочного замка LOTO',
-      'Контроль отсутствия напряжения мультиметром и сброс давления в контурах'
-    ]
+    xp: '⚡ +' + Math.max(100, 750 - errors * 100) + ' XP'
   });
   showScreen('resultScreen');
-  animateFitScore(score);
+  renderScenarioScore(score);
 
   const report = {
     module: 'safety',
@@ -78,9 +62,11 @@ function showSafetyReportScreen() {
       voltage_tested: safetyState.voltageTested,
       lockout_applied: safetyState.lockoutApplied,
       valves_opened: safetyState.valvesOpened.filter(Boolean).length,
+      hints_shown: getGuideHintCount(),
       total_time_sec: state.timer
     },
-    events: sessionEvents
+    events: sessionEvents,
+    observations: [[errors === 0, 'В сценарии не зафиксировано нарушений порядка.', 'Повторите сценарий и проверьте порядок действий до начала каждого этапа.']]
   };
   postToHost({ type: 'session_complete', ...report });
   requestAiFeedback(report);
@@ -96,37 +82,19 @@ function showAIReportScreen() {
     showSafetyReportScreen();
     return;
   }
-  let score = 84;
-  if (state.misclicks === 0) score += 10;
-  else if (state.misclicks <= 2) score += 5;
-
-  if (state.conflictChoice === 'B') score += 8;
-  if (state.budgetChoice === 'optimal') score += 5;
-  score = Math.min(score, 99);
-
-  const accuracy = Math.max(0, 100 - state.misclicks * 2);
-  const recommended = score >= 90;
+  const { procedure: accuracy, guest, inventory, score } = evaluateBaristaRun(
+    state.misclicks, state.conflictChoice, state.budgetChoice
+  );
   setResultTexts({
-    hardLabel: 'Точность технологии (Hard Skills)', hard: accuracy + '%',
-    handsLabel: 'Лишние действия (промахи)', hands: state.misclicks === 0 ? 'Нет' : String(state.misclicks),
-    softLabel: 'Стрессоустойчивость и эмпатия (Soft Skills)', soft: state.conflictChoice === 'B' ? '100%' : (state.conflictChoice === 'C' ? '70%' : '40%'),
-    timeLabel: 'Время полного цикла приготовления', time: state.timer + ' сек',
-    grade: recommended ? 'Senior Barista / Shift Supervisor' : 'Junior Barista',
-    desc: recommended
-      ? 'Исключительная моторика рук, строгое соблюдение техкарты и грамотная деэскалация конфликта с клиентом.'
-      : 'Техкарта выполнена. Рекомендуется поработать над точностью действий, общением с гостем и расчетом закупок.',
-    praise: recommended ? 'Отличный результат симуляции' : 'Хороший результат, есть зоны роста',
-    badge: recommended ? 'ВЕРДИКТ: РЕКОМЕНДОВАН' : 'ВЕРДИКТ: С ОБУЧЕНИЕМ',
-    xp: '⚡ +950 XP',
-    competencies: [
-      'Соблюдение рабочего давления 9 бар и правильный расчет граммовки (18г)',
-      state.conflictChoice === 'B' ? 'Быстрая деэскалация конфликтной ситуации с предложением комплимента' : 'Зона роста: деэскалация конфликта с гостем',
-      state.budgetChoice === 'optimal' ? 'Точный расчет закупки сырья на 35 кг без дефицита и перерасхода бюджета' : 'Зона роста: расчет закупки сырья под недельный расход'
-    ]
+    hardLabel: 'Точность действий по рецепту', hard: accuracy + '%',
+    handsLabel: 'Решение по закупке', hands: inventory ? 'Верно' : 'Неверно',
+    softLabel: 'Ответ гостю', soft: guest === 100 ? 'Верно' : guest === 50 ? 'Частично' : 'Неверно',
+    timeLabel: 'Время сценария', time: state.timer + ' сек',
+    xp: '⚡ +' + score * 9 + ' XP'
   });
 
   showScreen('resultScreen');
-  animateFitScore(score);
+  renderScenarioScore(score);
 
   const conflictLabels = { A: 'Defensive', B: 'Apologized & Remade Fast', C: 'Call Manager' };
   const report = {
@@ -135,12 +103,18 @@ function showAIReportScreen() {
     metrics: {
       step_accuracy_percent: accuracy,
       wrong_clicks: state.misclicks,
+      hints_shown: getGuideHintCount(),
       total_time_sec: state.timer,
       conflict_choice: conflictLabels[state.conflictChoice] || 'none',
       conflict_response_sec: state.conflictResponseSec,
       budget_choice: state.budgetChoice || 'none'
     },
-    events: sessionEvents
+    events: sessionEvents,
+    observations: [
+      [accuracy === 100, 'Рецепт выполнен без лишних действий.', 'При повторе сначала найдите нужный предмет, затем действуйте.'],
+      [guest === 100, 'Вы извинились и предложили переделать напиток.', 'В ответе гостю стоило признать ошибку и предложить переделать напиток.'],
+      [inventory === 100, 'Выбран заказ, покрывающий расход в пределах бюджета.', 'Заказ должен покрывать недельные 35 кг и укладываться в бюджет.']
+    ]
   };
   // Legacy shape kept for the Flutter FpsTelemetrySession model
   postToHost({
@@ -157,7 +131,7 @@ function showAIReportScreen() {
       response_time_sec: state.conflictResponseSec
     },
     management: {
-      inventory_calc_accuracy: state.budgetChoice === 'optimal' ? 100 : 60
+      inventory_calc_accuracy: inventory
     }
   });
   requestAiFeedback(report);
@@ -170,45 +144,58 @@ function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 }
 
-function showAiOfflineNote(card, source, body) {
-  card.style.display = 'block';
-  source.innerText = 'демо-версия без сервера';
-  body.innerHTML = '<p>Персональный разбор пишет Claude на нашем бэкенде. В этой статической демо-версии сервера нет — запустите <b>backend</b> по инструкции в README (раздел 6), и здесь появится разбор ваших действий.</p>';
+function renderReportList(container, items) {
+  container.replaceChildren(...items.map(text => {
+    const item = document.createElement('li');
+    item.textContent = text;
+    return item;
+  }));
 }
 
 async function requestAiFeedback(report) {
+  const seq = ++aiRequestSeq;
   if (typeof showCareerBlock === 'function') showCareerBlock(report);
   if (typeof showSurvey === 'function') showSurvey(report);
+
+  const hints = Number(report.metrics.hints_shown) || 0;
+  document.getElementById('statHints').textContent = String(hints);
+  const retry = document.getElementById('itChallengeButton');
+  retry.hidden = report.module !== 'it' || report.metrics.scenario_variant === 'challenge';
+
+  const observations = report.observations || [];
+  const successes = observations.filter(([ok]) => ok).map(([, text]) => text);
+  const improvements = observations.filter(([ok]) => !ok).map(([, text]) => text);
+  renderReportList(document.getElementById('localStrengths'), successes.length ? successes : ['Сценарий завершён.']);
+  renderReportList(document.getElementById('localImprovements'), improvements.length ? improvements : ['Попробуйте повторить задание с меньшим числом подсказок.']);
+
   const card = document.getElementById('aiFeedbackCard');
   const body = document.getElementById('aiFeedbackBody');
   const source = document.getElementById('aiFeedbackSource');
-  const apiBase = getApiBase();
-  if (!card) return;
-  if (apiBase === null) { showAiOfflineNote(card, source, body); return; }
-  const seq = ++aiRequestSeq;
-  card.style.display = 'block';
-  source.innerText = '';
-  body.innerHTML = '<div class="ai-card-loading">ИИ анализирует ваши действия…</div>';
+  card.style.display = 'none';
 
+  const apiBase = getApiBase();
+  if (apiBase === null || report.metrics.scenario_variant === 'challenge') return;
+  const { observations: localObservations, ...payload } = report;
   try {
     const res = await fetch(`${apiBase}/api/report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...report, lang: typeof getLanguage === 'function' ? getLanguage() : 'ru' })
+      signal: AbortSignal.timeout(12000),
+      body: JSON.stringify({ ...payload, lang: getLanguage() })
     });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok || seq !== aiRequestSeq) return;
     const data = await res.json();
-    if (seq !== aiRequestSeq) return; // a newer session already asked
-    source.innerText = data.source === 'claude' ? 'Сгенерировано Claude' : 'ИИ недоступен · базовый разбор';
+    if (seq !== aiRequestSeq || !document.getElementById('resultScreen').classList.contains('active') ||
+        data.source !== 'claude' || typeof data.summary !== 'string') return;
+    source.textContent = 'Сгенерировано Claude';
     body.innerHTML = `
       <p>${escapeHtml(data.summary)}</p>
-      ${data.strengths && data.strengths.length ? `<div><h5>Что получилось</h5><ul>${data.strengths.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
-      ${data.growth_areas && data.growth_areas.length ? `<div><h5>Над чем поработать</h5><ul>${data.growth_areas.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
-      ${data.career_advice ? `<div><h5>Совет по профессии</h5><p>${escapeHtml(data.career_advice)}</p></div>` : ''}
+      ${data.strengths?.length ? `<div><h5>Что получилось</h5><ul>${data.strengths.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
+      ${data.growth_areas?.length ? `<div><h5>Над чем поработать</h5><ul>${data.growth_areas.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
+      ${data.career_advice ? `<div><h5>Следующий шаг</h5><p>${escapeHtml(data.career_advice)}</p></div>` : ''}
     `;
-  } catch (e) {
-    // Static hosting (e.g. GitHub Pages) has no backend: explain instead of silently hiding
-    if (seq === aiRequestSeq) showAiOfflineNote(card, source, body);
-    console.info('[SynapKor] AI feedback unavailable:', e.message);
+    card.style.display = 'block';
+  } catch {
+    // The local debrief remains available.
   }
 }

@@ -48,6 +48,7 @@ let sessionStartedAt = Date.now();
 
 function resetSessionEvents() {
   sessionEvents = [];
+  guideHintsShown.clear();
   sessionStartedAt = Date.now();
 }
 

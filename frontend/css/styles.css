@@ -2128,3 +2128,11 @@ html[lang="kk"] .obj-label.target::before { content: 'Осында · '; }
 #homeScreen .home-main { position: relative; z-index: 1; }
 #homeScreen .home-nav { z-index: 30; background: rgba(244, 241, 234, 0.9); backdrop-filter: blur(10px); }
 @media (max-width: 1023px) { #homeScreen .hero-scroll { display: none; } }
+
+/* Keep the highlighted object clear of the guide when it is on the left. */
+#gameScreen.guide-on-right #guidePanel { left: auto; right: 16px; }
+.scenario-option { width: 100%; text-align: left; color: inherit; font: inherit; }
+.case-log { margin: 8px 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.8rem; }
+#localDebrief h4 { margin: 12px 0 4px; }
+#localDebrief ul { margin: 4px 0 12px; padding-inline-start: 20px; }
+#itChallengeButton[hidden] { display: none; }

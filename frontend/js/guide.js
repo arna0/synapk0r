@@ -110,12 +110,18 @@ function getGuideState() {
 }
 
 let guideVisible = true;
+const guideHintsShown = new Set();
+
+function getGuideHintCount() { return guideHintsShown.size; }
 let lastGuideSignature = '';
 
 function renderGuide(force) {
   const panel = document.getElementById('guidePanel');
   if (!panel) return;
   const g = getGuideState();
+  if (guideVisible && g.current.target && !isIntroVisible() && document.getElementById('gameScreen').classList.contains('active')) {
+    guideHintsShown.add(g.idx);
+  }
   const signature = currentProfession + '|' + g.idx + '|' + g.current.task + '|' + g.steps.map(s => s.done ? 1 : 0).join('');
   if (!force && signature === lastGuideSignature) return;
   lastGuideSignature = signature;
@@ -156,7 +162,7 @@ function showGuideToast(text) {
 }
 
 function getGuideTargetName() {
-  if (!document.getElementById('gameScreen').classList.contains('active')) return null;
+  if (!guideVisible || !document.getElementById('gameScreen').classList.contains('active')) return null;
   return getGuideState().current.target || null;
 }
 
@@ -186,7 +192,9 @@ function updateObjectLabels() {
   const w = wrap.clientWidth;
   const h = wrap.clientHeight;
   const targetName = getGuideTargetName();
+  const game = document.getElementById('gameScreen');
   let targetEntry = null;
+  let targetX = null;
 
   for (const entry of objectLabels) {
     const isTarget = entry.obj.name === targetName;
@@ -201,11 +209,14 @@ function updateObjectLabels() {
       entry.el.style.display = 'none';
       continue;
     }
+    if (isTarget) targetX = (p.x + 1) / 2 * w;
     entry.el.style.display = 'block';
     entry.el.classList.toggle('target', isTarget);
     entry.el.style.opacity = isTarget ? '1' : String(Math.max(0.35, 1 - dist / 4));
     entry.el.style.transform = `translate(${(p.x + 1) / 2 * w}px, ${(1 - p.y) / 2 * h}px) translate(-50%, -100%)`;
   }
+
+  game?.classList.toggle('guide-on-right', targetX !== null && targetX < Math.min(330, w * 0.45));
 
   // Edge pointer when the current target is out of view
   if (!pointer) return;
@@ -290,13 +301,13 @@ function isIntroVisible() {
   return !!el && el.classList.contains('visible');
 }
 
-function showIntro(profession) {
+function showIntro(profession, content = INTRO_CONTENT[profession]) {
   const overlay = document.getElementById('introOverlay');
   if (!overlay) return;
   let skip = false;
   try { skip = localStorage.getItem('synapkor_skip_intro_' + profession) === '1'; } catch (e) {}
   if (skip) return;
-  const c = INTRO_CONTENT[profession];
+  const c = content;
   document.getElementById('introTitle').innerText = c.title;
   document.getElementById('introGoal').innerText = c.goal;
   document.getElementById('introPlan').innerHTML = c.plan.map(p => `<li>${p}</li>`).join('');
@@ -317,4 +328,5 @@ function closeIntro() {
   // Time is measured from the moment the player actually starts
   state.timer = 0;
   document.getElementById('vrTimer').innerText = '00:00';
+  renderGuide(true);
 }

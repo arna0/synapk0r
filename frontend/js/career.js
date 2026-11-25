@@ -40,11 +40,11 @@ function loadCareerProfile() {
   try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}'); } catch (e) { return {}; }
 }
 
-function saveCareerResult(module, score) {
+function saveCareerResult(module) {
   try {
     const p = loadCareerProfile();
     const prev = p[module];
-    p[module] = { best: Math.max(score, prev ? prev.best : 0), last: score, runs: (prev ? prev.runs : 0) + 1, at: new Date().toISOString() };
+    p[module] = { runs: (Number(prev?.runs) || 0) + 1 };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
   } catch (e) { /* storage unavailable */ }
 }
@@ -54,7 +54,7 @@ function showCareerBlock(report) {
   const card = document.getElementById('careerCard');
   const c = CAREER_KZ[report.module];
   if (!card || !c) return;
-  saveCareerResult(report.module, report.score);
+  saveCareerResult(report.module);
   const tried = Object.keys(loadCareerProfile());
   const next = Object.keys(CAREER_KZ).filter(m => !tried.includes(m));
   card.style.display = 'block';
@@ -69,36 +69,35 @@ function showCareerBlock(report) {
     </div>
     <p class="career-text">${escapeHtml(c.college)}</p>
     <p class="career-fact">${escapeHtml(c.fact)}</p>
-    ${next.length ? `<div class="career-next">Сравните себя в другой профессии:
+    ${next.length ? `<div class="career-next">Попробуйте другую профессию:
       ${next.map(m => `<button type="button" class="career-chip" onclick="${CAREER_START[m]}">${CAREER_LABELS[m]}</button>`).join('')}</div>` : ''}
   `;
 }
 
-// Home screen: the player's results across professions, best fit first
+// Home screen: completed scenarios in catalogue order.
 function renderCareerProfile() {
   const box = document.getElementById('careerProfile');
   if (!box) return;
   const p = loadCareerProfile();
-  const done = Object.entries(p).filter(([m]) => CAREER_LABELS[m]).sort((a, b) => b[1].best - a[1].best);
+  const done = Object.keys(CAREER_LABELS).filter(m => p[m]);
   if (!done.length) { box.style.display = 'none'; return; }
   const missing = Object.keys(CAREER_LABELS).filter(m => !p[m]);
   box.style.display = 'flex';
   box.innerHTML = `
     <div class="section-head">
-      <h2>Ваш профиль профессий</h2>
+      <h2>Пройденные сценарии</h2>
       <span class="section-note">Пройдено ${done.length} из ${Object.keys(CAREER_LABELS).length}</span>
     </div>
     <div class="profile-rows">
-      ${done.map(([m, r], i) => `
+      ${done.map(m => `
         <div class="profile-row">
-          <span class="profile-name">${CAREER_LABELS[m]}${i === 0 && done.length > 1 ? ' <span class="profile-best">лучший результат</span>' : ''}</span>
-          <span class="profile-bar"><span class="profile-fill" style="width:${r.best}%"></span></span>
-          <span class="profile-score">${r.best}%</span>
+          <span class="profile-name">${CAREER_LABELS[m]}</span>
+          <span class="profile-best">Завершено</span>
         </div>`).join('')}
     </div>
     <p class="profile-note">${missing.length
       ? 'Попробуйте ещё: ' + missing.map(m => `<button type="button" class="career-chip" onclick="${CAREER_START[m]}">${CAREER_LABELS[m]}</button>`).join(' ')
-      : 'Вы попробовали все профессии. Сравните результаты и обсудите их с учителем или школьным психологом.'}</p>
+      : 'Вы попробовали все профессии. Обсудите с учителем, какие задания вам захотелось продолжить.'}</p>
   `;
 }
 

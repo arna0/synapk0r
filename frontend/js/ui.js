@@ -182,7 +182,7 @@ function startBaristaVR() {
 }
 
 function restartCurrentSimulation() {
-  if (getActiveScenario()) startScenario(currentProfession);
+  if (getActiveScenario()) startScenario(currentProfession, { challenge: getActiveScenario().variant === 'challenge' });
   else if (currentProfession === 'safety') startSafetyVR();
   else startBaristaVR();
 }
@@ -198,6 +198,9 @@ function resetSafetyToolsUI() {
 }
 
 function exitToHome() {
+  ++scenarioState.runId;
+  ++aiRequestSeq;
+  if (typeof mgActive !== 'undefined') mgActive?.close();
   if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
   document.getElementById('introOverlay')?.classList.remove('visible');
   clearInterval(state.timerInterval);
@@ -223,5 +226,5 @@ window.addEventListener('DOMContentLoaded', () => {
   const module = new URLSearchParams(location.search).get('module');
   if (module === 'barista') startBaristaVR();
   else if (module === 'safety') startSafetyVR();
-  else if (SCENARIOS[module]) startScenario(module);
+  else if (SCENARIOS[module]) startScenario(module, { challenge: new URLSearchParams(location.search).get('variant') === 'challenge' });
 });

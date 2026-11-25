@@ -9,6 +9,13 @@ let itIncidentOpen = true;
 
 const IT_PORT_POS = { x: 1.53, y: 1.255, z: -1.19 };
 const IT_CABLE_LOOSE = { x: 1.6, y: 0.95, z: -1.12 };
+const IT_CHALLENGE_LOG = [
+  '14:30:00 WARN backup-01 disk usage 81%',
+  '14:31:01 INFO release v2.4 activated',
+  '14:31:02 ERROR shop-api configuration: PAYMENT_REGION is missing',
+  '14:31:03 INFO db-01 connectivity probe: OK',
+  '14:31:04 ERROR POST /checkout: HTTP 503'
+];
 
 // ---------- screen drawings ----------
 function drawItDashboard(mode) {
@@ -52,6 +59,10 @@ function drawItDashboard(mode) {
   if (mode === 'alert') {
     ctx.fillStyle = '#FCA5A5';
     ctx.fillText('Сайт недоступен · нажмите [E]', 22, 300);
+  } else if (mode === 'incident') {
+    ctx.fillStyle = '#FCA5A5';
+    ctx.fillText('HTTP 503 · /checkout', 22, 296);
+    ctx.fillText('Сбой после выкладки v2.4', 22, 322);
   } else if (mode === 'details') {
     ctx.fillStyle = '#FCA5A5';
     ctx.fillText('HTTP 503 · 6 мин · 100% ошибок', 22, 296);
@@ -75,6 +86,7 @@ function drawItTerminal(mode) {
   ctx.textBaseline = 'top';
   const lines = {
     idle: [['#94A3B8', 'oncall@ops:~$ _']],
+    incident: IT_CHALLENGE_LOG.map(text => ['#E2E8F0', text]),
     logs: [
       ['#94A3B8', '$ journalctl -u shop-api -n 5'],
       ['#E2E8F0', '12:04:51 GET /cart 200'],
@@ -445,3 +457,53 @@ registerScenario({
     ]
   }
 });
+
+SCENARIOS.it.challenge = {
+  ...SCENARIOS.it,
+  variant: 'challenge',
+  questTitle: 'IT · Новый инцидент',
+  intro: {
+    title: 'Дежурство IT-инженера: новый инцидент',
+    goal: 'После выкладки сайт стал возвращать ошибки. Изучите сигнал и журнал, затем выберите причину сбоя.',
+    plan: ['Откройте мониторинг и журнал', 'Выберите причину сбоя по журналу'],
+    extra: [['1–3', 'Выбор ответа']]
+  },
+  steps: [
+    {
+      id: 'monitorDash', name: 'Откройте мониторинг', short: 'Алерт', hint: 'Открыть алерт',
+      how: 'Наведите прицел на монитор и нажмите <b>E</b>.',
+      run(done) { drawItDashboard('incident'); done(); }
+    },
+    {
+      id: 'terminal', name: 'Откройте журнал инцидента', short: 'Логи', hint: 'Открыть журнал',
+      how: 'Наведите прицел на ноутбук и нажмите <b>E</b>.',
+      run(done) { drawItTerminal('incident'); done(); }
+    }
+  ],
+  completeBanner: { title: 'Журнал открыт', text: 'Найдите запись, которая объясняет сбой.' },
+  decisions: [{
+    key: 'evidence', kind: 'hard', stepLabel: 'Выберите причину сбоя',
+    questTitle: 'IT · Выбор причины',
+    guideTask: 'Выберите причину сбоя', guideHow: 'Сравните время событий и содержание журнала.',
+    prompt() {
+      return `
+        <p class="case-question">Какая причина лучше всего объясняет ошибки при оплате?</p>
+        <pre class="case-log">${IT_CHALLENGE_LOG.join('\n')}</pre>`;
+    },
+    options: [
+      { id: 'a', label: 'backup_disk', score: 0, text: 'Заполнен диск резервного сервера' },
+      { id: 'b', label: 'network_cable', score: 0, text: 'Сервер базы данных потерял сеть' },
+      { id: 'c', label: 'missing_config', score: 100, text: 'В новой версии отсутствует настройка PAYMENT_REGION' }
+    ]
+  }],
+  victory: { title: 'Разбор инцидента завершён', text: 'Отчёт объяснит, какая строка журнала указывает на причину.' },
+  report: {
+    stepsLabel: 'Точность действий при инциденте',
+    hardLabel: 'Причина сбоя по журналу',
+    softLabel: 'Коммуникация с заказчиком',
+    timeLabel: 'Время сценария',
+    competencies: ({ answers }) => [answers.evidence === 'c'
+      ? 'Вы связали сбой с настройкой PAYMENT_REGION: ошибка появилась сразу после выкладки.'
+      : 'В журнале указано, что после выкладки отсутствовала настройка PAYMENT_REGION. Проверка базы прошла, а предупреждение о диске относится к резервному серверу.']
+  }
+};

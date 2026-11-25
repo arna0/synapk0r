@@ -30,3 +30,30 @@ jobs:
           node-version: 22
       - name: Check every frontend script parses
         run: for f in frontend/js/*.js; do node --check "$f" || exit 1; done
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node --test tests/scenario-result.test.cjs
+      - run: npm install --no-save --package-lock=false playwright@1.62.1
+      - run: npx playwright install --with-deps chromium
+      - name: Check the simulation in Chromium
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/synapkor-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:8080/frontend/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node tests/browser-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synapkor-screenshots
+          path: screenshots/

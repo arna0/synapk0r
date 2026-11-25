@@ -29,7 +29,9 @@ const scenarioState = {
   answers: {},          // decision key -> option id
   answerTimes: {},      // decision key -> seconds spent
   phaseStartedAt: 0,
-  group: null
+  group: null,
+  definition: null,
+  runId: 0
 };
 
 function registerScenario(def) {
@@ -41,7 +43,7 @@ function registerScenario(def) {
 }
 
 function getActiveScenario() {
-  return SCENARIOS[currentProfession] || null;
+  return scenarioState.definition?.id === currentProfession ? scenarioState.definition : SCENARIOS[currentProfession] || null;
 }
 
 function scenarioNow() {
@@ -68,10 +70,13 @@ function hideSafetyChrome() {
 }
 
 // ================= START =================
-function startScenario(id) {
-  const def = SCENARIOS[id];
+function startScenario(id, { challenge = false } = {}) {
+  const base = SCENARIOS[id];
+  const def = challenge && base?.challenge ? base.challenge : base;
   if (!def) return;
   currentProfession = id;
+  scenarioState.definition = def;
+  const runId = ++scenarioState.runId;
   hideSafetyChrome();
 
   isActionInProgress = false;
@@ -95,6 +100,7 @@ function startScenario(id) {
 
   showScreen('gameScreen');
   setTimeout(() => {
+    if (!isScenarioRunActive(runId)) return;
     initThreeFPS();
     if (scene) {
       ['baristaEnvironment', 'safetyEnvironment'].forEach(n => {
@@ -118,15 +124,20 @@ function startScenario(id) {
 
   sessionEvents.push({ t: 0, action: 'SESSION_START_' + id.toUpperCase(), ok: true });
   setGuideVisible(guideVisible);
-  showIntro(id);
+  showIntro(def.variant === 'challenge' ? id + '-challenge' : id, def.intro);
 
   clearInterval(state.timerInterval);
   state.timerInterval = setInterval(() => {
+    if (isIntroVisible()) return;
     state.timer++;
     const m = String(Math.floor(state.timer / 60)).padStart(2, '0');
     const s = String(state.timer % 60).padStart(2, '0');
     document.getElementById('vrTimer').innerText = `${m}:${s}`;
   }, 1000);
+}
+
+function isScenarioRunActive(runId) {
+  return scenarioState.runId === runId && document.getElementById('gameScreen').classList.contains('active');
 }
 
 // ================= HANDS-ON STEPS =================
@@ -155,15 +166,17 @@ function handleScenarioClick(name) {
   }
 
   isActionInProgress = true;
+  const runId = scenarioState.runId;
   const finish = () => {
+    if (!isScenarioRunActive(runId)) return;
     sessionEvents.push({ t: scenarioNow(), action: `STEP_DONE_${step.id}_${scenarioState.step + 1}`, ok: true });
     if (step.popup) showComboPopup(step.popup);
     scenarioState.step++;
-    setTimeout(() => { isActionInProgress = false; }, 250);
+    setTimeout(() => { if (isScenarioRunActive(runId)) isActionInProgress = false; }, 250);
     if (scenarioState.step >= def.steps.length) {
       renderScenarioStepsComplete();
       setTimeout(() => {
-        if (currentProfession === def.id && document.getElementById('gameScreen').classList.contains('active')) {
+        if (isScenarioRunActive(runId)) {
           startScenarioDecision(0);
         }
       }, 1600);
@@ -171,7 +184,9 @@ function handleScenarioClick(name) {
       renderScenarioHUD();
     }
   };
-  animateHandPunch(() => step.run ? step.run(finish) : finish());
+  animateHandPunch(() => {
+    if (isScenarioRunActive(runId)) step.run ? step.run(finish) : finish();
+  });
 }
 
 function renderScenarioHUD() {
@@ -223,10 +238,10 @@ function startScenarioDecision(idx) {
     ${d.prompt()}
     <div>
       ${d.options.map((o, i) => `
-        <div class="dialog-option" onclick="answerScenarioDecision('${o.id}')">
+        <button type="button" class="dialog-option scenario-option" onclick="answerScenarioDecision('${o.id}')">
           <div class="dialog-tag">${i + 1}</div>
-          <div>${o.text}</div>
-        </div>`).join('')}
+          <span>${o.text}</span>
+        </button>`).join('')}
     </div>`;
 }
 
@@ -296,7 +311,8 @@ function getScenarioObjectHint(def, name) {
 // ================= REPORT =================
 function showScenarioReport(def) {
   const r = def.report;
-  const accuracy = Math.max(0, 100 - state.misclicks * 5);
+  const incorrectActions = sessionEvents.filter(e => e.action.startsWith('WRONG_OBJECT_')).length;
+  const accuracy = Math.max(0, 100 - incorrectActions * 5);
   const pct = (kind) => {
     const ds = def.decisions.filter(d => d.kind === kind);
     if (!ds.length) return 100;
@@ -307,30 +323,27 @@ function showScenarioReport(def) {
   };
   const hard = pct('hard');
   const soft = pct('soft');
-  const score = Math.max(20, Math.min(99, Math.round(accuracy * 0.35 + hard * 0.4 + soft * 0.25)));
-  const tier = score >= 85 ? 'top' : (score >= 60 ? 'mid' : 'low');
+  const isChallenge = def.variant === 'challenge';
+  const score = Math.round(isChallenge ? accuracy * 0.2 + hard * 0.8 : accuracy * 0.35 + hard * 0.4 + soft * 0.25);
   const ctx = { accuracy, hard, soft, score, answers: scenarioState.answers };
 
   setResultTexts({
     hardLabel: r.stepsLabel, hard: accuracy + '%',
     handsLabel: r.hardLabel, hands: hard >= 100 ? 'Верно' : (hard >= 40 ? 'Частично' : 'Неверно'),
-    softLabel: r.softLabel, soft: soft + '%',
+    softLabel: isChallenge ? 'Найдено в журнале' : r.softLabel, soft: isChallenge ? 'PAYMENT_REGION' : soft + '%',
     timeLabel: r.timeLabel, time: state.timer + ' сек',
-    grade: r.grades[tier],
-    desc: tier === 'top' ? r.descTop : r.descLow,
-    praise: tier === 'top' ? 'Отличный результат симуляции' : (tier === 'mid' ? 'Хороший результат, есть зоны роста' : 'Симуляция завершена с замечаниями'),
-    badge: tier === 'top' ? 'ВЕРДИКТ: РЕКОМЕНДОВАН' : (tier === 'mid' ? 'ВЕРДИКТ: С ОБУЧЕНИЕМ' : 'ВЕРДИКТ: НУЖНА ДОРАБОТКА'),
-    xp: '⚡ +' + Math.max(100, score * 9) + ' XP',
-    competencies: r.competencies(ctx)
+    xp: '⚡ +' + Math.max(100, score * 9) + ' XP'
   });
   const handsEl = document.getElementById('statHands');
   if (handsEl) handsEl.style.color = hard >= 100 ? 'var(--emerald-text)' : 'var(--rose)';
   showScreen('resultScreen');
-  animateFitScore(score);
+  renderScenarioScore(score);
 
   const metrics = {
     step_accuracy_percent: accuracy,
-    wrong_clicks: state.misclicks,
+    wrong_clicks: incorrectActions,
+    hints_shown: getGuideHintCount(),
+    scenario_variant: def.variant || 'practice',
     total_time_sec: state.timer
   };
   def.decisions.forEach(d => {
@@ -339,7 +352,18 @@ function showScenarioReport(def) {
     metrics[d.key + '_correct'] = !!o && o.score >= 100;
     metrics[d.key + '_response_sec'] = scenarioState.answerTimes[d.key] || 0;
   });
-  const report = { module: def.id, score, metrics, events: sessionEvents };
+  const stepText = incorrectActions === 0
+    ? 'Этапы сценария выполнены без выбора неверного объекта.'
+    : 'При повторе проверьте, с каким объектом нужно взаимодействовать на каждом этапе.';
+  const decisionNotes = r.competencies(ctx).slice(isChallenge ? 0 : 1);
+  const observations = [
+    [incorrectActions === 0, stepText, stepText],
+    ...def.decisions.map((decision, index) => {
+      const note = decisionNotes[index];
+      return [metrics[decision.key + '_correct'], note, note];
+    })
+  ];
+  const report = { module: def.id, score, metrics, events: sessionEvents, observations };
   postToHost({ type: 'session_complete', ...report });
   requestAiFeedback(report);
 }

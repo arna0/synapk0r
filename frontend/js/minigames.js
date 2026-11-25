@@ -97,7 +97,8 @@ function mgPanel(title, task) {
       box.classList.add(score >= 85 ? 'is-great' : score >= 60 ? 'is-ok' : 'is-poor');
       panel.hint(verdict, score >= 60 ? 'ok' : 'bad');
       if (typeof playTone === 'function') playTone(score >= 60 ? 880 : 200, score >= 60 ? 'sine' : 'sawtooth', 0.15, 0.08);
-      setTimeout(() => { panel.close(); if (then) then(); }, score >= 60 ? 1100 : 1700);
+      const timer = setTimeout(() => { panel.close(); if (then) then(); }, score >= 60 ? 1100 : 1700);
+      panel.onCleanup(() => clearTimeout(timer));
     },
   };
   mgActive = panel;
@@ -899,14 +900,7 @@ function renderFitProfile() {
   const card = document.createElement('div');
   card.id = 'fitProfileCard';
   card.className = 'report-card fit-card';
-  const avg = Math.round(scored.reduce((s, k) => s + fit.scores[k], 0) / scored.length);
-  const best = scored.reduce((a, b) => (fit.scores[a] >= fit.scores[b] ? a : b));
-  const worst = scored.reduce((a, b) => (fit.scores[a] <= fit.scores[b] ? a : b));
-  const summary = avg >= 80
-    ? T('Задачи этой профессии даются вам естественно. Стоит попробовать её вживую: стажировка, мастер-класс, день с профессионалом.', 'This job’s core tasks come naturally to you. Worth trying for real: an internship, a workshop, a day with a professional.')
-    : avg >= 60
-      ? T(`Хорошая база. Сильнее всего — «${traits[best][0]}», подтянуть — «${traits[worst][0]}». Это тренируется.`, `A good base. Strongest: “${traits[best][0]}”; to work on: “${traits[worst][0]}”. That can be trained.`)
-      : T(`Пока непросто, особенно «${traits[worst][0]}». Попробуйте ещё раз или сравните с другой профессией.`, `Hard for now, especially “${traits[worst][0]}”. Try again, or compare with another profession.`);
+  const summary = T('Ваши результаты в мини-играх отражают действия в этом прохождении.', 'These minigame results describe this run.');
   card.innerHTML = `<h3 class="fit-title"></h3><p class="fit-sub"></p><div class="fit-rows"></div><p class="fit-summary"></p>`;
   card.querySelector('.fit-title').textContent = T('Что требует профессия и как у вас вышло', 'What this job asks for, and how you did');
   card.querySelector('.fit-sub').textContent = T('По мини-играм: каждая — упрощённая версия реального навыка.', 'From the mini-games: each is a simplified real skill.');

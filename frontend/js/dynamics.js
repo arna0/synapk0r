@@ -288,12 +288,13 @@ function showInterrupt(def) {
 
 // wrap the scenario engine
 const _startScenario = startScenario;
-startScenario = function (id) {
+startScenario = function (id, options) {
   adapt.reset();
   Object.assign(skillStats, { perfect: 0, good: 0, miss: 0 });
   const def = SCENARIOS[id];
-  interruptAt = def && INTERRUPTS[id] ? 1 + Math.floor(Math.random() * Math.max(1, def.steps.length - 2)) : -1;
-  return _startScenario(id);
+  interruptAt = !options?.challenge && id !== 'it' && def && INTERRUPTS[id] ? 1 + Math.floor(Math.random() * Math.max(1, def.steps.length - 2)) : -1;
+  clearInterval(decisionTimer);
+  return _startScenario(id, options);
 };
 window.startScenario = startScenario;
 
@@ -321,7 +322,7 @@ startScenarioDecision = function (idx) {
   _startScenarioDecision(idx);
   clearInterval(decisionTimer);
   const hud = document.getElementById('hudDockInner');
-  if (!hud) return;
+  if (!hud || getActiveScenario()?.id === 'it') return;
   const total = secondsFor(35);
   const bar = document.createElement('div');
   bar.className = 'decision-timer';
@@ -331,7 +332,9 @@ startScenarioDecision = function (idx) {
   const label = bar.querySelector('.decision-timer-text');
   const started = Date.now();
   let late = false;
+  const runId = scenarioState.runId;
   decisionTimer = setInterval(() => {
+    if (!isScenarioRunActive(runId)) { clearInterval(decisionTimer); return; }
     const leftSec = total - (Date.now() - started) / 1000;
     fill.style.width = Math.max(0, (leftSec / total) * 100) + '%';
     bar.classList.toggle('is-urgent', leftSec < total * 0.3);
