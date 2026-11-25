@@ -83,7 +83,9 @@ const skillStats = { perfect: 0, good: 0, miss: 0 };
 
 function showActionProgressBar(title, durationMs, onFinished) {
   const host = document.getElementById('viewportWrap') || document.getElementById('gameScreen') || document.body;
-  if (skillCheckActive) skillCheckActive.close();
+  skillCheckActive?.close();
+  const runId = scenarioState.runId;
+  let completionTimer;
 
   const zoneWidth = Math.max(10, Math.min(34, 24 / adapt.level));      // % of the bar
   const period = Math.max(650, Math.min(1900, (900 + durationMs * 0.35) / adapt.level)); // ms per sweep
@@ -151,7 +153,7 @@ function showActionProgressBar(title, durationMs, onFinished) {
       box.classList.add(perfect ? 'is-perfect' : 'is-good');
       hint.textContent = perfect ? 'Идеально' : 'Хорошо';
       if (typeof playTone === 'function') playTone(perfect ? 880 : 660, 'sine', 0.12, 0.08);
-      setTimeout(() => { close(); if (onFinished) onFinished(); }, 380);
+      completionTimer = setTimeout(complete, 380);
       return;
     }
     misses++;
@@ -166,7 +168,7 @@ function showActionProgressBar(title, durationMs, onFinished) {
       // never block progress: after three misses the action completes, the misses still count
       locked = true;
       hint.textContent = 'Засчитано с ошибками';
-      setTimeout(() => { close(); if (onFinished) onFinished(); }, 600);
+      completionTimer = setTimeout(complete, 600);
       return;
     }
     hint.textContent = 'Мимо, попробуйте ещё раз';
@@ -191,7 +193,13 @@ function showActionProgressBar(title, durationMs, onFinished) {
   const mobileBtn = document.getElementById('mobileActionTrigger');
   if (mobileBtn) mobileBtn.addEventListener('pointerdown', onTap, true);
 
+  function complete() {
+    close();
+    if (isScenarioRunActive(runId)) onFinished?.();
+  }
+
   function close() {
+    clearTimeout(completionTimer);
     cancelAnimationFrame(raf);
     window.removeEventListener('keydown', onKey, true);
     if (mobileBtn) mobileBtn.removeEventListener('pointerdown', onTap, true);
@@ -224,6 +232,17 @@ const INTERRUPTS = {
 };
 let interruptAt = -1;
 let decisionTimer = 0;
+let activeInterrupt = null;
+
+function resetSimulationOverlays() {
+  mgActive?.close();
+  skillCheckActive?.close();
+  activeInterrupt?.close();
+  clearInterval(decisionTimer);
+  clearTimeout(showComboPopup.timer);
+  document.getElementById('comboPopup')?.classList.remove('active');
+  document.getElementById('guideToast')?.classList.remove('show');
+}
 
 function secondsFor(base) {
   return Math.round(Math.max(15, Math.min(50, base / adapt.level)));
@@ -231,7 +250,8 @@ function secondsFor(base) {
 
 function showInterrupt(def) {
   const data = INTERRUPTS[def.id];
-  if (!data) return;
+  if (!data || activeInterrupt) return;
+  const runId = scenarioState.runId;
   isActionInProgress = true;
   const host = document.getElementById('viewportWrap') || document.body;
   const total = secondsFor(12);
@@ -248,17 +268,22 @@ function showInterrupt(def) {
   const opts = box.querySelector('.interrupt-options');
   const shuffled = [...data.options].sort(() => Math.random() - 0.5);
   let done = false;
-  const finish = (opt, timedOut) => {
-    if (done) return;
+  function close() {
     done = true;
     clearInterval(timer);
     window.removeEventListener('keydown', onKey, true);
+    box.remove();
+    activeInterrupt = null;
+  }
+  const finish = (opt, timedOut) => {
+    if (done) return;
+    close();
+    if (!isScenarioRunActive(runId)) return;
     const ok = !!(opt && opt.ok);
     if (!ok) { state.misclicks++; adapt.lastMisclicks = state.misclicks; adapt.down(0.1); } else adapt.up(0.05);
     sessionEvents.push({ t: scenarioNow(), action: timedOut ? 'INTERRUPT_TIMEOUT' : ok ? 'INTERRUPT_HANDLED' : 'INTERRUPT_POOR', ok });
     showGuideToast(timedOut ? 'Время вышло: на звонок никто не ответил' : ok ? 'Хорошо: коротко, по делу, работа продолжается' : 'Так делать не стоит: это засчитано как ошибка');
-    box.remove();
-    setTimeout(() => { isActionInProgress = false; }, 200);
+    isActionInProgress = false;
   };
   shuffled.forEach((o, i) => {
     const b = document.createElement('button');
@@ -284,44 +309,33 @@ function showInterrupt(def) {
     box.classList.toggle('is-urgent', left < 0.3);
     if (left <= 0) finish(null, true);
   }, 100);
+  activeInterrupt = { close };
 }
 
 // wrap the scenario engine
 const _startScenario = startScenario;
-startScenario = function (id) {
+startScenario = function (id, options) {
   adapt.reset();
   Object.assign(skillStats, { perfect: 0, good: 0, miss: 0 });
   const def = SCENARIOS[id];
-  interruptAt = def && INTERRUPTS[id] ? 1 + Math.floor(Math.random() * Math.max(1, def.steps.length - 2)) : -1;
-  return _startScenario(id);
+  interruptAt = !options?.challenge && id !== 'it' && def && INTERRUPTS[id] ? 1 + Math.floor(Math.random() * Math.max(1, def.steps.length - 2)) : -1;
+  clearInterval(decisionTimer);
+  return _startScenario(id, options);
 };
 window.startScenario = startScenario;
 
-const _handleScenarioClick = handleScenarioClick;
-handleScenarioClick = function (name) {
-  const before = scenarioState.step;
-  _handleScenarioClick(name);
-  // the step finishes asynchronously (after the skill check); watch for it
-  if (interruptAt < 0) return;
-  const def = getActiveScenario();
-  const watch = setInterval(() => {
-    if (scenarioState.step !== before || scenarioState.phase !== 'steps') {
-      clearInterval(watch);
-      if (scenarioState.step === interruptAt && scenarioState.phase === 'steps' && def) {
-        interruptAt = -1;
-        setTimeout(() => showInterrupt(def), 700);
-      }
-    }
-  }, 150);
-  setTimeout(() => clearInterval(watch), 15000);
-};
+function maybeShowScenarioInterrupt(def) {
+  if (scenarioState.step !== interruptAt || scenarioState.phase !== 'steps') return;
+  interruptAt = -1;
+  showInterrupt(def);
+}
 
 const _startScenarioDecision = startScenarioDecision;
 startScenarioDecision = function (idx) {
   _startScenarioDecision(idx);
   clearInterval(decisionTimer);
   const hud = document.getElementById('hudDockInner');
-  if (!hud) return;
+  if (!hud || getActiveScenario()?.id === 'it') return;
   const total = secondsFor(35);
   const bar = document.createElement('div');
   bar.className = 'decision-timer';
@@ -331,7 +345,9 @@ startScenarioDecision = function (idx) {
   const label = bar.querySelector('.decision-timer-text');
   const started = Date.now();
   let late = false;
+  const runId = scenarioState.runId;
   decisionTimer = setInterval(() => {
+    if (!isScenarioRunActive(runId)) { clearInterval(decisionTimer); return; }
     const leftSec = total - (Date.now() - started) / 1000;
     fill.style.width = Math.max(0, (leftSec / total) * 100) + '%';
     bar.classList.toggle('is-urgent', leftSec < total * 0.3);

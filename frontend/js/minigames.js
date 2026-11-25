@@ -97,7 +97,8 @@ function mgPanel(title, task) {
       box.classList.add(score >= 85 ? 'is-great' : score >= 60 ? 'is-ok' : 'is-poor');
       panel.hint(verdict, score >= 60 ? 'ok' : 'bad');
       if (typeof playTone === 'function') playTone(score >= 60 ? 880 : 200, score >= 60 ? 'sine' : 'sawtooth', 0.15, 0.08);
-      setTimeout(() => { panel.close(); if (then) then(); }, score >= 60 ? 1100 : 1700);
+      const timer = setTimeout(() => { panel.close(); if (then) then(); }, score >= 60 ? 1100 : 1700);
+      panel.onCleanup(() => clearTimeout(timer));
     },
   };
   mgActive = panel;
@@ -354,7 +355,7 @@ function mgVoltage(done) {
   const p = mgPanel(T('Проверка отсутствия напряжения', 'Proving dead'), T('1) Проверьте прибор на эталоне. 2) Замерьте все пары: выберите две клеммы. 3) Снова проверьте прибор.', '1) Check the meter on the proving unit. 2) Test every pair: pick two terminals. 3) Check the meter again.'));
   const terms = ['L1', 'L2', 'L3', 'N', 'PE'];
   const PAIRS = ['L1-L2', 'L2-L3', 'L1-L3', 'L1-PE', 'L2-PE', 'L3-PE'];
-  const live = Math.random() < 0.4 ? 'L3-PE' : null;
+  const live = (safetyRun.backfeed ??= Math.random() < 0.4) ? 'L3-PE' : null;
   const tested = new Set();
   let provedBefore = false, provedAfter = false, first = null;
   const lcd = document.createElement('div');
@@ -368,7 +369,7 @@ function mgVoltage(done) {
   const prove = mgChoices(p, [{ text: T('Проверить прибор на эталоне (230 В)', 'Check the meter on the proving unit (230 V)') }], () => {
     setLcd('230.0 V', 'warn');
     if (tested.size === 0) provedBefore = true;
-    else provedAfter = true;
+    else if (PAIRS.every(pair => tested.has(pair))) provedAfter = true;
     if (typeof playMultimeterBeep === 'function') playMultimeterBeep();
   });
   terms.forEach((name) => {
@@ -383,7 +384,7 @@ function mgVoltage(done) {
       const pair = [first, name].sort((a, c) => terms.indexOf(a) - terms.indexOf(c)).join('-');
       first = null;
       tested.add(pair);
-      const v = pair === live ? '231.4 V' : pair.includes('N') ? '0.0 V' : '0.0 V';
+      const v = pair === live ? '231.4 V' : '0.0 V';
       setLcd(v, pair === live ? 'bad' : 'ok');
       if (typeof playMultimeterBeep === 'function') playMultimeterBeep();
       count.textContent = T(`Пар проверено: ${PAIRS.filter((x) => tested.has(x)).length} из 6`, `Pairs tested: ${PAIRS.filter((x) => tested.has(x)).length} of 6`);
@@ -398,21 +399,32 @@ function mgVoltage(done) {
   const verdict = (says) => {
     const covered = PAIRS.filter((x) => tested.has(x)).length;
     let score = covered / 6 * 70 + (provedBefore ? 15 : 0) + (provedAfter ? 15 : 0);
-    let ok = true;
-    if (says === 'dead' && live) { score = Math.min(score, 20); ok = false; }
+    const unsafeConfirmation = says === 'dead' && live;
+    if (unsafeConfirmation) score = Math.min(score, 20);
     if (says === 'live' && !sawLive()) score -= 30;
     const notes = [];
     if (!provedBefore) notes.push(T('прибор не проверен до замера', 'meter not checked before'));
     if (!provedAfter) notes.push(T('и после', 'or after'));
     if (covered < 6) notes.push(T(`пропущено пар: ${6 - covered}`, `pairs missed: ${6 - covered}`));
-    if (!ok) {
+    if (unsafeConfirmation) {
       safetyState.errors++;
       logAction('VOLTAGE_CONFIRMED_WHILE_LIVE', Date.now(), false);
     }
-    const text = !ok ? T('На L3–PE было 231 В: обратное питание. Подтверждать «нет напряжения» было нельзя.', 'L3–PE read 231 V: back-feed. You couldn’t confirm it was dead.')
-      : says === 'live' ? T('Верно: напряжение есть — работы остановлены, питание снимут на вводе', 'Right: it’s live — work stopped, power will be cut at the supply')
-        : notes.length ? T('Засчитано, но: ', 'Accepted, but: ') + notes.join(', ') : T('Полная проверка по правилу «проверь–замерь–проверь»', 'A full prove–test–prove');
-    p.finish(score, 'thoroughness', text, () => done(says === 'live' && live ? 'fault' : 'ok'));
+    const result = says === 'live' && sawLive() ? 'fault'
+      : says === 'dead' && !live && notes.length === 0 ? 'ok' : 'retry';
+    let text;
+    if (unsafeConfirmation) {
+      text = T('На L3–PE было 231 В: обратное питание. Подтверждать «нет напряжения» было нельзя.', 'L3–PE read 231 V: back-feed. You couldn’t confirm it was dead.');
+    } else if (result === 'fault') {
+      text = T('Верно: напряжение есть — работы остановлены, питание снимут на вводе', 'Right: it’s live — work stopped, power will be cut at the supply');
+    } else if (result === 'ok') {
+      text = T('Полная проверка по правилу «проверь–замерь–проверь»', 'A full prove–test–prove');
+    } else if (says === 'live') {
+      text = T('Сначала найдите клеммы с напряжением.', 'First find the terminals with a live reading.');
+    } else {
+      text = T('Проверка не завершена: ', 'Check incomplete: ') + notes.join(', ');
+    }
+    p.finish(result === 'retry' ? Math.min(score, 59) : score, 'thoroughness', text, () => done(result));
   };
   mgButton(p, T('Напряжения нет', 'It’s dead'), () => verdict('dead'));
   const stopBtn = mgButton(p, T('Есть напряжение — стоп', 'Live — stop'), () => verdict('live'));
@@ -577,7 +589,8 @@ function mgLogs(done) {
 // Dead port: activity LEDs blink on every port except one.
 function mgPorts(done) {
   const p = mgPanel(T('Сервер db-01, задняя панель', 'db-01, rear panel'), T('На рабочих портах мигает индикатор. Найдите порт без связи.', 'Working ports blink. Find the port with no link.'));
-  const n = 8, dead = Math.floor(Math.random() * n);
+  const n = 8;
+  const dead = 0; // The same eth0 connector that is unplugged in the room.
   const wrap = document.createElement('div');
   wrap.className = 'mg-ports';
   p.body.appendChild(wrap);
@@ -823,12 +836,12 @@ showActionProgressBar = function (title, durationMs, onFinished) {
 };
 
 // ---------- safety wiring ----------
-let safetyRun = { scanned: false, colleagueDone: false };
+let safetyRun = { scanned: false, backfeed: null };
 
 const _startSafetyVR2 = window.startSafetyVR;
 window.startSafetyVR = function (...args) {
   fitReset('safety');
-  safetyRun = { scanned: false, colleagueDone: false };
+  safetyRun = { scanned: false, backfeed: null };
   const r = _startSafetyVR2.apply(this, args);
   return r;
 };
@@ -848,38 +861,25 @@ handleSafetyInteraction = function (targetName) {
 const _testVoltage2 = testVoltageWithMultimeter;
 testVoltageWithMultimeter = function () {
   if (isActionInProgress || mgActive) return;
-  if (safetyState.powerState === 'ON') return _testVoltage2();  // the original flags the live test
+  if (safetyState.powerState === 'ON' || !safetyState.ppeEquipped || !safetyState.lockoutApplied) return _testVoltage2();
   isActionInProgress = true;
   mgVoltage((result) => {
     isActionInProgress = false;
     if (result === 'fault') {
+      safetyRun.backfeed = false;
       showGuideToast(T('Мастер снял питание на вводе. Повторите проверку.', 'The supervisor cut power at the supply. Test again.'));
-      return;
     }
-    _testVoltage2();
+    if (result === 'ok') _testVoltage2();
   });
 };
 
 const _operateValve2 = operateValve;
 operateValve = function (idx) {
-  if (safetyState.valvesOpened[idx] || isActionInProgress || mgActive) return _operateValve2(idx);
+  if (isActionInProgress || mgActive) return;
+  if (safetyState.valvesOpened[idx]) return _operateValve2(idx);
+  if (!canOperateScenarioValve()) return;
   isActionInProgress = true;
   mgValve(idx, () => { isActionInProgress = false; _operateValve2(idx); });
-};
-
-const _applyLotoLock2 = applyLotoLock;
-applyLotoLock = function () {
-  const wasLocked = safetyState.lockoutApplied;
-  const r = _applyLotoLock2();
-  if (!wasLocked && safetyState.lockoutApplied && !safetyRun.colleagueDone) {
-    safetyRun.colleagueDone = true;
-    setTimeout(() => {
-      if (safetyState.completed || mgActive) { safetyRun.colleagueDone = false; return; }
-      isActionInProgress = true;
-      mgColleague(() => { isActionInProgress = false; });
-    }, 2200);
-  }
-  return r;
 };
 
 // reset the profile when a module starts
@@ -899,14 +899,7 @@ function renderFitProfile() {
   const card = document.createElement('div');
   card.id = 'fitProfileCard';
   card.className = 'report-card fit-card';
-  const avg = Math.round(scored.reduce((s, k) => s + fit.scores[k], 0) / scored.length);
-  const best = scored.reduce((a, b) => (fit.scores[a] >= fit.scores[b] ? a : b));
-  const worst = scored.reduce((a, b) => (fit.scores[a] <= fit.scores[b] ? a : b));
-  const summary = avg >= 80
-    ? T('Задачи этой профессии даются вам естественно. Стоит попробовать её вживую: стажировка, мастер-класс, день с профессионалом.', 'This job’s core tasks come naturally to you. Worth trying for real: an internship, a workshop, a day with a professional.')
-    : avg >= 60
-      ? T(`Хорошая база. Сильнее всего — «${traits[best][0]}», подтянуть — «${traits[worst][0]}». Это тренируется.`, `A good base. Strongest: “${traits[best][0]}”; to work on: “${traits[worst][0]}”. That can be trained.`)
-      : T(`Пока непросто, особенно «${traits[worst][0]}». Попробуйте ещё раз или сравните с другой профессией.`, `Hard for now, especially “${traits[worst][0]}”. Try again, or compare with another profession.`);
+  const summary = T('Ваши результаты в мини-играх отражают действия в этом прохождении.', 'These minigame results describe this run.');
   card.innerHTML = `<h3 class="fit-title"></h3><p class="fit-sub"></p><div class="fit-rows"></div><p class="fit-summary"></p>`;
   card.querySelector('.fit-title').textContent = T('Что требует профессия и как у вас вышло', 'What this job asks for, and how you did');
   card.querySelector('.fit-sub').textContent = T('По мини-играм: каждая — упрощённая версия реального навыка.', 'From the mini-games: each is a simplified real skill.');

@@ -86,13 +86,14 @@ function npcApplyPose(pose) {
 
 // ---------------------------------------------------------------- show, walk, leave
 async function npcShow(module, opts) {
+  const runId = scenarioState.runId;
   try {
     await npcLoad();
   } catch (e) {
     console.warn('[npc] model not loaded, keeping the simple figure', e);
     return false;
   }
-  if (typeof scene === 'undefined' || !scene) return false;
+  if (!scene || module !== currentProfession || !isScenarioRunActive(runId)) return false;
   const o = NPC.src;
   NPC.obj = o;
   NPC.module = module;
@@ -170,8 +171,9 @@ function npcTag() {
 
 function npcSay(text, ms = 4200) {
   if (NPC.state === 'hidden') return;
-  if (!NPC.bubble) NPC.bubble = npcEl('npc-bubble');
-  NPC.bubble.textContent = text;
+  if (!NPC.bubble) NPC.bubble = document.getElementById('roomDialogue');
+  if (!NPC.bubble) return;
+  NPC.bubble.textContent = NPC.role ? NPC.role + ' · ' + text : text;
   NPC.bubble.style.display = '';
   NPC.bubbleUntil = performance.now() + ms;
 }
@@ -254,9 +256,9 @@ function npcTick() {
     if (NPC.bubble) {
       const show = now < NPC.bubbleUntil;
       NPC.bubble.style.display = show ? '' : 'none';
-      NPC.bubble.style.left = x + 'px';
-      NPC.bubble.style.top = (y - 30) + 'px';
-      NPC.bubble.style.opacity = visible ? 1 : 0;
+
+
+
     }
   }
 }
@@ -364,40 +366,6 @@ function cafeComplaint() {
   return { text: lines[main][tone], face, tone };
 }
 
-if (typeof startQuest2Conflict === 'function') {
-  startQuest2Conflict = function () {
-    state.quest = 2;
-    state.quest2StartedAt = Date.now();
-    document.getElementById('vrQuestTitle').innerText = T('Квест 2: разговор с гостем', 'Quest 2: talking to the guest');
-    const real = NPC.module === 'barista' && NPC.state !== 'hidden';
-    if (customerObj && !real) customerObj.visible = true;
-    player.pos.set(0, 1.65, 0.75);
-    player.yaw = 0;
-    player.pitch = 0.05;
-    playTone(280, 'sawtooth', 0.4, 0.12);
-    const c = cafeComplaint();
-    if (real) { npcSay(c.text, 7000); if (c.tone !== 'polite') NPC.gesture = { kind: 'shake', t: 0 }; }
-    const hud = document.getElementById('hudDockInner') || document.getElementById('hudBottom');
-    const opts = [
-      ['A', 'rose', T('«Вы сами так заказали, проверяйте чек перед оплатой»', '“That’s what you ordered. Check your receipt before paying.”')],
-      ['B', 'emerald', T('«Простите за ошибку! Я переделаю за 1 минуту и угощу вас фирменным десертом»', '“Sorry about that! I’ll remake it in a minute, and the dessert is on us.”')],
-      ['C', 'amber', T('«Подождите, я позову управляющего смены»', '“One moment, I’ll get the shift manager.”')],
-    ];
-    hud.innerHTML = `<div class="speech-bubble" id="typewriterBox">${c.face} <strong>${T('Клиент', 'Customer')}:</strong> <span id="typewriterText"></span></div><div>${opts.map(([k, col, text]) => `
-      <div class="dialog-option" onclick="handleConflictAnswer('${k}')">
-        <div class="dialog-tag" style="background:var(--${col}-bg); color:var(--${col}); border:1px solid var(--${col}-border);">${k}</div>
-        <div>${text}</div>
-      </div>`).join('')}</div>`;
-    const span = document.getElementById('typewriterText');
-    let i = 0;
-    const full = `«${c.text}»`;
-    const iv = setInterval(() => {
-      if (!span.isConnected || i >= full.length) { clearInterval(iv); return; }
-      span.textContent += full[i++];
-    }, 22);
-  };
-}
-
 if (typeof handleConflictAnswer === 'function') {
   const _answer = handleConflictAnswer;
   handleConflictAnswer = function (opt) {
@@ -408,7 +376,8 @@ if (typeof handleConflictAnswer === 'function') {
         C: [-0.1, 'shake', T('Мне не нужен управляющий, мне нужен нормальный кофе.', 'I don’t need a manager, I need a proper coffee.')],
       }[opt];
       if (r) { npcMood(r[0], r[1]); npcSay(r[2], 3800); }
-      setTimeout(() => { if (NPC.module === 'barista') npcLeave(CAFE_DOOR); }, 2600);
+      const runId = scenarioState.runId;
+      setTimeout(() => { if (isScenarioRunActive(runId) && NPC.module === 'barista') npcLeave(CAFE_DOOR); }, 2600);
     }
     return _answer.call(this, opt);
   };
@@ -423,7 +392,7 @@ function clinicPatientSeat() {
   clinic.startedAt = Date.now();
   clinic.slow = false;
   NPC.seen.coughAt = Date.now() + 8000;
-  npcShow('doctor', { role: T('Пациент', 'Patient'), mood: 0.55, sit: true, at: [DOC_PATIENT.x, DOC_PATIENT.z], faceYaw: 0, sitY: -0.45 })
+  npcShow('doctor', { role: T('Пациент', 'Patient'), mood: 0.55, sit: true, at: [DOC_PATIENT.x, DOC_PATIENT.z], faceYaw: 0, sitY: -0.32 })
     .then((ok) => {
       if (!ok) return;
       npcHidePlaceholder(scene.getObjectByName('patientBody'));
@@ -571,7 +540,8 @@ if (typeof answerScenarioDecision === 'function') {
     window[name] = function (...args) {
       npcHide();
       const r = orig.apply(this, args);
-      setTimeout(() => fn(args), 700);
+      const runId = scenarioState.runId;
+      setTimeout(() => { if (isScenarioRunActive(runId)) fn(args); }, 700);
       return r;
     };
   };

@@ -62,6 +62,13 @@ function applyArenaBounds(mode) {
   player.velocity.set(0, 0, 0);
 }
 
+function resetPlayerMotion() {
+  for (const key of Object.keys(player.keys)) player.keys[key] = false;
+  player.velocity.set(0, 0, 0);
+  player.swayX = 0;
+  player.swayY = 0;
+}
+
 function setMoveKey(code, val) {
   if (player.keys.hasOwnProperty(code)) player.keys[code] = val;
 }
@@ -153,10 +160,12 @@ function initThreeFPS() {
   let guideRenderTimer = 0;
   createGuideArrow();
 
+  const gameScreen = document.getElementById('gameScreen');
   function animate() {
     requestAnimationFrame(animate);
     const delta = Math.min(clock.getDelta(), 0.08);
     const time = clock.getElapsedTime();
+    if (!gameScreen.classList.contains('active')) return;
 
     // ================= STANDARD FPS WASD VECTOR MOVEMENT =================
     let inputForward = 0;
@@ -271,7 +280,8 @@ function initThreeFPS() {
       customerObj.rotation.y = Math.sin(time * 1.8) * 0.05;
     }
 
-    if (espressoStreamParticles && espressoStreamParticles.visible) {
+    if (currentProfession === 'barista' && espressoStreamParticles?.visible) {
+      if (cupLiquidMesh) cupLiquidMesh.scale.y = Math.min(0.30, cupLiquidMesh.scale.y + delta * 0.14);
       const p = espressoStreamParticles.geometry.attributes.position.array;
       for (let i = 1; i < p.length; i += 3) {
         p[i] -= delta * 1.8;
@@ -280,7 +290,7 @@ function initThreeFPS() {
       espressoStreamParticles.geometry.attributes.position.needsUpdate = true;
     }
 
-    if (steamParticles && steamParticles.visible) {
+    if (currentProfession === 'barista' && steamParticles?.visible) {
       const sp = steamParticles.geometry.attributes.position.array;
       for (let i = 1; i < sp.length; i += 3) {
         sp[i] += delta * 0.45;
@@ -389,6 +399,7 @@ function initThreeFPS() {
       }
     }
 
+    updateRoomAtmosphere(time, delta);
     renderer.render(scene, camera);
   }
   animate();

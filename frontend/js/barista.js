@@ -26,25 +26,30 @@ function handleFPSObjectClick(name) {
 function executeStepAction(stepIdx, onComplete) {
   const config = state.stepsConfig[stepIdx];
 
+  const runId = scenarioState.runId;
   switch(stepIdx) {
     case 0: // Portafilter -> Grinder Fork
       playTone(520, 'sine', 0.15, 0.1);
       animateHandPunch(() => {
-        portafilterObj.position.set(-1.18, 1.28, -0.27);
-        showComboPopup(config.popup);
-        advanceStep();
-        if (onComplete) onComplete();
+        if (!isScenarioRunActive(runId)) return;
+        tweenObject(portafilterObj, { x: -1.18, y: 1.28, z: -0.27 }, 380, () => {
+          showComboPopup(config.popup);
+          advanceStep();
+          onComplete?.();
+        });
       });
       break;
 
     case 1: // Grinder -> Tamping Mat
       playGrinderSound();
       showActionProgressBar('ПОМОЛ ЗЕРНА (18 грамм)...', 1400, () => {
+        if (!isScenarioRunActive(runId)) return;
         playSuccessChime();
-        portafilterObj.position.set(-0.42, 1.18, 0.05);
-        showComboPopup(config.popup);
-        advanceStep();
-        if (onComplete) onComplete();
+        tweenObject(portafilterObj, { x: -0.42, y: 1.18, z: 0.05 }, 430, () => {
+          showComboPopup(config.popup);
+          advanceStep();
+          onComplete?.();
+        });
       });
       break;
 
@@ -53,18 +58,15 @@ function executeStepAction(stepIdx, onComplete) {
         playTamperThud();
         if (window.triggerCameraShake) window.triggerCameraShake(0.04);
 
-        // Realistic smooth tamping sequence
-        tamperObj.position.set(-0.42, 1.30, 0.05);
-        setTimeout(() => {
-          tamperObj.position.set(-0.42, 1.22, 0.05);
-          setTimeout(() => {
-            tamperObj.position.set(-0.18, 1.16, 0.05);
-            portafilterObj.position.set(-0.70, 1.32, -0.17);
+        if (!isScenarioRunActive(runId)) return;
+        tweenObject(tamperObj, { x: -0.42, y: 1.22, z: 0.05 }, 285, () => {
+          tweenObject(tamperObj, { x: -0.18, y: 1.16, z: 0.05 }, 380);
+          tweenObject(portafilterObj, { x: -0.70, y: 1.32, z: -0.17 }, 530, () => {
             showComboPopup(config.popup);
             advanceStep();
-            if (onComplete) onComplete();
-          }, 250);
-        }, 200);
+            onComplete?.();
+          });
+        });
       });
       break;
 
@@ -72,11 +74,13 @@ function executeStepAction(stepIdx, onComplete) {
       playEspressoFlowSound();
       espressoStreamParticles.visible = true;
       cupLiquidMesh.visible = true;
-      cupLiquidMesh.scale.set(1, 0.30, 1);
+      cupLiquidMesh.scale.set(1, 0.025, 1);
       cupLiquidMesh.material.color.setHex(0x3E271E);
 
       showActionProgressBar('ЭКСТРАКЦИЯ ЭСПРЕССО (9 БАР)...', 2000, () => {
+        if (!isScenarioRunActive(runId)) return;
         espressoStreamParticles.visible = false;
+        cupLiquidMesh.scale.y = 0.30;
         playSuccessChime();
         showComboPopup(config.popup);
         advanceStep();
@@ -90,22 +94,24 @@ function executeStepAction(stepIdx, onComplete) {
       steamParticles.visible = true;
 
       showActionProgressBar('ВЗБИВАНИЕ ОВСЯНОГО МОЛОКА...', 1800, () => {
+        if (!isScenarioRunActive(runId)) return;
         steamParticles.visible = false;
         playSuccessChime();
 
-        // Animate silky milk pouring over cup
-        pitcherObj.position.set(-0.62, 1.36, -0.15);
-        pitcherObj.rotation.z = -0.40;
-        cupLiquidMesh.scale.set(1, 0.75, 1);
-        cupLiquidMesh.material.color.setHex(0xE5D4C0);
-
-        setTimeout(() => {
-          pitcherObj.rotation.z = 0;
-          pitcherObj.position.set(0.20, 1.16, -0.05);
-          showComboPopup(config.popup);
-          advanceStep();
-          if (onComplete) onComplete();
-        }, 700);
+        tweenObject(pitcherObj, { x: -0.57, y: 1.43, z: -0.15, rot: [0, 0, -0.67] }, 390, () => {
+          document.getElementById('gameScreen').classList.add('milk-pouring');
+          setTimeout(() => {
+            if (!isScenarioRunActive(runId)) return;
+            document.getElementById('gameScreen').classList.remove('milk-pouring');
+            cupLiquidMesh.scale.y = 0.75;
+            cupLiquidMesh.material.color.setHex(0xE5D4C0);
+            tweenObject(pitcherObj, { x: 0.20, y: 1.16, z: -0.05, rot: [0, 0, 0] }, 450, () => {
+              showComboPopup(config.popup);
+              advanceStep();
+              onComplete?.();
+            });
+          }, 740);
+        });
       });
       break;
 
@@ -113,11 +119,13 @@ function executeStepAction(stepIdx, onComplete) {
       playIceDropSound();
       iceCubesGroup.visible = true;
       animateHandPunch(() => {
+        if (!isScenarioRunActive(runId)) return;
         cupLiquidMesh.scale.set(1, 0.90, 1);
-        cupObj.position.set(0.0, 1.16, 0.12);
-        showComboPopup(config.popup);
-        renderQuestSuccess();
-        if (onComplete) onComplete();
+        tweenObject(cupObj, { x: 0, y: 1.16, z: 0.12 }, 530, () => {
+          showComboPopup(config.popup);
+          renderQuestSuccess();
+          onComplete?.();
+        });
       });
       break;
   }
@@ -138,56 +146,56 @@ function renderQuestSuccess() {
   }, 1400);
 }
 
-// ================= QUEST 2: SOFT SKILLS =================
+// ================= QUEST 2: SERVICE PRIORITIES =================
+let cafeServicePriority = '';
+
+const CAFE_SERVICE_OPTIONS = {
+  guest: ['Сначала переделать напиток', 'Гость получил новый напиток. Два заказа в очереди пришлось задержать.'],
+  queue: ['Сначала закрыть два заказа', 'Два заказа выданы. Гость с жалобой ждал без объяснения.'],
+  coordinate: ['Назвать гостю время и попросить коллегу помочь', 'Коллега взял очередь. Гость знает, когда получит новый напиток.']
+};
+
 function startQuest2Conflict() {
   state.quest = 2;
   state.quest2StartedAt = Date.now();
-  document.getElementById('vrQuestTitle').innerText = 'КВЕСТ 2: КОНФЛИКТ С ГОСТЕМ';
-  if (customerObj) customerObj.visible = true;
-
+  cafeServicePriority = '';
+  document.getElementById('vrQuestTitle').innerText = 'Смена бариста · час пик';
+  const real = NPC.module === 'barista' && NPC.state !== 'hidden';
+  if (customerObj && !real) customerObj.visible = true;
   player.pos.set(0, 1.65, 0.75);
   player.yaw = 0;
   player.pitch = 0.05;
-
-  playTone(280, 'sawtooth', 0.4, 0.12);
-
-  const hud = document.getElementById('hudDockInner') || document.getElementById('hudBottom');
+  const hud = document.getElementById('hudDockInner');
   hud.innerHTML = `
-    <div class="speech-bubble" id="typewriterBox">
-      😡 <strong>Клиент (в упор):</strong> <span id="typewriterText"></span>
+    <div class="work-tickets" aria-label="${trRu('Очередь заказов')}">
+      <span>#24 · Espresso</span><span>#25 · Latte</span><span data-priority="true">${trRu('Возврат · Iced Oat Latte')}</span>
     </div>
-    <div>
-      <div class="dialog-option" onclick="handleConflictAnswer('A')">
-        <div class="dialog-tag" style="background:var(--rose-bg); color:var(--rose); border:1px solid var(--rose-border);">A</div>
-        <div>«Вы сами так заказали, проверяйте чек перед оплатой»</div>
-      </div>
-      <div class="dialog-option" onclick="handleConflictAnswer('B')">
-        <div class="dialog-tag" style="background:var(--emerald-bg); color:var(--emerald); border:1px solid var(--emerald-border);">B</div>
-        <div>«Простите за ошибку! Я переделаю за 1 минуту и угощу вас фирменным десертом»</div>
-      </div>
-      <div class="dialog-option" onclick="handleConflictAnswer('C')">
-        <div class="dialog-tag" style="background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-border);">C</div>
-        <div>«Подождите, я позову управляющего смены»</div>
-      </div>
-    </div>
-  `;
+    <p class="case-question">Два заказа ждут выдачи. Гость просит переделать напиток. Коллега свободен. Что сделаете первым?</p>
+    <p class="cafe-complaint"></p>
+    ${Object.entries(CAFE_SERVICE_OPTIONS).map(([id, [label]]) =>
+      `<button type="button" class="dialog-option scenario-option" onclick="chooseCafeServicePriority('${id}')">${label}</button>`
+    ).join('')}`;
+  hud.querySelector('.cafe-complaint').textContent = cafeComplaint().text;
+}
 
-  const fullText = "«Я трижды повторил: БЕЗ САХАРА! Вы испортили мой заказ, я требую жалобную книгу!»";
-  let charIdx = 0;
-  const txtSpan = document.getElementById('typewriterText');
-  let typeIntv = setInterval(() => {
-    if (txtSpan) {
-      txtSpan.innerText += fullText[charIdx];
-      charIdx++;
-      if (charIdx >= fullText.length) clearInterval(typeIntv);
-    } else {
-      clearInterval(typeIntv);
-    }
-  }, 25);
+function chooseCafeServicePriority(option) {
+  if (!Object.hasOwn(CAFE_SERVICE_OPTIONS, option) || state.quest !== 2 || cafeServicePriority) return;
+  cafeServicePriority = option;
+  sessionEvents.push({ t: scenarioNow(), action: 'BARISTA_PRIORITY_' + option, ok: option === 'coordinate' });
+  const hud = document.getElementById('hudDockInner');
+  hud.innerHTML = `
+    <p class="service-outcome" role="status">${CAFE_SERVICE_OPTIONS[option][1]}</p>
+    <p class="case-question">Что вы скажете гостю?</p>
+    <button type="button" class="dialog-option scenario-option" onclick="handleConflictAnswer('A')">«Проверьте чек. Я сделал то, что заказано»</button>
+    <button type="button" class="dialog-option scenario-option" onclick="handleConflictAnswer('B')">«Извините за ошибку. Я переделаю напиток и скажу, когда он будет готов»</button>
+    <button type="button" class="dialog-option scenario-option" onclick="handleConflictAnswer('C')">«Я позову управляющего»</button>`;
+  hud.querySelector('button').focus();
 }
 
 function handleConflictAnswer(opt) {
+  if (state.quest !== 2 || !cafeServicePriority || !['A', 'B', 'C'].includes(opt)) return;
   state.conflictChoice = opt;
+  sessionEvents.push({ t: scenarioNow(), action: 'BARISTA_GUEST_' + opt, ok: opt === 'B' });
   state.conflictResponseSec = Math.round((Date.now() - state.quest2StartedAt) / 100) / 10;
   playSuccessChime();
   if (customerObj) customerObj.visible = false;
@@ -226,5 +234,6 @@ function startQuest3Management() {
 
 function handleBudgetAnswer(opt) {
   state.budgetChoice = opt;
+  sessionEvents.push({ t: scenarioNow(), action: 'BARISTA_STOCK_' + opt, ok: opt === 'optimal' });
   triggerEpicVictory();
 }

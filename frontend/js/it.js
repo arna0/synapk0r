@@ -5,26 +5,111 @@
 let itDashScreen = null, itTermScreen = null;
 let itDbLed = null, itCableObj = null, itAlarmLight = null, itAlarmDome = null;
 let itRackLeds = [];
-let itIncidentOpen = true;
+let itWorldStatus = 'down';
+let itDisplayMode = 'alert';
+let itChartTime = 0;
+let itLastChartUpdate = -1;
+let itCaseIndex = -1;
+let itRecoveryRetries = 0;
+let itLastRecovery = '';
+
+const IT_RECOVERY_OPTIONS = {
+  PAYMENT_REGION: 'Вернуть последнюю рабочую версию',
+  POOL_TIMEOUT: 'Снизить нагрузку на сервис бронирования',
+  READ_ONLY: 'Направить запись на доступный для записи узел'
+};
 
 const IT_PORT_POS = { x: 1.53, y: 1.255, z: -1.19 };
 const IT_CABLE_LOOSE = { x: 1.6, y: 0.95, z: -1.12 };
+const IT_CASES = [
+  {
+    code: 'PAYMENT_REGION',
+    endpoint: '/checkout',
+    alert: 'Сбой после выкладки v2.4',
+    lines: [
+      '14:30:00 WARN backup-01 disk usage 81%',
+      '14:31:01 INFO release v2.4 activated',
+      '14:31:02 ERROR shop-api configuration: PAYMENT_REGION is missing',
+      '14:31:03 INFO db-01 connectivity probe: OK',
+      '14:31:04 ERROR POST /checkout: HTTP 503'
+    ],
+    answers: [
+      ['backup_disk', 'Заполнен диск резервного сервера'],
+      ['network_cable', 'Сервер базы данных потерял сеть'],
+      ['missing_config', 'В новой версии отсутствует настройка PAYMENT_REGION']
+    ],
+    correct: 2,
+    success: 'Вы связали сбой с настройкой PAYMENT_REGION: ошибка появилась сразу после выкладки.',
+    explanation: 'В журнале указано, что после выкладки отсутствовала настройка PAYMENT_REGION. Проверка базы прошла, а предупреждение о диске относится к резервному серверу.'
+  },
+  {
+    code: 'POOL_TIMEOUT',
+    endpoint: '/bookings',
+    alert: 'Сбой при росте нагрузки',
+    lines: [
+      '16:40:00 INFO booking requests: 4x baseline',
+      '16:40:02 WARN db pool: 40/40 connections in use',
+      '16:40:03 ERROR booking-api: POOL_TIMEOUT waiting for connection',
+      '16:40:04 INFO network probe: OK',
+      '16:40:05 ERROR POST /bookings: HTTP 503'
+    ],
+    answers: [
+      ['pool_saturated', 'Все соединения с базой заняты'],
+      ['network_cable', 'Сервер базы данных потерял сеть'],
+      ['missing_config', 'В новой версии отсутствует настройка PAYMENT_REGION']
+    ],
+    correct: 0,
+    success: 'Вы заметили, что под нагрузкой закончились свободные соединения с базой.',
+    explanation: 'Журнал показывает 40 из 40 занятых соединений, затем POOL_TIMEOUT. Сеть при этом доступна.'
+  },
+  {
+    code: 'READ_ONLY',
+    endpoint: '/orders',
+    alert: 'Новые заказы не сохраняются',
+    lines: [
+      '09:15:00 WARN backup-01 disk usage 78%',
+      '09:15:02 INFO db-01 failover completed',
+      '09:15:03 ERROR order-api: READ_ONLY transaction on new primary',
+      '09:15:04 INFO GET /catalog: HTTP 200',
+      '09:15:05 ERROR POST /orders: HTTP 503'
+    ],
+    answers: [
+      ['backup_disk', 'Заполнен диск резервного сервера'],
+      ['read_only', 'После переключения база принимает только чтение'],
+      ['pool_saturated', 'Все соединения с базой заняты']
+    ],
+    correct: 1,
+    success: 'Вы связали сбой записи с режимом только для чтения после переключения базы.',
+    explanation: 'После переключения журнал сообщает READ_ONLY: каталог открывается, но новые заказы не сохраняются.'
+  }
+];
+
+function itCase() { return IT_CASES[itCaseIndex]; }
+
+function resetItEnvironment() {
+  itWorldStatus = 'down';
+  itLastRecovery = '';
+  itDisplayMode = 'alert';
+  itChartTime = 0;
+  itLastChartUpdate = -1;
+}
 
 // ---------- screen drawings ----------
 function drawItDashboard(mode) {
   if (!itDashScreen) return;
+  itDisplayMode = mode;
   const { ctx, canvas, tex } = itDashScreen;
   const w = canvas.width, h = canvas.height;
   const ok = mode === 'ok';
   ctx.fillStyle = '#0F172A';
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = ok ? '#059669' : '#DC2626';
+  ctx.fillStyle = ok ? '#047857' : itWorldStatus === 'working' ? '#a76216' : '#b9323c';
   ctx.fillRect(0, 0, w, 64);
   ctx.fillStyle = '#FFFFFF';
   ctx.font = '800 30px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(ok ? '✓ ALL SYSTEMS OPERATIONAL' : '⚠ ALERT · shop.kz', 22, 33);
+  ctx.fillText(ok ? 'OK · SERVICES AVAILABLE' : itWorldStatus === 'working' ? 'RECOVERY IN PROGRESS' : 'ALERT · shop.kz', 22, 33);
 
   // uptime graph
   ctx.strokeStyle = '#334155';
@@ -38,9 +123,10 @@ function drawItDashboard(mode) {
   const pts = 24;
   for (let i = 0; i <= pts; i++) {
     const x = 22 + (w - 44) * i / pts;
-    let y = 118 + Math.sin(i * 1.3) * 5;
-    if (i > 13) y = 225;                  // outage: requests fail
-    if (ok && i > 20) y = 118 + Math.sin(i) * 5; // recovered
+    const noise = Math.sin(i * 1.3 + itChartTime * 2) * 5;
+    const healthy = i < 12 || (ok && i > 19);
+    const baseline = healthy ? 118 : itWorldStatus === 'working' && i > 20 ? 175 : 225;
+    const y = baseline + noise;
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   }
   ctx.stroke();
@@ -52,6 +138,10 @@ function drawItDashboard(mode) {
   if (mode === 'alert') {
     ctx.fillStyle = '#FCA5A5';
     ctx.fillText('Сайт недоступен · нажмите [E]', 22, 300);
+  } else if (mode === 'incident') {
+    ctx.fillStyle = '#FCA5A5';
+    ctx.fillText('HTTP 503 · ' + itCase().endpoint, 22, 296);
+    ctx.fillText(itCase().alert, 22, 322);
   } else if (mode === 'details') {
     ctx.fillStyle = '#FCA5A5';
     ctx.fillText('HTTP 503 · 6 мин · 100% ошибок', 22, 296);
@@ -59,7 +149,7 @@ function drawItDashboard(mode) {
     ctx.fillText('Подозрение: база данных db-01', 22, 322);
   } else {
     ctx.fillStyle = '#6EE7B7';
-    ctx.fillText('HTTP 200 OK · ответ 84 мс', 22, 296);
+    ctx.fillText(itLastRecovery || 'HTTP 200 OK · ответ 84 мс', 22, 296);
     ctx.fillText('Инцидент #412 закрыт', 22, 322);
   }
   tex.needsUpdate = true;
@@ -75,25 +165,26 @@ function drawItTerminal(mode) {
   ctx.textBaseline = 'top';
   const lines = {
     idle: [['#94A3B8', 'oncall@ops:~$ _']],
+    incident: itCase()?.lines.map(text => [text.includes('ERROR') ? '#fda4af' : '#b7d2eb', text]),
     logs: [
       ['#94A3B8', '$ journalctl -u shop-api -n 5'],
-      ['#E2E8F0', '12:04:51 GET /cart 200'],
-      ['#F87171', '12:05:02 ERROR db-01:5432'],
-      ['#F87171', '  connection refused'],
-      ['#F87171', '12:05:03 HTTP 503 /checkout'],
-      ['#FDE68A', '12:05:03 retry 3/3 failed']
+      ['#E2E8F0', '10:41:58 GET /cart 200'],
+      ['#F87171', '10:42:07 WARN db-01:5432'],
+      ['#F87171', '  No route to host'],
+      ['#F87171', '10:42:07 HTTP 503 /checkout'],
+      ['#FDE68A', '10:42:11 retry 3/3 failed']
     ],
     restart: [
       ['#94A3B8', '$ sudo systemctl restart shop-api'],
       ['#94A3B8', '$ systemctl status shop-api'],
       ['#34D399', '● shop-api: active (running)'],
       ['#E2E8F0', 'db-01:5432 connected ✓'],
-      ['#34D399', '12:11:40 GET /checkout 200']
+      ['#34D399', '10:48:40 GET /checkout 200']
     ]
   }[mode];
   lines.forEach(([color, text], i) => {
     ctx.fillStyle = color;
-    ctx.fillText(text, 14, 14 + i * 26);
+    ctx.fillText(text, 14, 14 + i * 26, canvas.width - 28);
   });
   tex.needsUpdate = true;
 }
@@ -101,7 +192,7 @@ function drawItTerminal(mode) {
 // ---------- scene ----------
 function buildItEnvironment(group) {
   itRackLeds = [];
-  itIncidentOpen = true;
+  const challenge = getActiveScenario()?.variant === 'challenge';
 
   // Room: raised-floor tiles, dark walls
   const floorCanvas = makeCanvasScreen(256, 256);
@@ -255,6 +346,10 @@ function buildItEnvironment(group) {
   port.position.set(0.23, 0, 0.032);
   db.add(face, plate, itDbLed, port);
   db.position.set(1.3, 0.22 + 6 * 0.172, -1.22);
+  if (challenge) {
+    itDbLed.material.color.setHex(0x34d399);
+    itDbLed.material.emissive.setHex(0x34d399);
+  }
   group.add(db);
   interactiveObjects.push(db);
 
@@ -268,6 +363,10 @@ function buildItEnvironment(group) {
   addHitbox(itCableObj, 0.12, 0.3, 0.12, 0, 0.1, 0);
   itCableObj.position.set(IT_CABLE_LOOSE.x, IT_CABLE_LOOSE.y, IT_CABLE_LOOSE.z);
   itCableObj.rotation.set(0.15, 0, -0.08);
+  if (challenge) {
+    itCableObj.position.set(IT_PORT_POS.x, IT_PORT_POS.y, IT_PORT_POS.z);
+    itCableObj.rotation.set(0, 0, 0);
+  }
   group.add(itCableObj);
   interactiveObjects.push(itCableObj);
 
@@ -278,13 +377,22 @@ function buildItEnvironment(group) {
 }
 
 function updateItEnvironment(time) {
+  if (time - itLastChartUpdate >= 0.24) {
+    itChartTime = time;
+    itLastChartUpdate = time;
+    drawItDashboard(itDisplayMode);
+  }
   itRackLeds.forEach(led => {
     led.material.emissiveIntensity = Math.sin(time * 9 + led.userData.phase) > 0.2 ? 1.6 : 0.2;
   });
   if (itAlarmLight) {
-    const pulse = itIncidentOpen ? Math.pow(Math.max(0, Math.sin(time * 5)), 4) * 2.2 : 0;
+    const color = { down: 0xff4b42, working: 0xffb653, restored: 0x47e2ab }[itWorldStatus];
+    const pulse = itWorldStatus === 'restored' ? 0.2 : 0.4 + Math.pow(Math.max(0, Math.sin(time * 3.5)), 3);
+    itAlarmLight.color.setHex(color);
     itAlarmLight.intensity = pulse;
-    itAlarmDome.material.emissiveIntensity = itIncidentOpen ? 0.3 + pulse * 0.6 : 0.05;
+    itAlarmDome.material.color.setHex(color);
+    itAlarmDome.material.emissive.setHex(color);
+    itAlarmDome.material.emissiveIntensity = pulse * 0.65;
   }
 }
 
@@ -310,9 +418,10 @@ registerScenario({
     ],
     extra: [['1–3', 'Выбор ответа']]
   },
-  reset() { itIncidentOpen = true; },
+  reset: resetItEnvironment,
   build: buildItEnvironment,
   update: updateItEnvironment,
+  briefing() { return '<div class="work-tickets"><span>#412 · shop.kz</span><span>/checkout</span></div>'; },
   steps: [
     {
       id: 'monitorDash', name: 'Изучите алерт мониторинга', short: 'Алерт', hint: 'Открыть алерт',
@@ -350,11 +459,13 @@ registerScenario({
       run(done) {
         tweenObject(itCableObj, { ...IT_PORT_POS, rot: [0, 0, 0] }, 600, () => {
           playTone(900, 'square', 0.06, 0.12);
+          itWorldStatus = 'working';
           itDbLed.material.color.setHex(0xFBBF24);
           itDbLed.material.emissive.setHex(0xF59E0B);
+          const dbIndicator = itDbLed;
           setTimeout(() => {
-            itDbLed.material.color.setHex(0x22C55E);
-            itDbLed.material.emissive.setHex(0x22C55E);
+            dbIndicator.material.color.setHex(0x22C55E);
+            dbIndicator.material.emissive.setHex(0x22C55E);
           }, 700);
           done();
         });
@@ -375,7 +486,7 @@ registerScenario({
       why: 'Инцидент закрыт, только когда это подтверждают метрики, а не «вроде работает».',
       popup: 'HTTP 200 OK · всё работает ✅',
       run(done) {
-        showActionProgressBar('ОБНОВЛЯЮ МЕТРИКИ...', 900, () => { drawItDashboard('ok'); itIncidentOpen = false; done(); });
+        showActionProgressBar('ОБНОВЛЯЮ МЕТРИКИ...', 900, () => { itWorldStatus = 'restored'; drawItDashboard('ok'); done(); });
       }
     }
   ],
@@ -445,3 +556,100 @@ registerScenario({
     ]
   }
 });
+
+SCENARIOS.it.challenge = {
+  ...SCENARIOS.it,
+  variant: 'challenge',
+  briefing() { return `<div class="work-tickets"><span>shop.kz</span><span>${itCase().endpoint}</span></div>`; },
+  reset() {
+    resetItEnvironment();
+    itCaseIndex = (itCaseIndex + 1) % IT_CASES.length;
+    itRecoveryRetries = 0;
+  },
+  questTitle: 'IT · Новый инцидент',
+  intro: {
+    title: 'Дежурство IT-инженера: новый инцидент',
+    goal: 'Сайт возвращает ошибки. Изучите сигнал и журнал, затем выберите наиболее вероятную причину сбоя.',
+    plan: ['Откройте мониторинг и журнал', 'Выберите причину сбоя по журналу'],
+    extra: [['1–3', 'Выбор ответа']]
+  },
+  steps: [
+    {
+      id: 'monitorDash', name: 'Откройте мониторинг', short: 'Алерт', hint: 'Открыть алерт',
+      how: 'Наведите прицел на монитор и нажмите <b>E</b>.',
+      run(done) { drawItDashboard('incident'); done(); }
+    },
+    {
+      id: 'terminal', name: 'Откройте журнал инцидента', short: 'Логи', hint: 'Открыть журнал',
+      how: 'Наведите прицел на ноутбук и нажмите <b>E</b>.',
+      run(done) { drawItTerminal('incident'); done(); }
+    }
+  ],
+  completeBanner: { title: 'Журнал открыт', text: 'Найдите запись, которая объясняет сбой.' },
+  decisions: [{
+    key: 'evidence', kind: 'hard', stepLabel: 'Выберите причину сбоя',
+    questTitle: 'IT · Выбор причины',
+    guideTask: 'Выберите причину сбоя', guideHow: 'Сравните время событий и содержание журнала.',
+    prompt() {
+      return `
+        <p class="case-question">Какая причина лучше всего объясняет сбой?</p>
+        <pre class="case-log">${itCase().lines.join('\n')}</pre>`;
+    },
+    get options() {
+      const current = itCase();
+      return current.answers.map(([label, text], index) => ({
+        id: String(index),
+        label,
+        text,
+        score: index === current.correct ? 100 : 0
+      }));
+    },
+    onAnswer(option) {
+      if (option.score === 100) {
+        itWorldStatus = 'working';
+        drawItDashboard('incident');
+      }
+    }
+  }, {
+    key: 'recovery', kind: 'hard', stepLabel: 'Выберите действие и проверьте результат',
+    questTitle: 'IT · Проверка восстановления',
+    guideTask: 'Выберите действие по журналу',
+    guideHow: 'Сравните ошибку в журнале с предложенными действиями.',
+    prompt() {
+      return `
+        ${itRecoveryRetries ? `<p class="service-outcome" role="status" id="itRecoveryStatus">${itCase().endpoint} · HTTP 503 · <span>Сбой сохраняется. Сверьтесь с журналом и попробуйте другой вариант.</span></p>` : ''}
+        <p class="case-question">Что поможет восстановить сервис в этом сценарии?</p>
+        <pre class="case-log">${itCase().lines.join('\n')}</pre>`;
+    },
+    get options() {
+      return Object.entries(IT_RECOVERY_OPTIONS).map(([id, text]) => ({
+        id, text, label: id.toLowerCase(),
+        score: id === itCase().code ? (itRecoveryRetries > 0 ? 50 : 100) : 0
+      }));
+    },
+    onAnswer(option) {
+      if (option.id !== itCase().code) {
+        itRecoveryRetries++;
+        itWorldStatus = 'down';
+        drawItDashboard('incident');
+        return false;
+      }
+      itWorldStatus = 'restored';
+      itLastRecovery = `${itCase().endpoint} · HTTP 200`;
+      drawItDashboard('ok');
+      return true;
+    }
+  }],
+  victory: { title: 'Разбор инцидента завершён', text: 'Контрольный запрос успешен: HTTP 200. В отчёте указана причина сбоя.' },
+  report: {
+    stepsLabel: 'Точность действий при инциденте',
+    hardLabel: 'Причина сбоя по журналу',
+    softLabel: 'Коммуникация с заказчиком',
+    timeLabel: 'Время сценария',
+    evidence: () => itCase().code,
+    competencies: ({ answers }) => [
+      Number(answers.evidence) === itCase().correct ? itCase().success : itCase().explanation,
+      itRecoveryRetries ? 'После повторной попытки контрольный запрос прошёл успешно.' : 'Вы восстановили сервис с первой попытки и получили HTTP 200.'
+    ]
+  }
+};

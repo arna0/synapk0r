@@ -32,7 +32,7 @@ class _SimUnavailable extends StatelessWidget {
       alignment: Alignment.center,
       padding: const EdgeInsets.all(24),
       child: Text(
-        '3D-симулятор работает на Android, iOS и в браузере.\nЗадания можно пройти с панелью ниже.',
+        '3D-симулятор работает на Android, iOS и в браузере.',
         textAlign: TextAlign.center,
         style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textMutedDark, height: 1.5),
       ),

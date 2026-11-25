@@ -844,6 +844,10 @@ function testVoltageWithMultimeter() {
       safetyState.errors++;
       logAction('TEST_VOLTAGE_LIVE_DANGER', Date.now(), false);
       showSafetyAlert('⚡ ВНИМАНИЕ! Напряжение 380V НЕ снято! Опасность поражения током!');
+    } else if (!safetyState.ppeEquipped || !safetyState.lockoutApplied) {
+      safetyState.errors++;
+      logAction('VIOLATION_VOLTAGE_BEFORE_CHECKLIST', Date.now(), false);
+      showSafetyAlert('Сначала выполните предыдущие шаги задания. Проверка не засчитана.');
     } else {
       safetyState.voltageTested = true;
       logAction('TEST_VOLTAGE_CONFIRMED_ZERO', Date.now(), true);
@@ -958,6 +962,7 @@ function applyLotoLock() {
   animateHandPunch(() => {
     if (lotoPadlockMesh) lotoPadlockMesh.visible = true;
     safetyState.lockoutApplied = true;
+    safetyState.voltageTested = false;
     playBreakerClack();
     playSuccessChime();
 
@@ -971,12 +976,23 @@ function applyLotoLock() {
     showComboPopup('🔒 LOTO ЗАМОК УСТАНОВЛЕН: НЕ ВКЛЮЧАТЬ! +150 XP');
     logAction('APPLY_LOTO_LOCK_SUCCESS', Date.now(), true);
     if (safetyState.selectedTool === 'loto') selectInventoryTool('loto');
-    isActionInProgress = false;
-    checkSafetyCompletion();
+    mgColleague(() => {
+      isActionInProgress = false;
+      checkSafetyCompletion();
+    });
   });
 }
 
+function canOperateScenarioValve() {
+  if (safetyState.ppeEquipped && safetyState.powerState === 'OFF' && safetyState.lockoutApplied && safetyState.voltageTested) return true;
+  safetyState.errors++;
+  logAction('VIOLATION_VALVE_BEFORE_CHECKLIST', Date.now(), false);
+  showSafetyAlert('Сначала выполните предыдущие шаги задания. Клапан остался закрыт.');
+  return false;
+}
+
 function operateValve(idx) {
+  if (!canOperateScenarioValve()) return;
   if (safetyState.valvesOpened[idx]) {
     showSafetyAlert(`Клапан ${idx + 1} уже открыт, давление стравливается.`);
     return;
@@ -987,8 +1003,14 @@ function operateValve(idx) {
     playValveHiss();
     const wheel = idx === 0 ? valve1Wheel : valve2Wheel;
     const particles = idx === 0 ? steamParticles1 : steamParticles2;
-    if (wheel) wheel.rotation.z += Math.PI * 2;
-    if (particles) particles.visible = true;
+    if (wheel) {
+      const { x, y, z } = wheel.position;
+      tweenObject(wheel, { x, y, z, rot: [wheel.rotation.x, wheel.rotation.y, wheel.rotation.z + Math.PI * 2] }, 760);
+    }
+    if (particles) {
+      particles.visible = true;
+      setTimeout(() => { particles.visible = false; }, 1650);
+    }
 
     safetyState.valvesOpened[idx] = true;
 
@@ -1026,8 +1048,10 @@ function checkSafetyCompletion() {
 
   if (isReady && !safetyState.completed) {
     safetyState.completed = true;
+    const runId = scenarioState.runId;
     clearInterval(state.timerInterval);
     setTimeout(() => {
+      if (!isScenarioRunActive(runId)) return;
       // Deactivate Emergency Strobe & turn on steady Green Safe Beacon
       if (emergencyBeaconLight) emergencyBeaconLight.intensity = 0;
       if (greenLedMesh) greenLedMesh.material.emissiveIntensity = 2.0;
@@ -1053,6 +1077,10 @@ function checkSafetyCompletion() {
 // ================= START SAFETY VR ENTRY POINT =================
 function startSafetyVR() {
   currentProfession = 'safety';
+  const runId = ++scenarioState.runId;
+  resetSimulationOverlays();
+  resetPlayerMotion();
+  document.getElementById('gameScreen').classList.remove('milk-pouring');
   document.getElementById('gameScreen').classList.add('safety-mode');
   isActionInProgress = false;
 
@@ -1111,6 +1139,7 @@ function startSafetyVR() {
   showScreen('gameScreen');
 
   setTimeout(() => {
+    if (!isScenarioRunActive(runId)) return;
     initThreeFPS();
     if (scene) {
       // Remove barista objects if present
@@ -1121,6 +1150,7 @@ function startSafetyVR() {
       removeScenarioScenes();
 
       build3DSafetyEnvironment();
+      enhanceScene('safety');
     }
     startTransformerHum();
     handleWindowResize();
@@ -1129,6 +1159,7 @@ function startSafetyVR() {
   clearInterval(state.timerInterval);
   state.timer = 0;
   state.timerInterval = setInterval(() => {
+    if (isIntroVisible()) return;
     state.timer++;
     const m = String(Math.floor(state.timer / 60)).padStart(2, '0');
     const s = String(state.timer % 60).padStart(2, '0');

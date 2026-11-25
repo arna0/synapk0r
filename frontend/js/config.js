@@ -8,6 +8,7 @@ function getApiBase() {
   const fromQuery = apiFromQuery();
   if (fromQuery) return fromQuery;
   if (typeof window.SYNAPKOR_API_BASE === 'string') return window.SYNAPKOR_API_BASE.replace(/\/$/, '');
+  if (location.hostname.endsWith('.github.io')) return null;
   return location.protocol.startsWith('http') ? '' : null;
 }
 

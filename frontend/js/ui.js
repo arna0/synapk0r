@@ -87,6 +87,10 @@ function showScreen(id) {
 
 function startBaristaVR() {
   currentProfession = 'barista';
+  const runId = ++scenarioState.runId;
+  resetSimulationOverlays();
+  resetPlayerMotion();
+  document.getElementById('gameScreen').classList.remove('milk-pouring');
   document.getElementById('gameScreen').classList.remove('safety-mode');
   stopTransformerHum();
   const safetyHud = document.getElementById('safetyHudBar');
@@ -102,6 +106,7 @@ function startBaristaVR() {
 
   isActionInProgress = false;
   resetSafetyToolsUI();
+  cafeServicePriority = '';
   state.quest = 1;
   state.step = 0;
   state.timer = 0;
@@ -156,6 +161,7 @@ function startBaristaVR() {
 
   showScreen('gameScreen');
   setTimeout(() => {
+    if (!isScenarioRunActive(runId)) return;
     initThreeFPS();
     if (scene) {
       const oldSafety = scene.getObjectByName('safetyEnvironment');
@@ -165,6 +171,7 @@ function startBaristaVR() {
       const oldBarista = scene.getObjectByName('baristaEnvironment');
       if (oldBarista) scene.remove(oldBarista);
       build3DEnvironment();
+      enhanceScene('barista');
     }
     renderHUD();
     handleWindowResize();
@@ -174,6 +181,7 @@ function startBaristaVR() {
 
   clearInterval(state.timerInterval);
   state.timerInterval = setInterval(() => {
+    if (isIntroVisible()) return;
     state.timer++;
     const m = String(Math.floor(state.timer / 60)).padStart(2, '0');
     const s = String(state.timer % 60).padStart(2, '0');
@@ -182,7 +190,7 @@ function startBaristaVR() {
 }
 
 function restartCurrentSimulation() {
-  if (getActiveScenario()) startScenario(currentProfession);
+  if (getActiveScenario()) startScenario(currentProfession, { challenge: getActiveScenario().variant === 'challenge' });
   else if (currentProfession === 'safety') startSafetyVR();
   else startBaristaVR();
 }
@@ -198,6 +206,9 @@ function resetSafetyToolsUI() {
 }
 
 function exitToHome() {
+  ++scenarioState.runId;
+  ++aiRequestSeq;
+  resetSimulationOverlays();
   if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
   document.getElementById('introOverlay')?.classList.remove('visible');
   clearInterval(state.timerInterval);
@@ -223,5 +234,5 @@ window.addEventListener('DOMContentLoaded', () => {
   const module = new URLSearchParams(location.search).get('module');
   if (module === 'barista') startBaristaVR();
   else if (module === 'safety') startSafetyVR();
-  else if (SCENARIOS[module]) startScenario(module);
+  else if (SCENARIOS[module]) startScenario(module, { challenge: new URLSearchParams(location.search).get('variant') === 'challenge' });
 });

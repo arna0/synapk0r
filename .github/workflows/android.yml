@@ -6,13 +6,15 @@ on:
   push:
     branches: [main]
     paths: ['mobile/**', 'frontend/**', 'scripts/**', '.github/workflows/android.yml']
+  pull_request:
+    paths: ['mobile/**', 'frontend/**', 'scripts/**', '.github/workflows/android.yml']
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: android
+  group: android-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -55,6 +57,7 @@ jobs:
           grep -E "(error|Error):" build.txt | head -20 | while read -r l; do echo "::error::$l"; done
           exit $code
       - name: Publish as the android-latest pre-release
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

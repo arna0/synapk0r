@@ -21,40 +21,63 @@ function setupFPSControls(container) {
 
   const viewportWrap = document.getElementById('viewportWrap') || container;
 
-  // Desktop Pointer Lock on click
-  const UI_OVERLAY_SELECTOR = 'button, #virtualDpad, #mobileActionTrigger, .vr-status-bar, .safety-inventory-bar, .multimeter-hud-panel, .victory-modal-overlay, .telemetry-log-panel, .intro-overlay, .guide-panel, .guide-toggle-btn';
+  const UI_OVERLAY_SELECTOR = 'button, #virtualDpad, #mobileActionTrigger, .vr-status-bar, .safety-inventory-bar, .multimeter-hud-panel, .victory-modal-overlay, .telemetry-log-panel, .intro-overlay, .guide-panel, .guide-toggle-btn, #desktopAimHint';
+  const captureButton = document.getElementById('pointerLockToggle');
+  const captureHint = document.getElementById('desktopAimText');
+  const requestLock = viewportWrap.requestPointerLock;
+  const hasPointerLock = () => document.pointerLockElement === viewportWrap;
+  captureButton.hidden = typeof requestLock !== 'function';
+
   viewportWrap.addEventListener('click', (e) => {
-    if (e.target && e.target.closest && e.target.closest(UI_OVERLAY_SELECTOR)) return;
-    const victoryModal = document.getElementById('victoryModal');
-    if (victoryModal && victoryModal.style.display === 'flex') return;
-    if (isIntroVisible()) return;
-    if (window.innerWidth > 768 && !document.pointerLockElement) {
-      try {
-        const req = viewportWrap.requestPointerLock || viewportWrap.mozRequestPointerLock || viewportWrap.webkitRequestPointerLock;
-        if (req) { req.call(viewportWrap); return; }
-      } catch(err){}
-    }
-    if (totalDragDistance <= 12) {
+    if (e.button !== 0 || e.target.closest(UI_OVERLAY_SELECTOR) || !renderer) return;
+    if (isSceneInteractionBlocked()) return;
+    if (hasPointerLock()) {
       triggerCenterInteraction();
+      return;
+    }
+    if (totalDragDistance > 12) return;
+    const bounds = renderer.domElement.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    const point = new THREE.Vector2(
+      ((e.clientX - bounds.left) / bounds.width) * 2 - 1,
+      1 - ((e.clientY - bounds.top) / bounds.height) * 2
+    );
+    const object = getSceneInteractionTarget(point);
+    if (!object && !isActionInProgress && getSceneInteractionTarget(point, Infinity)) {
+      showGuideToast('Подойдите ближе к предмету.');
+      return;
+    }
+    triggerSceneInteraction(object);
+  });
+
+  function showCaptureFallback() {
+    captureHint.textContent = 'Захват мыши недоступен. Перетащите для обзора и нажмите на предмет.';
+  }
+
+  captureButton.addEventListener('click', async () => {
+    if (isSceneInteractionBlocked() || typeof requestLock !== 'function') return;
+    try {
+      await requestLock.call(viewportWrap);
+    } catch {
+      showCaptureFallback();
     }
   });
 
-  function onPointerLockChange() {
-    const isLocked = (document.pointerLockElement === viewportWrap || document.mozPointerLockElement === viewportWrap || document.webkitPointerLockElement === viewportWrap);
-    const badge = document.getElementById('pointerLockBadge');
-    const hint = document.getElementById('desktopAimHint');
-    if (badge) badge.style.display = isLocked ? 'flex' : 'none';
-    if (hint) hint.style.display = isLocked ? 'none' : 'flex';
-  }
-
-  document.addEventListener('pointerlockchange', onPointerLockChange);
-  document.addEventListener('mozpointerlockchange', onPointerLockChange);
-  document.addEventListener('webkitpointerlockchange', onPointerLockChange);
+  document.addEventListener('pointerlockerror', showCaptureFallback);
+  document.addEventListener('pointerlockchange', () => {
+    const isLocked = hasPointerLock();
+    document.getElementById('pointerLockBadge').style.display = isLocked ? 'flex' : 'none';
+    document.getElementById('desktopAimHint').style.display = isLocked ? 'none' : '';
+    if (isLocked) {
+      captureHint.textContent = 'Перетащите мышью для обзора. Нажмите на предмет.';
+      viewportWrap.focus({ preventScroll: true });
+    }
+  });
 
   // Mouse movement when pointer locked
   document.addEventListener('mousemove', (e) => {
-    const isLocked = (document.pointerLockElement === viewportWrap || document.mozPointerLockElement === viewportWrap || document.webkitPointerLockElement === viewportWrap);
-    if (isLocked) {
+    const isLocked = hasPointerLock();
+    if (isLocked && !isSceneInteractionBlocked()) {
       const movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
       const movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
       const lookSens = 0.0022;
@@ -70,26 +93,37 @@ function setupFPSControls(container) {
 
   // Keyboard support (WASD + Arrow Keys + Shift Sprint + E/Space Interact)
   window.addEventListener('keydown', (e) => {
-    if (e.repeat) return;
+    if (e.repeat || e.defaultPrevented) return;
+    const editable = e.target.closest?.('button, input, select, textarea, a, summary, [contenteditable]');
     const gameActive = document.getElementById('gameScreen').classList.contains('active');
-    if (e.code === 'KeyW' || e.code === 'ArrowUp') player.keys.KeyW = true;
-    if (e.code === 'KeyS' || e.code === 'ArrowDown') player.keys.KeyS = true;
-    if (e.code === 'KeyA' || e.code === 'ArrowLeft') player.keys.KeyA = true;
-    if (e.code === 'KeyD' || e.code === 'ArrowRight') player.keys.KeyD = true;
-    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') player.keys.Shift = true;
-
-    if ((e.code === 'KeyE' || e.code === 'Space') && gameActive) {
+    if (gameActive && isIntroVisible() &&
+        (e.code === 'Escape' || (e.code === 'Enter' && !editable))) {
       e.preventDefault();
-      triggerCenterInteraction();
+      closeIntro();
+      return;
     }
-    if (e.code === 'KeyH' && gameActive) toggleGuide();
-    if ((e.code === 'Enter' || e.code === 'Escape') && gameActive && isIntroVisible()) { e.preventDefault(); closeIntro(); return; }
-    if (currentProfession === 'safety' && gameActive && !isIntroVisible()) {
-      if (e.code === 'Digit1') togglePPE();
-      if (e.code === 'Digit2') selectInventoryTool('multimeter');
-      if (e.code === 'Digit3') selectInventoryTool('loto');
+    if (e.target.closest?.('input, select, textarea, [contenteditable]')) return;
+    if (editable && (e.code === 'Space' || e.code === 'Enter')) return;
+
+    if (!isSceneInteractionBlocked()) {
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') player.keys.KeyW = true;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') player.keys.KeyS = true;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') player.keys.KeyA = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') player.keys.KeyD = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') player.keys.Shift = true;
+
+      if (e.code === 'KeyE' || e.code === 'Space') {
+        e.preventDefault();
+        triggerCenterInteraction();
+      }
+      if (e.code === 'KeyH') toggleGuide();
+      if (currentProfession === 'safety') {
+        if (e.code === 'Digit1') handleSafetyInteraction('ppeStand');
+        if (e.code === 'Digit2') selectInventoryTool('multimeter');
+        if (e.code === 'Digit3') selectInventoryTool('loto');
+      }
+      if (getActiveScenario()) handleScenarioKey(e.code);
     }
-    if (gameActive && !isIntroVisible() && getActiveScenario()) handleScenarioKey(e.code);
     if (e.code === 'KeyF') {
       toggleFullScreen();
     }
@@ -112,7 +146,8 @@ function setupFPSControls(container) {
 
   // Mouse drag fallback on PC (when pointer lock is not active)
   viewportWrap.addEventListener('mousedown', (e) => {
-    if (e.target && e.target.closest(UI_OVERLAY_SELECTOR)) return;
+    if (e.button !== 0 || e.target.closest(UI_OVERLAY_SELECTOR) || isSceneInteractionBlocked()) return;
+    viewportWrap.focus({ preventScroll: true });
     isDragging = true;
     previousMouseX = e.clientX;
     previousMouseY = e.clientY;
@@ -124,8 +159,8 @@ function setupFPSControls(container) {
   });
 
   window.addEventListener('mousemove', (e) => {
-    const isLocked = (document.pointerLockElement === viewportWrap || document.mozPointerLockElement === viewportWrap || document.webkitPointerLockElement === viewportWrap);
-    if (isDragging && !isLocked) {
+    const isLocked = hasPointerLock();
+    if (isDragging && !isLocked && !isSceneInteractionBlocked()) {
       const deltaX = e.clientX - previousMouseX;
       const deltaY = e.clientY - previousMouseY;
       previousMouseX = e.clientX;
@@ -177,6 +212,7 @@ function setupFPSControls(container) {
   }
 
   viewportWrap.addEventListener('touchstart', (e) => {
+    if (isSceneInteractionBlocked()) return;
     const vRect = viewportWrap.getBoundingClientRect();
     for (let i = 0; i < e.changedTouches.length; i++) {
       const t = e.changedTouches[i];
@@ -205,6 +241,7 @@ function setupFPSControls(container) {
   }, { passive: false });
 
   viewportWrap.addEventListener('touchmove', (e) => {
+    if (isSceneInteractionBlocked() || (cameraTouchId === null && dpadTouchId === null)) return;
     if (e.cancelable) e.preventDefault();
 
     for (let i = 0; i < e.changedTouches.length; i++) {
@@ -248,26 +285,42 @@ function setupFPSControls(container) {
     }
   }
 
+  window.addEventListener('blur', () => {
+    Object.keys(player.keys).forEach(key => { player.keys[key] = false; });
+    isDragging = false;
+    totalDragDistance = 0;
+    cameraTouchId = null;
+    dpadTouchId = null;
+    clearDpadVisuals();
+  });
+
   viewportWrap.addEventListener('touchend', onTouchEnd, { passive: true });
   viewportWrap.addEventListener('touchcancel', onTouchEnd, { passive: true });
 }
 
+function isSceneInteractionBlocked() {
+  return !document.getElementById('gameScreen').classList.contains('active') ||
+    isIntroVisible() || mgActive || document.getElementById('victoryModal').style.display === 'flex';
+}
+
+function getSceneInteractionTarget(point, maxDistance = 2.5) {
+  if (!camera) return null;
+  raycaster.setFromCamera(point, camera);
+  const [hit] = raycaster.intersectObjects(interactiveObjects, true);
+  if (!hit || hit.distance >= maxDistance) return null;
+  let object = hit.object;
+  while (object && !interactiveObjects.includes(object)) object = object.parent;
+  return object;
+}
+
 function checkCenterRaycast() {
   if (!camera) return;
-
-  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  const intersects = raycaster.intersectObjects(interactiveObjects, true);
-
+  const topObj = getSceneInteractionTarget(new THREE.Vector2(0, 0));
   const tip = document.getElementById('hoverTooltip');
   const tipText = document.getElementById('tooltipText');
   const crosshair = document.getElementById('mainCrosshair');
 
-  if (intersects.length > 0 && intersects[0].distance < 2.5) {
-    let topObj = intersects[0].object;
-    while (topObj.parent && topObj.parent !== scene && !interactiveObjects.includes(topObj)) {
-      topObj = topObj.parent;
-    }
-
+  if (topObj) {
     if (hoveredObject !== topObj) {
       if (hoveredObject) setMeshGlow(hoveredObject, false);
       hoveredObject = topObj;
@@ -286,17 +339,21 @@ function checkCenterRaycast() {
 }
 
 function triggerCenterInteraction() {
-  if (isActionInProgress || isIntroVisible()) return;
-  if (hoveredObject) {
-    if (currentProfession === 'safety') {
-      handleSafetyInteraction(hoveredObject.name);
-    } else if (getActiveScenario()) {
-      handleScenarioClick(hoveredObject.name);
-    } else {
-      handleFPSObjectClick(hoveredObject.name);
-    }
-  } else {
+  triggerSceneInteraction(hoveredObject);
+}
+
+function triggerSceneInteraction(object) {
+  if (isActionInProgress || isSceneInteractionBlocked()) return;
+  if (!object) {
     state.misclicks++;
+    return;
+  }
+  if (currentProfession === 'safety') {
+    handleSafetyInteraction(object.name);
+  } else if (getActiveScenario()) {
+    handleScenarioClick(object.name);
+  } else {
+    handleFPSObjectClick(object.name);
   }
 }
 
