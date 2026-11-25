@@ -104,7 +104,7 @@ function getGuideState() {
   }
   return { steps, idx: cookSteps.length + 1, current: {
     task: 'Рассчитайте закупку зерна',
-    how: 'Расход — 35 кг в неделю, бюджет — 120 000 ₸. Выберите вариант <b>внизу экрана</b>.',
+    how: gameText('Проверьте бюджет, спрос и остаток зерна в задании ниже.', 'Check the budget, demand, and stock in the task below.', 'Төмендегі тапсырмадан бюджет, сұраныс пен дән қорын тексеріңіз.'),
     why: 'Нужно покрыть весь расход и не выйти за бюджет.',
     target: null } };
 }

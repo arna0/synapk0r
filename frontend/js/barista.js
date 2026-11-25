@@ -193,6 +193,16 @@ function handleConflictAnswer(opt) {
   state.conflictResponseSec = Math.round((Date.now() - state.quest2StartedAt) / 100) / 10;
   playSuccessChime();
   if (customerObj) customerObj.visible = false;
+  if (opt === 'B' && (fit.scores.timing ?? 0) < 85) {
+    isActionInProgress = true;
+    const before = fit.scores.timing ?? 0;
+    mgShot(() => {
+      isActionInProgress = false;
+      sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'BARISTA_REMAKE', ok: fit.scores.timing > before });
+      startQuest3Management();
+    });
+    return;
+  }
   startQuest3Management();
 }
 
@@ -201,29 +211,22 @@ function startQuest3Management() {
   state.quest = 3;
   document.getElementById('vrQuestTitle').innerText = 'КВЕСТ 3: КАССА И ЗАКУПКА';
 
+  const order = baristaOrder();
   const hud = document.getElementById('hudDockInner') || document.getElementById('hudBottom');
-  hud.innerHTML = `
-    <div style="font-size:12px; color:var(--amber); font-weight:700; margin-bottom:4px;">
-      💼 3D POS ТЕРМИНАЛ: Закупка зерна на неделю
-    </div>
-    <p style="font-size:12px; color:var(--text-muted-dark); margin-bottom:10px;">
-      Бюджет кофейни: 120 000 ₸. Расход: 35 кг/неделю. Выберите оптимальный заказ:
-    </p>
-    <div>
-      <button type="button" class="dialog-option release-choice" onclick="handleBudgetAnswer('low')">
-        <div class="dialog-tag">1</div>
-        <div><strong>45 000 ₸ (15 кг)</strong></div>
-      </button>
-      <button type="button" class="dialog-option release-choice" onclick="handleBudgetAnswer('optimal')">
-        <div class="dialog-tag">2</div>
-        <div><strong>90 000 ₸ (35 кг)</strong></div>
-      </button>
-      <button type="button" class="dialog-option release-choice" onclick="handleBudgetAnswer('high')">
-        <div class="dialog-tag">3</div>
-        <div><strong>135 000 ₸ (55 кг)</strong></div>
-      </button>
-    </div>
-  `;
+  const statement = gameText(
+    `Спрос: ${order.demand} кг. На складе: ${order.stock} кг. Бюджет: ${formatTenge(order.budget)}.`,
+    `Demand: ${order.demand} kg. In stock: ${order.stock} kg. Budget: ${formatTenge(order.budget)}.`,
+    `Сұраныс: ${order.demand} кг. Қоймада: ${order.stock} кг. Бюджет: ${formatTenge(order.budget)}.`
+  );
+  const title = gameText('Заказ зерна на неделю', 'Weekly coffee order', 'Апталық кофе дәні тапсырысы');
+  hud.innerHTML = `<p><strong>${title}</strong></p><p>${statement}</p><div>
+    ${Object.entries(order.options).map(([id, [mass, price]], i) =>
+      `<button type="button" class="dialog-option release-choice" onclick="handleBudgetAnswer('${id}')">
+        <span class="dialog-tag">${i + 1}</span>
+        <span>${mass} ${gameText('кг', 'kg', 'кг')} · ${formatTenge(price)}</span>
+      </button>`
+    ).join('')}
+  </div>`;
 }
 
 function handleBudgetAnswer(opt) {

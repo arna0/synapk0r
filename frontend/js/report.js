@@ -167,9 +167,19 @@ function escapeHtml(text) {
 }
 
 function baristaPurchasingFeedback(choice) {
-  if (choice === 'optimal') return gameText('Заказ покрывает спрос и оставляет 30 000 ₸ в резерве.', 'Your order covers demand and leaves ₸30,000 in reserve.', 'Тапсырыс сұранысты жабады және 30 000 ₸ резервте қалады.');
-  if (choice === 'high') return gameText('Заказ превысил бюджет на 15 000 ₸.', 'Your order exceeded the budget by ₸15,000.', 'Тапсырыс бюджеттен 15 000 ₸ асып кетті.');
-  return gameText('До выполнения плана не хватает 20 кг зерна.', 'Your order was 20 kg short of the weekly demand.', 'Апталық сұранысқа 20 кг дән жетіспеді.');
+  const order = baristaOrder();
+  const [mass, price] = order.options[choice] ?? [0, 0];
+  const reserve = order.budget - price;
+  const shortage = order.demand - order.stock - mass;
+  if (reserve < 0) {
+    const overage = formatTenge(-reserve);
+    return gameText(`Заказ превысил бюджет на ${overage}.`, `Your order exceeded the budget by ${overage}.`, `Тапсырыс бюджеттен ${overage} асып кетті.`);
+  }
+  if (shortage > 0) {
+    return gameText(`До выполнения плана не хватает ${shortage} кг зерна.`, `Your order was ${shortage} kg short of weekly demand.`, `Апталық сұранысқа ${shortage} кг дән жетіспеді.`);
+  }
+  const saved = formatTenge(reserve);
+  return gameText(`Заказ покрывает спрос. Резерв: ${saved}.`, `Your order covers demand. Reserve: ${saved}.`, `Тапсырыс сұранысты жабады. Резерв: ${saved}.`);
 }
 
 function showLocalDebrief(card, source, body, report) {

@@ -86,3 +86,16 @@ test('over-budget completion explains the outcome without a victory fanfare', ()
   assert.equal(elements.victoryTitle.innerText, 'Shift complete');
   assert.match(elements.victoryText.innerText, /exceeded the budget/);
 });
+
+test('the Barista replay uses a different purchasing case with one valid order', () => {
+  const ctx = vm.createContext({});
+  vm.runInContext(script('session'), ctx);
+  const original = vm.runInContext('baristaOrder()', ctx);
+  const replay = vm.runInContext('baristaReplay = true; baristaOrder()', ctx);
+  assert.notEqual(replay.demand, original.demand);
+  for (const { budget, demand, stock, options } of [original, replay]) {
+    const valid = Object.entries(options).filter(([, [mass, price]]) => mass + stock >= demand && price <= budget);
+    assert.equal(valid.length, 1);
+    assert.equal(valid[0][0], 'optimal');
+  }
+});

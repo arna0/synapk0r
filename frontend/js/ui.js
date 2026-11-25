@@ -193,6 +193,7 @@ function restartCurrentSimulation() {
   else if (currentProfession === 'safety') startSafetyVR();
   else startBaristaVR();
   independentRun = true;
+  baristaReplay = currentProfession === 'barista';
   setGuideVisible(false);
 }
 

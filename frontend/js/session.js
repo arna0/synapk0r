@@ -1,6 +1,7 @@
 // Cancel asynchronous gameplay work when a new run starts or the player leaves.
 let runNumber = 0;
 let independentRun = false;
+let baristaReplay = false;
 const runTimers = new Set();
 const runCleanups = new Set();
 
@@ -27,6 +28,7 @@ function runEvery(callback, delay) {
 function endGameRun() {
   runNumber++;
   independentRun = false;
+  baristaReplay = false;
   guideVisible = true;
   for (const timer of runTimers) {
     clearTimeout(timer);
@@ -62,4 +64,14 @@ function baristaOutcome(conflict, budget, miniScores) {
   const purchasing = budget === 'optimal' ? 100 : 0;
   const score = Math.round(technique * 0.55 + service * 0.25 + purchasing * 0.2);
   return { technique, service, purchasing, score, metBrief: technique >= 75 && service === 100 && purchasing === 100 };
+}
+
+function baristaOrder() {
+  return baristaReplay
+    ? { budget: 145000, demand: 55, stock: 10, options: { low: [25, 65000], optimal: [45, 115000], high: [60, 155000] } }
+    : { budget: 120000, demand: 40, stock: 5, options: { low: [15, 45000], optimal: [35, 90000], high: [55, 135000] } };
+}
+
+function formatTenge(value) {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₸';
 }
