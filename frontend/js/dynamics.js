@@ -74,7 +74,7 @@ function showComboPopup(raw) {
   }
   el.classList.add('active');
   clearTimeout(showComboPopup.timer);
-  showComboPopup.timer = setTimeout(() => el.classList.remove('active'), 1600);
+  showComboPopup.timer = runLater(() => el.classList.remove('active'), 1600);
 }
 
 // ---------- skill check (replaces the self-filling progress bar) ----------
@@ -151,7 +151,7 @@ function showActionProgressBar(title, durationMs, onFinished) {
       box.classList.add(perfect ? 'is-perfect' : 'is-good');
       hint.textContent = perfect ? 'Идеально' : 'Хорошо';
       if (typeof playTone === 'function') playTone(perfect ? 880 : 660, 'sine', 0.12, 0.08);
-      setTimeout(() => { close(); if (onFinished) onFinished(); }, 380);
+      runLater(() => { close(); if (onFinished) onFinished(); }, 380);
       return;
     }
     misses++;
@@ -166,7 +166,7 @@ function showActionProgressBar(title, durationMs, onFinished) {
       // never block progress: after three misses the action completes, the misses still count
       locked = true;
       hint.textContent = 'Засчитано с ошибками';
-      setTimeout(() => { close(); if (onFinished) onFinished(); }, 600);
+      runLater(() => { close(); if (onFinished) onFinished(); }, 600);
       return;
     }
     hint.textContent = 'Мимо, попробуйте ещё раз';
@@ -252,13 +252,14 @@ function showInterrupt(def) {
     if (done) return;
     done = true;
     clearInterval(timer);
+    unregister();
     window.removeEventListener('keydown', onKey, true);
     const ok = !!(opt && opt.ok);
     if (!ok) { state.misclicks++; adapt.lastMisclicks = state.misclicks; adapt.down(0.1); } else adapt.up(0.05);
     sessionEvents.push({ t: scenarioNow(), action: timedOut ? 'INTERRUPT_TIMEOUT' : ok ? 'INTERRUPT_HANDLED' : 'INTERRUPT_POOR', ok });
     showGuideToast(timedOut ? 'Время вышло: на звонок никто не ответил' : ok ? 'Хорошо: коротко, по делу, работа продолжается' : 'Так делать не стоит: это засчитано как ошибка');
     box.remove();
-    setTimeout(() => { isActionInProgress = false; }, 200);
+    runLater(() => { isActionInProgress = false; }, 200);
   };
   shuffled.forEach((o, i) => {
     const b = document.createElement('button');
@@ -274,11 +275,12 @@ function showInterrupt(def) {
     if (n !== undefined && shuffled[n]) { e.stopImmediatePropagation(); finish(shuffled[n], false); }
   };
   window.addEventListener('keydown', onKey, true);
+  const unregister = onRunEnd(() => window.removeEventListener('keydown', onKey, true));
   host.appendChild(box);
   if (typeof playTone === 'function') playTone(740, 'square', 0.12, 0.06);
   const started = Date.now();
   const fill = box.querySelector('.countdown-fill');
-  const timer = setInterval(() => {
+  const timer = runEvery(() => {
     const left = 1 - (Date.now() - started) / (total * 1000);
     fill.style.width = Math.max(0, left * 100) + '%';
     box.classList.toggle('is-urgent', left < 0.3);
@@ -304,16 +306,20 @@ handleScenarioClick = function (name) {
   // the step finishes asynchronously (after the skill check); watch for it
   if (interruptAt < 0) return;
   const def = getActiveScenario();
-  const watch = setInterval(() => {
+  const watch = runEvery(() => {
     if (scenarioState.step !== before || scenarioState.phase !== 'steps') {
       clearInterval(watch);
       if (scenarioState.step === interruptAt && scenarioState.phase === 'steps' && def) {
         interruptAt = -1;
-        setTimeout(() => showInterrupt(def), 700);
+        runLater(function waitForAvailableInput() {
+          if (scenarioState.phase !== 'steps') return;
+          if (isActionInProgress) runLater(waitForAvailableInput, 150);
+          else showInterrupt(def);
+        }, 700);
       }
     }
   }, 150);
-  setTimeout(() => clearInterval(watch), 15000);
+  runLater(() => clearInterval(watch), 15000);
 };
 
 const _startScenarioDecision = startScenarioDecision;
@@ -331,7 +337,7 @@ startScenarioDecision = function (idx) {
   const label = bar.querySelector('.decision-timer-text');
   const started = Date.now();
   let late = false;
-  decisionTimer = setInterval(() => {
+  decisionTimer = runEvery(() => {
     const leftSec = total - (Date.now() - started) / 1000;
     fill.style.width = Math.max(0, (leftSec / total) * 100) + '%';
     bar.classList.toggle('is-urgent', leftSec < total * 0.3);

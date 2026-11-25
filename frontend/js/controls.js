@@ -28,15 +28,18 @@ function setupFPSControls(container) {
     const victoryModal = document.getElementById('victoryModal');
     if (victoryModal && victoryModal.style.display === 'flex') return;
     if (isIntroVisible()) return;
-    if (window.innerWidth > 768 && !document.pointerLockElement) {
+    if (!document.pointerLockElement && totalDragDistance <= 12) {
+      const target = directGameTarget(e.clientX, e.clientY, viewportWrap);
+      if (target) { interactWithGameObject(target.name); return; }
+    }
+    if (window.innerWidth > 768 && !document.pointerLockElement &&
+        !document.getElementById('appContainer')?.classList.contains('mode-mobile-frame')) {
       try {
         const req = viewportWrap.requestPointerLock || viewportWrap.mozRequestPointerLock || viewportWrap.webkitRequestPointerLock;
-        if (req) { req.call(viewportWrap); return; }
+        if (req) { req.call(viewportWrap)?.catch(() => {}); return; }
       } catch(err){}
     }
-    if (totalDragDistance <= 12) {
-      triggerCenterInteraction();
-    }
+    if (document.pointerLockElement && totalDragDistance <= 12) triggerCenterInteraction();
   });
 
   function onPointerLockChange() {
@@ -44,7 +47,7 @@ function setupFPSControls(container) {
     const badge = document.getElementById('pointerLockBadge');
     const hint = document.getElementById('desktopAimHint');
     if (badge) badge.style.display = isLocked ? 'flex' : 'none';
-    if (hint) hint.style.display = isLocked ? 'none' : 'flex';
+    if (hint) hint.hidden = isLocked;
   }
 
   document.addEventListener('pointerlockchange', onPointerLockChange);
@@ -68,10 +71,14 @@ function setupFPSControls(container) {
     }
   });
 
+  window.addEventListener('blur', resetGameInputs);
+
   // Keyboard support (WASD + Arrow Keys + Shift Sprint + E/Space Interact)
   window.addEventListener('keydown', (e) => {
     if (e.repeat) return;
     const gameActive = document.getElementById('gameScreen').classList.contains('active');
+    if (!gameActive || e.target?.closest?.('input, textarea, select')) return;
+    if (e.target?.closest?.('button') && ['Space', 'Enter'].includes(e.code)) return;
     if (e.code === 'KeyW' || e.code === 'ArrowUp') player.keys.KeyW = true;
     if (e.code === 'KeyS' || e.code === 'ArrowDown') player.keys.KeyS = true;
     if (e.code === 'KeyA' || e.code === 'ArrowLeft') player.keys.KeyA = true;
@@ -285,18 +292,47 @@ function checkCenterRaycast() {
   }
 }
 
+function resetGameInputs() {
+  for (const key in player.keys) player.keys[key] = false;
+  isDragging = false;
+  totalDragDistance = 0;
+  cameraTouchId = null;
+  dpadTouchId = null;
+  document.querySelectorAll('.dpad-btn.pressed').forEach(button => button.classList.remove('pressed'));
+}
+
+function directGameTarget(x, y, viewport) {
+  if (!camera || !raycaster) return null;
+  const rect = viewport.getBoundingClientRect();
+  if (!rect.width || !rect.height) return null;
+  const cursor = new THREE.Vector2((x - rect.left) / rect.width * 2 - 1, 1 - (y - rect.top) / rect.height * 2);
+  raycaster.setFromCamera(cursor, camera);
+  const hit = raycaster.intersectObjects(interactiveObjects, true)[0];
+  if (!hit || hit.distance >= 2.5) return null;
+  let target = hit.object;
+  while (target && !interactiveObjects.includes(target)) target = target.parent;
+  return target;
+}
+
+function interactWithGameObject(name) {
+  if (isActionInProgress || isIntroVisible() ||
+      document.getElementById('victoryModal')?.style.display === 'flex' ||
+      !document.getElementById('gameScreen')?.classList.contains('active')) return false;
+  if (currentProfession === 'safety') handleSafetyInteraction(name);
+  else if (getActiveScenario()) handleScenarioClick(name);
+  else handleFPSObjectClick(name);
+  return true;
+}
+
 function triggerCenterInteraction() {
-  if (isActionInProgress || isIntroVisible()) return;
-  if (hoveredObject) {
-    if (currentProfession === 'safety') {
-      handleSafetyInteraction(hoveredObject.name);
-    } else if (getActiveScenario()) {
-      handleScenarioClick(hoveredObject.name);
-    } else {
-      handleFPSObjectClick(hoveredObject.name);
-    }
-  } else {
-    state.misclicks++;
+  if (hoveredObject) interactWithGameObject(hoveredObject.name);
+}
+
+function interactWithGuideTarget() {
+  const target = getGuideTargetName();
+  if (!target || !interactiveObjects.some(object => object.name === target)) return;
+  if (interactWithGameObject(target)) {
+    sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'GUIDED_ACTION', ok: true });
   }
 }
 

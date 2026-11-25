@@ -8,7 +8,7 @@ function handleFPSObjectClick(name) {
     if (currentTarget && name === currentTarget.id) {
       isActionInProgress = true;
       executeStepAction(state.step, () => {
-        setTimeout(() => {
+        runLater(() => {
           isActionInProgress = false;
         }, 300);
       });
@@ -55,9 +55,9 @@ function executeStepAction(stepIdx, onComplete) {
 
         // Realistic smooth tamping sequence
         tamperObj.position.set(-0.42, 1.30, 0.05);
-        setTimeout(() => {
+        runLater(() => {
           tamperObj.position.set(-0.42, 1.22, 0.05);
-          setTimeout(() => {
+          runLater(() => {
             tamperObj.position.set(-0.18, 1.16, 0.05);
             portafilterObj.position.set(-0.70, 1.32, -0.17);
             showComboPopup(config.popup);
@@ -99,7 +99,7 @@ function executeStepAction(stepIdx, onComplete) {
         cupLiquidMesh.scale.set(1, 0.75, 1);
         cupLiquidMesh.material.color.setHex(0xE5D4C0);
 
-        setTimeout(() => {
+        runLater(() => {
           pitcherObj.rotation.z = 0;
           pitcherObj.position.set(0.20, 1.16, -0.05);
           showComboPopup(config.popup);
@@ -115,7 +115,7 @@ function executeStepAction(stepIdx, onComplete) {
       animateHandPunch(() => {
         cupLiquidMesh.scale.set(1, 0.90, 1);
         cupObj.position.set(0.0, 1.16, 0.12);
-        showComboPopup(config.popup);
+        advanceStep();
         renderQuestSuccess();
         if (onComplete) onComplete();
       });
@@ -132,7 +132,7 @@ function advanceStep() {
 
 function renderQuestSuccess() {
   renderHUDComplete();
-  setTimeout(() => {
+  runLater(() => {
     const gameActive = document.getElementById('gameScreen').classList.contains('active');
     if (currentProfession === 'barista' && state.quest === 1 && gameActive) startQuest2Conflict();
   }, 1400);
@@ -157,25 +157,25 @@ function startQuest2Conflict() {
       😡 <strong>Клиент (в упор):</strong> <span id="typewriterText"></span>
     </div>
     <div>
-      <div class="dialog-option" onclick="handleConflictAnswer('A')">
-        <div class="dialog-tag" style="background:var(--rose-bg); color:var(--rose); border:1px solid var(--rose-border);">A</div>
+      <button type="button" class="dialog-option release-choice" onclick="handleConflictAnswer('A')">
+        <div class="dialog-tag">A</div>
         <div>«Вы сами так заказали, проверяйте чек перед оплатой»</div>
-      </div>
-      <div class="dialog-option" onclick="handleConflictAnswer('B')">
-        <div class="dialog-tag" style="background:var(--emerald-bg); color:var(--emerald); border:1px solid var(--emerald-border);">B</div>
+      </button>
+      <button type="button" class="dialog-option release-choice" onclick="handleConflictAnswer('B')">
+        <div class="dialog-tag">B</div>
         <div>«Простите за ошибку! Я переделаю за 1 минуту и угощу вас фирменным десертом»</div>
-      </div>
-      <div class="dialog-option" onclick="handleConflictAnswer('C')">
-        <div class="dialog-tag" style="background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-border);">C</div>
+      </button>
+      <button type="button" class="dialog-option release-choice" onclick="handleConflictAnswer('C')">
+        <div class="dialog-tag">C</div>
         <div>«Подождите, я позову управляющего смены»</div>
-      </div>
+      </button>
     </div>
   `;
 
   const fullText = "«Я трижды повторил: БЕЗ САХАРА! Вы испортили мой заказ, я требую жалобную книгу!»";
   let charIdx = 0;
   const txtSpan = document.getElementById('typewriterText');
-  let typeIntv = setInterval(() => {
+  let typeIntv = runEvery(() => {
     if (txtSpan) {
       txtSpan.innerText += fullText[charIdx];
       charIdx++;
@@ -187,7 +187,9 @@ function startQuest2Conflict() {
 }
 
 function handleConflictAnswer(opt) {
+  if (state.quest !== 2 || state.conflictChoice) return;
   state.conflictChoice = opt;
+  sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'CUSTOMER_DECISION_' + opt, ok: opt === 'B' });
   state.conflictResponseSec = Math.round((Date.now() - state.quest2StartedAt) / 100) / 10;
   playSuccessChime();
   if (customerObj) customerObj.visible = false;
@@ -208,23 +210,25 @@ function startQuest3Management() {
       Бюджет кофейни: 120 000 ₸. Расход: 35 кг/неделю. Выберите оптимальный заказ:
     </p>
     <div>
-      <div class="dialog-option" onclick="handleBudgetAnswer('low')">
-        <div class="dialog-tag" style="border:1px solid var(--border-dark);">1</div>
-        <div><strong>45 000 ₸ (15 кг)</strong> — Экономия (высокий риск дефицита)</div>
-      </div>
-      <div class="dialog-option" onclick="handleBudgetAnswer('optimal')">
-        <div class="dialog-tag" style="border:1px solid var(--emerald); color:var(--emerald);">2</div>
-        <div><strong>90 000 ₸ (35 кг)</strong> — Оптимально (100% покрытие + 30 000 ₸ резерв)</div>
-      </div>
-      <div class="dialog-option" onclick="handleBudgetAnswer('high')">
-        <div class="dialog-tag" style="border:1px solid var(--rose); color:var(--rose);">3</div>
-        <div><strong>135 000 ₸ (55 кг)</strong> — Перерасход бюджета на 15 000 ₸</div>
-      </div>
+      <button type="button" class="dialog-option release-choice" onclick="handleBudgetAnswer('low')">
+        <div class="dialog-tag">1</div>
+        <div><strong>45 000 ₸ (15 кг)</strong></div>
+      </button>
+      <button type="button" class="dialog-option release-choice" onclick="handleBudgetAnswer('optimal')">
+        <div class="dialog-tag">2</div>
+        <div><strong>90 000 ₸ (35 кг)</strong></div>
+      </button>
+      <button type="button" class="dialog-option release-choice" onclick="handleBudgetAnswer('high')">
+        <div class="dialog-tag">3</div>
+        <div><strong>135 000 ₸ (55 кг)</strong></div>
+      </button>
     </div>
   `;
 }
 
 function handleBudgetAnswer(opt) {
+  if (state.quest !== 3 || state.budgetChoice) return;
   state.budgetChoice = opt;
+  sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'PURCHASE_DECISION_' + opt.toUpperCase(), ok: opt === 'optimal' });
   triggerEpicVictory();
 }

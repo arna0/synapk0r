@@ -3,7 +3,8 @@
 // ================= EPIC VICTORY TRIGGER =================
 function triggerEpicVictory() {
   clearInterval(state.timerInterval);
-  playVictoryFanfare();
+  const result = baristaOutcome(state.conflictChoice, state.budgetChoice, fit.scores);
+  if (result.metBrief) playVictoryFanfare();
 
   // Lock camera into cinematic angle
   player.pos.set(0.18, 1.45, 0.2);
@@ -11,8 +12,10 @@ function triggerEpicVictory() {
   player.pitch = -0.35;
 
   // Show Victory Overlay Modal (texts may have been replaced by the safety module)
-  document.getElementById('victoryTitle').innerText = 'Симуляция успешно пройдена!';
-  document.getElementById('victoryText').innerText = 'Вы приготовили напиток по стандарту, грамотно разрешили конфликт с гостем и рассчитали бюджет сырья.';
+  document.getElementById('victoryTitle').innerText = result.metBrief
+    ? gameText('Цель смены выполнена', 'Shift goals met', 'Ауысым мақсаты орындалды')
+    : gameText('Смена завершена', 'Shift complete', 'Ауысым аяқталды');
+  document.getElementById('victoryText').innerText = baristaPurchasingFeedback(state.budgetChoice);
   const victoryModal = document.getElementById('victoryModal');
   if (victoryModal) victoryModal.style.display = 'flex';
 }
@@ -28,6 +31,7 @@ function setResultTexts(t) {
   set('resVerdictGrade', t.grade); set('resVerdictDesc', t.desc);
   set('resPraiseTitle', t.praise); set('resVerdictBadge', t.badge);
   set('resTotalXp', t.xp);
+  set('retryModeLabel', gameText('Самостоятельная попытка', 'Try independently', 'Өз бетіңізше орындау'));
   const comp = document.getElementById('resCompetencies');
   if (comp) comp.innerHTML = t.competencies.map(c => '• ' + c).join('<br>');
 }
@@ -54,12 +58,12 @@ function showSafetyReportScreen() {
     handsLabel: 'Нарушения ТБ', hands: String(errors),
     softLabel: 'Проверка отсутствия напряжения', soft: safetyState.voltageTested ? 'Выполнена' : 'Нет',
     timeLabel: 'Время подготовки оборудования', time: state.timer + ' сек',
-    grade: passed ? 'Инженер ТБ: допуск к работам' : (errors <= 2 ? 'Требуется повторный инструктаж' : 'Допуск не рекомендован'),
+    grade: passed ? gameText('Упражнение пройдено без нарушений', 'Exercise completed without violations', 'Жаттығу бұзушылықсыз аяқталды') : gameText('Повторите упражнение', 'Retry the exercise', 'Жаттығуды қайталаңыз'),
     desc: passed
       ? 'Правильная последовательность: СИЗ → отключение → LOTO → проверка напряжения → сброс давления.'
       : 'Регламент выполнен, но с нарушениями ТБ. Повторите последовательность операций без ошибок.',
     praise: passed ? 'Отличный результат симуляции' : 'Симуляция завершена с замечаниями',
-    badge: passed ? 'ВЕРДИКТ: РЕКОМЕНДОВАН' : 'ВЕРДИКТ: НУЖНА ДОРАБОТКА',
+    badge: gameText('УЧЕБНАЯ СИМУЛЯЦИЯ', 'PRACTICE SCENARIO', 'ОҚУ СИМУЛЯЦИЯСЫ'),
     xp: '⚡ +' + Math.max(100, 750 - errors * 100) + ' XP',
     competencies: [
       'Использование диэлектрических СИЗ перед работой в электрощитовой',
@@ -96,32 +100,23 @@ function showAIReportScreen() {
     showSafetyReportScreen();
     return;
   }
-  let score = 84;
-  if (state.misclicks === 0) score += 10;
-  else if (state.misclicks <= 2) score += 5;
-
-  if (state.conflictChoice === 'B') score += 8;
-  if (state.budgetChoice === 'optimal') score += 5;
-  score = Math.min(score, 99);
-
-  const accuracy = Math.max(0, 100 - state.misclicks * 2);
-  const recommended = score >= 90;
+  const result = baristaOutcome(state.conflictChoice, state.budgetChoice, fit.scores);
+  const { score, technique: accuracy, service } = result;
+  const recommended = result.metBrief;
   setResultTexts({
     hardLabel: 'Точность технологии (Hard Skills)', hard: accuracy + '%',
     handsLabel: 'Лишние действия (промахи)', hands: state.misclicks === 0 ? 'Нет' : String(state.misclicks),
-    softLabel: 'Стрессоустойчивость и эмпатия (Soft Skills)', soft: state.conflictChoice === 'B' ? '100%' : (state.conflictChoice === 'C' ? '70%' : '40%'),
-    timeLabel: 'Время полного цикла приготовления', time: state.timer + ' сек',
-    grade: recommended ? 'Senior Barista / Shift Supervisor' : 'Junior Barista',
-    desc: recommended
-      ? 'Исключительная моторика рук, строгое соблюдение техкарты и грамотная деэскалация конфликта с клиентом.'
-      : 'Техкарта выполнена. Рекомендуется поработать над точностью действий, общением с гостем и расчетом закупок.',
-    praise: recommended ? 'Отличный результат симуляции' : 'Хороший результат, есть зоны роста',
-    badge: recommended ? 'ВЕРДИКТ: РЕКОМЕНДОВАН' : 'ВЕРДИКТ: С ОБУЧЕНИЕМ',
+    softLabel: gameText('Решение по жалобе', 'Customer response', 'Қонаққа жауап'), soft: service + '%',
+    timeLabel: gameText('Время смены', 'Shift duration', 'Ауысым ұзақтығы'), time: state.timer + ' сек',
+    grade: recommended ? gameText('Цель смены выполнена', 'Shift goals met', 'Ауысым мақсаты орындалды') : gameText('Смена завершена', 'Shift complete', 'Ауысым аяқталды'),
+    desc: baristaPurchasingFeedback(state.budgetChoice),
+    praise: gameText('Результат симуляции', 'Scenario performance', 'Симуляция нәтижесі'),
+    badge: gameText('СМЕНА БАРИСТА', 'BARISTA SHIFT', 'БАРИСТА АУЫСЫМЫ'),
     xp: '⚡ +950 XP',
     competencies: [
-      'Соблюдение рабочего давления 9 бар и правильный расчет граммовки (18г)',
-      state.conflictChoice === 'B' ? 'Быстрая деэскалация конфликтной ситуации с предложением комплимента' : 'Зона роста: деэскалация конфликта с гостем',
-      state.budgetChoice === 'optimal' ? 'Точный расчет закупки сырья на 35 кг без дефицита и перерасхода бюджета' : 'Зона роста: расчет закупки сырья под недельный расход'
+      gameText('Техника: ', 'Drink technique: ', 'Сусын дайындау: ') + accuracy + '%',
+      gameText('Ответ гостю: ', 'Customer response: ', 'Қонаққа жауап: ') + service + '%',
+      baristaPurchasingFeedback(state.budgetChoice)
     ]
   });
 
@@ -165,15 +160,42 @@ function showAIReportScreen() {
 
 // ================= AI FEEDBACK (backend -> Claude) =================
 let aiRequestSeq = 0;
+let feedbackRequest = null;
 
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 }
 
-function showAiOfflineNote(card, source, body) {
+function baristaPurchasingFeedback(choice) {
+  if (choice === 'optimal') return gameText('Заказ покрывает спрос и оставляет 30 000 ₸ в резерве.', 'Your order covers demand and leaves ₸30,000 in reserve.', 'Тапсырыс сұранысты жабады және 30 000 ₸ резервте қалады.');
+  if (choice === 'high') return gameText('Заказ превысил бюджет на 15 000 ₸.', 'Your order exceeded the budget by ₸15,000.', 'Тапсырыс бюджеттен 15 000 ₸ асып кетті.');
+  return gameText('До выполнения плана не хватает 20 кг зерна.', 'Your order was 20 kg short of the weekly demand.', 'Апталық сұранысқа 20 кг дән жетіспеді.');
+}
+
+function showLocalDebrief(card, source, body, report) {
+  const assisted = report.events.filter(event => event.action === 'GUIDED_ACTION').length;
+  const openedGuide = report.events.some(event => event.action === 'GUIDE_REOPENED');
+  const unsuccessful = report.events.filter(event => event.ok === false).length;
+  const details = report.module === 'barista'
+    ? baristaPurchasingFeedback(report.metrics.budget_choice)
+    : gameText('Повторите этап, на котором возникли трудности.', 'Retry the step you found hardest.', 'Қиын болған қадамды қайталаңыз.');
   card.style.display = 'block';
-  source.innerText = 'демо-версия без сервера';
-  body.innerHTML = '<p>Персональный разбор пишет Claude на нашем бэкенде. В этой статической демо-версии сервера нет — запустите <b>backend</b> по инструкции в README (раздел 6), и здесь появится разбор ваших действий.</p>';
+  source.textContent = gameText('Разбор по результатам игры', 'Scenario feedback', 'Симуляция нәтижесін талдау');
+  const summary = document.createElement('p');
+  summary.textContent = details;
+  const evidence = document.createElement('p');
+  evidence.textContent = gameText(
+    `Ошибки и неудачные попытки: ${unsuccessful}. Действия с подсказкой: ${assisted}.`,
+    `Mistakes and unsuccessful attempts: ${unsuccessful}. Guided actions: ${assisted}.`,
+    `Қателер мен сәтсіз әрекеттер: ${unsuccessful}. Көмекпен жасалған әрекеттер: ${assisted}.`
+  );
+  const reflection = document.createElement('p');
+  reflection.textContent = gameText('Какую часть этой работы вы хотели бы попробовать ещё раз?', 'Which part of this job would you like to try again?', 'Осы жұмыстың қай бөлігін тағы байқап көргіңіз келеді?');
+  const mode = document.createElement('p');
+  mode.textContent = independentRun && !openedGuide
+    ? gameText('Самостоятельная попытка', 'Independent attempt', 'Өз бетінше орындалған әрекет')
+    : gameText('Практика с подсказками', 'Guided practice', 'Көмекпен жаттығу');
+  body.replaceChildren(mode, summary, evidence, reflection);
 }
 
 async function requestAiFeedback(report) {
@@ -184,31 +206,38 @@ async function requestAiFeedback(report) {
   const source = document.getElementById('aiFeedbackSource');
   const apiBase = getApiBase();
   if (!card) return;
-  if (apiBase === null) { showAiOfflineNote(card, source, body); return; }
+  showLocalDebrief(card, source, body, report);
+  if (apiBase === null || (apiBase === '' && location.hostname.endsWith('.github.io'))) return;
   const seq = ++aiRequestSeq;
-  card.style.display = 'block';
-  source.innerText = '';
-  body.innerHTML = '<div class="ai-card-loading">ИИ анализирует ваши действия…</div>';
+  feedbackRequest?.abort();
+  const request = new AbortController();
+  feedbackRequest = request;
+  const timeout = setTimeout(() => request.abort(), 4500);
 
   try {
     const res = await fetch(`${apiBase}/api/report`, {
       method: 'POST',
+      signal: request.signal,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...report, lang: typeof getLanguage === 'function' ? getLanguage() : 'ru' })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
-    if (seq !== aiRequestSeq) return; // a newer session already asked
+    if (seq !== aiRequestSeq || request.signal.aborted) return; // a newer session already asked
+    if (data.source !== 'claude') return;
+    const analysis = document.createElement('section');
+    body.appendChild(analysis);
     source.innerText = data.source === 'claude' ? 'Сгенерировано Claude' : 'ИИ недоступен · базовый разбор';
-    body.innerHTML = `
+    analysis.innerHTML = `
       <p>${escapeHtml(data.summary)}</p>
       ${data.strengths && data.strengths.length ? `<div><h5>Что получилось</h5><ul>${data.strengths.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
       ${data.growth_areas && data.growth_areas.length ? `<div><h5>Над чем поработать</h5><ul>${data.growth_areas.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
       ${data.career_advice ? `<div><h5>Совет по профессии</h5><p>${escapeHtml(data.career_advice)}</p></div>` : ''}
     `;
-  } catch (e) {
-    // Static hosting (e.g. GitHub Pages) has no backend: explain instead of silently hiding
-    if (seq === aiRequestSeq) showAiOfflineNote(card, source, body);
-    console.info('[SynapKor] AI feedback unavailable:', e.message);
+  } catch {
+    // The local debrief is already visible.
+  } finally {
+    clearTimeout(timeout);
+    if (feedbackRequest === request) feedbackRequest = null;
   }
 }

@@ -45,7 +45,7 @@ function showSurvey(report) {
   card.innerHTML = `
     <div class="survey-head">
       <span class="survey-title">Анкета · 1 минута</span>
-      <span class="survey-note">Помогает нам улучшить симулятор</span>
+      <span class="survey-note">${gameText('По желанию. Ответы сохраняются на устройстве и могут отправляться на сервер. Не указывайте имя или контакты.', 'Optional. Answers are saved on this device and may be sent to the server. Please leave out names and contact details.', 'Қатысу ерікті. Жауаптар құрылғыда сақталады және серверге жіберілуі мүмкін. Атыңыз бен байланыс деректерін жазбаңыз.')}</span>
     </div>
     <div class="survey-list">
       ${SURVEY_QUESTIONS.map(q => `
@@ -84,7 +84,7 @@ async function submitSurvey() {
   card.innerHTML = '<div class="survey-thanks">Спасибо! Ответы сохранены.</div>';
 
   const apiBase = getApiBase();
-  if (apiBase === null) return;
+  if (apiBase === null || (apiBase === '' && location.hostname.endsWith('.github.io'))) return;
   try {
     await fetch(`${apiBase}/api/survey`, {
       method: 'POST',

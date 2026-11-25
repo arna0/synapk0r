@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SynapKor — 3D-симулятор профессий</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
   <script src="vendor/OBJLoader.js" defer></script>
   <script src="vendor/FBXLoader.js" defer></script>
   <script>window.THREE || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
-  <link rel="stylesheet" href="css/styles.css?v=20261134">
+  <link rel="stylesheet" href="css/styles.css?v=20261135">
 </head>
 <body>
 
@@ -392,7 +392,7 @@
           <span style="display:inline-block; width:8px; height:8px; background:var(--emerald); border-radius:50%;" id="vrQuestDot"></span>
           <span id="vrQuestTitle">КВЕСТ 1: ICED OAT LATTE</span>
         </div>
-        <div class="timer-pill" id="vrTimer">00:00</div>
+        <div class="timer-pill" id="vrTimer" aria-label="Elapsed time">00:00</div>
         <!-- Live Safety Indicators -->
         <div id="safetyHudBar" class="safety-hud-bar" style="display:none;">
           <div class="safety-hud-pill danger" id="pillPower"><span class="status-dot danger" id="dotPower"></span><span id="textPower">ПИТАНИЕ: 380V ON</span></div>
@@ -430,6 +430,7 @@
         <div class="guide-current">
           <div class="guide-task" id="guideTask"></div>
           <div class="guide-how" id="guideHow"></div>
+          <button type="button" class="guided-action" id="guidedAction" onclick="interactWithGuideTarget()" hidden></button>
           <div class="guide-why" id="guideWhy"></div>
         </div>
         <div class="guide-progress"><div class="guide-progress-fill" id="guideProgressFill"></div></div>
@@ -619,7 +620,7 @@
 
           <div style="display:flex; flex-direction:column; gap:8px;">
             <button class="btn-action" onclick="restartCurrentSimulation()" style="width:100%;">
-              🔄 Повторить симуляцию
+              <span id="retryModeLabel">Самостоятельная попытка</span>
             </button>
             <button class="btn-secondary" onclick="exitToHome()" style="width:100%;">
               🏠 В главное меню
@@ -686,31 +687,32 @@
 </div>
 
 <!-- App scripts (classic scripts share one global scope; order matters) -->
-<script src="js/config.js?v=20261134"></script>
-<script src="js/telemetry.js?v=20261134"></script>
-<script src="js/safety.js?v=20261134"></script>
-<script src="js/audio.js?v=20261134"></script>
-<script src="js/engine.js?v=20261134"></script>
-<script src="js/controls.js?v=20261134"></script>
-<script src="js/guide.js?v=20261134"></script>
-<script src="js/effects.js?v=20261134"></script>
-<script src="js/barista.js?v=20261134"></script>
-<script src="js/report.js?v=20261134"></script>
-<script src="js/survey.js?v=20261134"></script>
-<script src="js/career.js?v=20261134"></script>
-<script src="js/i18n-en.js?v=20261134"></script>
-<script src="js/i18n-en-game.js?v=20261134"></script>
-<script src="js/i18n.js?v=20261134"></script>
-<script src="js/home.js?v=20261134"></script>
-<script src="js/scenario.js?v=20261134"></script>
-<script src="js/it.js?v=20261134"></script>
-<script src="js/doctor.js?v=20261134"></script>
-<script src="js/ui.js?v=20261134"></script>
-<script src="js/dynamics.js?v=20261134"></script>
-<script src="js/minigames.js?v=20261134"></script>
-<script src="js/graphics.js?v=20261134"></script>
-<script src="js/models.js?v=20261134"></script>
-<script src="js/npc.js?v=20261134"></script>
+<script src="js/config.js?v=20261135"></script>
+<script src="js/session.js?v=20261135"></script>
+<script src="js/telemetry.js?v=20261135"></script>
+<script src="js/safety.js?v=20261135"></script>
+<script src="js/audio.js?v=20261135"></script>
+<script src="js/engine.js?v=20261135"></script>
+<script src="js/controls.js?v=20261135"></script>
+<script src="js/guide.js?v=20261135"></script>
+<script src="js/effects.js?v=20261135"></script>
+<script src="js/barista.js?v=20261135"></script>
+<script src="js/report.js?v=20261135"></script>
+<script src="js/survey.js?v=20261135"></script>
+<script src="js/career.js?v=20261135"></script>
+<script src="js/i18n-en.js?v=20261135"></script>
+<script src="js/i18n-en-game.js?v=20261135"></script>
+<script src="js/i18n.js?v=20261135"></script>
+<script src="js/home.js?v=20261135"></script>
+<script src="js/scenario.js?v=20261135"></script>
+<script src="js/it.js?v=20261135"></script>
+<script src="js/doctor.js?v=20261135"></script>
+<script src="js/ui.js?v=20261135"></script>
+<script src="js/dynamics.js?v=20261135"></script>
+<script src="js/minigames.js?v=20261135"></script>
+<script src="js/graphics.js?v=20261135"></script>
+<script src="js/models.js?v=20261135"></script>
+<script src="js/npc.js?v=20261135"></script>
 
 </body>
 </html>

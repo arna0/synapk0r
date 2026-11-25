@@ -71,6 +71,7 @@ function hideSafetyChrome() {
 function startScenario(id) {
   const def = SCENARIOS[id];
   if (!def) return;
+  endGameRun();
   currentProfession = id;
   hideSafetyChrome();
 
@@ -94,7 +95,7 @@ function startScenario(id) {
   player.pitch = def.spawn.pitch;
 
   showScreen('gameScreen');
-  setTimeout(() => {
+  runLater(() => {
     initThreeFPS();
     if (scene) {
       ['baristaEnvironment', 'safetyEnvironment'].forEach(n => {
@@ -159,10 +160,10 @@ function handleScenarioClick(name) {
     sessionEvents.push({ t: scenarioNow(), action: `STEP_DONE_${step.id}_${scenarioState.step + 1}`, ok: true });
     if (step.popup) showComboPopup(step.popup);
     scenarioState.step++;
-    setTimeout(() => { isActionInProgress = false; }, 250);
+    runLater(() => { isActionInProgress = false; }, 250);
     if (scenarioState.step >= def.steps.length) {
       renderScenarioStepsComplete();
-      setTimeout(() => {
+      runLater(() => {
         if (currentProfession === def.id && document.getElementById('gameScreen').classList.contains('active')) {
           startScenarioDecision(0);
         }
@@ -223,10 +224,10 @@ function startScenarioDecision(idx) {
     ${d.prompt()}
     <div>
       ${d.options.map((o, i) => `
-        <div class="dialog-option" onclick="answerScenarioDecision('${o.id}')">
+        <button type="button" class="dialog-option release-choice" onclick="answerScenarioDecision('${o.id}')">
           <div class="dialog-tag">${i + 1}</div>
-          <div>${o.text}</div>
-        </div>`).join('')}
+          <span>${o.text}</span>
+        </button>`).join('')}
     </div>`;
 }
 
@@ -316,10 +317,10 @@ function showScenarioReport(def) {
     handsLabel: r.hardLabel, hands: hard >= 100 ? 'Верно' : (hard >= 40 ? 'Частично' : 'Неверно'),
     softLabel: r.softLabel, soft: soft + '%',
     timeLabel: r.timeLabel, time: state.timer + ' сек',
-    grade: r.grades[tier],
+    grade: gameText('Результат упражнения', 'Exercise result', 'Жаттығу нәтижесі'),
     desc: tier === 'top' ? r.descTop : r.descLow,
     praise: tier === 'top' ? 'Отличный результат симуляции' : (tier === 'mid' ? 'Хороший результат, есть зоны роста' : 'Симуляция завершена с замечаниями'),
-    badge: tier === 'top' ? 'ВЕРДИКТ: РЕКОМЕНДОВАН' : (tier === 'mid' ? 'ВЕРДИКТ: С ОБУЧЕНИЕМ' : 'ВЕРДИКТ: НУЖНА ДОРАБОТКА'),
+    badge: gameText('УЧЕБНАЯ СИМУЛЯЦИЯ', 'PRACTICE SCENARIO', 'ОҚУ СИМУЛЯЦИЯСЫ'),
     xp: '⚡ +' + Math.max(100, score * 9) + ' XP',
     competencies: r.competencies(ctx)
   });
@@ -350,7 +351,9 @@ function tweenObject(obj, to, ms, done) {
   const from = obj.position.clone();
   const fromRot = obj.rotation.clone();
   const start = performance.now();
+  const owner = runNumber;
   function tick(now) {
+    if (owner !== runNumber) return;
     const k = Math.min(1, (now - start) / ms);
     const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
     obj.position.set(

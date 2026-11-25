@@ -41,8 +41,13 @@ function handleWindowResize() {
   if (w <= 0 || h <= 0) return;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
+  renderer.setSize(w, h, false);
+}
+const gameViewport = document.getElementById('viewportWrap');
+if (gameViewport && typeof ResizeObserver !== 'undefined') {
+  new ResizeObserver(handleWindowResize).observe(gameViewport);
 }
 window.addEventListener('resize', handleWindowResize);
 window.addEventListener('orientationchange', () => setTimeout(handleWindowResize, 150));
@@ -66,7 +71,8 @@ function setDeviceMode(mode) {
   document.getElementById('gameBtnModeDesktop')?.classList.toggle('active', isDesk);
   document.getElementById('gameBtnModeMobile')?.classList.toggle('active', !isDesk);
 
-  setTimeout(handleWindowResize, 100);
+  if (document.pointerLockElement) document.exitPointerLock?.();
+  requestAnimationFrame(handleWindowResize);
 }
 
 function toggleFullScreen() {
@@ -86,6 +92,7 @@ function showScreen(id) {
 }
 
 function startBaristaVR() {
+  endGameRun();
   currentProfession = 'barista';
   document.getElementById('gameScreen').classList.remove('safety-mode');
   stopTransformerHum();
@@ -114,8 +121,8 @@ function startBaristaVR() {
   applyArenaBounds('barista');
   player.pos.set(0, 1.65, 0.95);
   player.baseEyeHeight = 1.65;
-  player.yaw = 0;
-  player.pitch = -0.28;
+  player.yaw = -0.41;
+  player.pitch = -0.43;
 
   if (portafilterObj) {
     portafilterObj.position.set(-0.42, 1.18, 0.05);
@@ -155,7 +162,7 @@ function startBaristaVR() {
   if (victoryModal) victoryModal.style.display = 'none';
 
   showScreen('gameScreen');
-  setTimeout(() => {
+  runLater(() => {
     initThreeFPS();
     if (scene) {
       const oldSafety = scene.getObjectByName('safetyEnvironment');
@@ -185,6 +192,8 @@ function restartCurrentSimulation() {
   if (getActiveScenario()) startScenario(currentProfession);
   else if (currentProfession === 'safety') startSafetyVR();
   else startBaristaVR();
+  independentRun = true;
+  setGuideVisible(false);
 }
 
 function resetSafetyToolsUI() {
@@ -198,6 +207,7 @@ function resetSafetyToolsUI() {
 }
 
 function exitToHome() {
+  endGameRun();
   if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
   document.getElementById('introOverlay')?.classList.remove('visible');
   clearInterval(state.timerInterval);

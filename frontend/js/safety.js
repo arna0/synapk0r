@@ -835,6 +835,12 @@ function updateMultimeterDisplay() {
 
 function testVoltageWithMultimeter() {
   if (isActionInProgress) return;
+  if (safetyState.powerState === 'OFF' && !safetyState.lockoutApplied) {
+    safetyState.errors++;
+    logAction('VIOLATION_MEASUREMENT_BEFORE_LOCKOUT', Date.now(), false);
+    showSafetyAlert(gameText('Сначала выполните предыдущий этап симуляции.', 'Complete the previous simulation step first.', 'Алдымен симуляцияның алдыңғы қадамын орындаңыз.'));
+    return;
+  }
   isActionInProgress = true;
   playMultimeterBeep();
   animateHandPunch(() => {
@@ -958,6 +964,7 @@ function applyLotoLock() {
   animateHandPunch(() => {
     if (lotoPadlockMesh) lotoPadlockMesh.visible = true;
     safetyState.lockoutApplied = true;
+    scheduleSafetyColleague();
     playBreakerClack();
     playSuccessChime();
 
@@ -977,6 +984,12 @@ function applyLotoLock() {
 }
 
 function operateValve(idx) {
+  if (!safetyState.voltageTested || !safetyState.lockoutApplied) {
+    safetyState.errors++;
+    logAction('VIOLATION_PRESSURE_STEP_OUT_OF_ORDER', Date.now(), false);
+    showSafetyAlert(gameText('Сначала выполните предыдущие этапы симуляции.', 'Complete the earlier simulation steps first.', 'Алдымен симуляцияның алдыңғы қадамдарын орындаңыз.'));
+    return;
+  }
   if (safetyState.valvesOpened[idx]) {
     showSafetyAlert(`Клапан ${idx + 1} уже открыт, давление стравливается.`);
     return;
@@ -1027,7 +1040,7 @@ function checkSafetyCompletion() {
   if (isReady && !safetyState.completed) {
     safetyState.completed = true;
     clearInterval(state.timerInterval);
-    setTimeout(() => {
+    runLater(() => {
       // Deactivate Emergency Strobe & turn on steady Green Safe Beacon
       if (emergencyBeaconLight) emergencyBeaconLight.intensity = 0;
       if (greenLedMesh) greenLedMesh.material.emissiveIntensity = 2.0;
@@ -1052,6 +1065,7 @@ function checkSafetyCompletion() {
 
 // ================= START SAFETY VR ENTRY POINT =================
 function startSafetyVR() {
+  endGameRun();
   currentProfession = 'safety';
   document.getElementById('gameScreen').classList.add('safety-mode');
   isActionInProgress = false;
@@ -1110,7 +1124,7 @@ function startSafetyVR() {
 
   showScreen('gameScreen');
 
-  setTimeout(() => {
+  runLater(() => {
     initThreeFPS();
     if (scene) {
       // Remove barista objects if present

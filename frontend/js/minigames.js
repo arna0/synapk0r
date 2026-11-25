@@ -97,7 +97,7 @@ function mgPanel(title, task) {
       box.classList.add(score >= 85 ? 'is-great' : score >= 60 ? 'is-ok' : 'is-poor');
       panel.hint(verdict, score >= 60 ? 'ok' : 'bad');
       if (typeof playTone === 'function') playTone(score >= 60 ? 880 : 200, score >= 60 ? 'sine' : 'sawtooth', 0.15, 0.08);
-      setTimeout(() => { panel.close(); if (then) then(); }, score >= 60 ? 1100 : 1700);
+      runLater(() => { panel.close(); if (then) then(); }, score >= 60 ? 1100 : 1700);
     },
   };
   mgActive = panel;
@@ -813,7 +813,7 @@ function quickAction(title, ms, done) {
   host.appendChild(el);
   const bar = el.querySelector('.quick-bar div');
   requestAnimationFrame(() => { bar.style.transition = `width ${Math.min(ms, 900)}ms linear`; bar.style.width = '100%'; });
-  setTimeout(() => { el.remove(); done && done(); }, Math.min(ms, 900) + 60);
+  runLater(() => { el.remove(); done && done(); }, Math.min(ms, 900) + 60);
 }
 
 showActionProgressBar = function (title, durationMs, onFinished) {
@@ -848,7 +848,7 @@ handleSafetyInteraction = function (targetName) {
 const _testVoltage2 = testVoltageWithMultimeter;
 testVoltageWithMultimeter = function () {
   if (isActionInProgress || mgActive) return;
-  if (safetyState.powerState === 'ON') return _testVoltage2();  // the original flags the live test
+  if (safetyState.powerState === 'ON' || !safetyState.lockoutApplied) return _testVoltage2();
   isActionInProgress = true;
   mgVoltage((result) => {
     isActionInProgress = false;
@@ -862,25 +862,25 @@ testVoltageWithMultimeter = function () {
 
 const _operateValve2 = operateValve;
 operateValve = function (idx) {
-  if (safetyState.valvesOpened[idx] || isActionInProgress || mgActive) return _operateValve2(idx);
+  if (isActionInProgress || mgActive) return;
+  if (safetyState.valvesOpened[idx] || !safetyState.voltageTested || !safetyState.lockoutApplied) return _operateValve2(idx);
   isActionInProgress = true;
   mgValve(idx, () => { isActionInProgress = false; _operateValve2(idx); });
 };
 
-const _applyLotoLock2 = applyLotoLock;
-applyLotoLock = function () {
-  const wasLocked = safetyState.lockoutApplied;
-  const r = _applyLotoLock2();
-  if (!wasLocked && safetyState.lockoutApplied && !safetyRun.colleagueDone) {
-    safetyRun.colleagueDone = true;
-    setTimeout(() => {
-      if (safetyState.completed || mgActive) { safetyRun.colleagueDone = false; return; }
-      isActionInProgress = true;
-      mgColleague(() => { isActionInProgress = false; });
-    }, 2200);
-  }
-  return r;
-};
+function scheduleSafetyColleague() {
+  if (safetyRun.colleagueDone) return;
+  safetyRun.colleagueDone = true;
+  runLater(function openEncounter() {
+    if (safetyState.completed) return;
+    if (mgActive || isActionInProgress) {
+      runLater(openEncounter, 250);
+      return;
+    }
+    isActionInProgress = true;
+    mgColleague(() => { isActionInProgress = false; });
+  }, 800);
+}
 
 // reset the profile when a module starts
 const _startScenarioMg = window.startScenario;
@@ -899,14 +899,11 @@ function renderFitProfile() {
   const card = document.createElement('div');
   card.id = 'fitProfileCard';
   card.className = 'report-card fit-card';
-  const avg = Math.round(scored.reduce((s, k) => s + fit.scores[k], 0) / scored.length);
-  const best = scored.reduce((a, b) => (fit.scores[a] >= fit.scores[b] ? a : b));
-  const worst = scored.reduce((a, b) => (fit.scores[a] <= fit.scores[b] ? a : b));
-  const summary = avg >= 80
-    ? T('Задачи этой профессии даются вам естественно. Стоит попробовать её вживую: стажировка, мастер-класс, день с профессионалом.', 'This job’s core tasks come naturally to you. Worth trying for real: an internship, a workshop, a day with a professional.')
-    : avg >= 60
-      ? T(`Хорошая база. Сильнее всего — «${traits[best][0]}», подтянуть — «${traits[worst][0]}». Это тренируется.`, `A good base. Strongest: “${traits[best][0]}”; to work on: “${traits[worst][0]}”. That can be trained.`)
-      : T(`Пока непросто, особенно «${traits[worst][0]}». Попробуйте ещё раз или сравните с другой профессией.`, `Hard for now, especially “${traits[worst][0]}”. Try again, or compare with another profession.`);
+  const summary = gameText(
+    'Результаты выполненных упражнений в этой смене.',
+    'Results from the exercises you completed in this run.',
+    'Осы айналымда орындаған жаттығуларыңыздың нәтижелері.'
+  );
   card.innerHTML = `<h3 class="fit-title"></h3><p class="fit-sub"></p><div class="fit-rows"></div><p class="fit-summary"></p>`;
   card.querySelector('.fit-title').textContent = T('Что требует профессия и как у вас вышло', 'What this job asks for, and how you did');
   card.querySelector('.fit-sub').textContent = T('По мини-играм: каждая — упрощённая версия реального навыка.', 'From the mini-games: each is a simplified real skill.');
@@ -931,7 +928,7 @@ function renderFitProfile() {
 const _showScreenMg = window.showScreen || showScreen;
 showScreen = function (id, ...rest) {
   const r = _showScreenMg.call(this, id, ...rest);
-  if (id === 'resultScreen') setTimeout(renderFitProfile, 0);
+  if (id === 'resultScreen') runLater(renderFitProfile, 0);
   return r;
 };
 window.showScreen = showScreen;

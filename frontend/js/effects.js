@@ -4,8 +4,10 @@ function animateHandPunch(onComplete) {
   if (!handsGroup || !rightHand) { if (onComplete) onComplete(); return; }
   handsGroup.userData.animating = true;
   let progress = 0;
+  const owner = runNumber;
 
   function step() {
+    if (owner !== runNumber) return;
     progress += 0.1;
     if (progress <= 0.5) {
       rightHand.position.z = -0.55 - progress * 0.4;

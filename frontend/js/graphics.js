@@ -109,8 +109,13 @@ const GFX_MOODS = {
 
 function gfxMood(module) {
   const mood = GFX_MOODS[module] || GFX_MOODS.barista;
-  if (GFX.lights) scene.remove(GFX.lights);
+  if (GFX.lights?.userData.module === module) return mood;
+  if (GFX.lights) {
+    GFX.lights.traverse(light => light.shadow?.dispose());
+    scene.remove(GFX.lights);
+  }
   const g = new THREE.Group();
+  g.userData.module = module;
   const key = new THREE.DirectionalLight(mood.key, mood.keyI);
   key.position.set(-3, 5, 2.5);
   key.castShadow = window.innerWidth > 768;
@@ -129,8 +134,98 @@ function gfxMood(module) {
   return mood;
 }
 
+// Atmosphere props sit against the walls and are excluded from interaction raycasts.
+function dressRoom(module, room) {
+  if (!room || room.getObjectByName('roomDetails')) return;
+  const details = new THREE.Group();
+  details.name = 'roomDetails';
+  room.add(details);
+
+  const timber = 0x815536;
+  const cream = 0xf1e5d0;
+  const teal = 0x3c7770;
+  const metal = 0x455463;
+  const props = new Map();
+  function block(w, h, d, x, y, z, color, lit = false) {
+    const key = `${color}:${lit}`;
+    if (!props.has(key)) {
+      props.set(key, lit ? new THREE.MeshBasicMaterial({ color }) : new THREE.MeshStandardMaterial({ color, roughness: 0.78 }));
+    }
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), props.get(key));
+    mesh.position.set(x, y, z);
+    mesh.receiveShadow = !lit;
+    mesh.userData.gfxDone = true;
+    details.add(mesh);
+    return mesh;
+  }
+  function sign(x, y, width, title, subtitle, background) {
+    const map = createTextTexture([
+      { text: title, font: '800 37px sans-serif' },
+      { text: subtitle, font: '600 23px sans-serif' }
+    ], background, '#fff6e8', 512, 192);
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(width, width * 0.375), new THREE.MeshBasicMaterial({ map }));
+    panel.position.set(x, y, -2.37);
+    details.add(panel);
+  }
+
+  if (module === 'barista') {
+    block(9.7, 0.18, 0.06, 0, 0.18, -2.43, timber);
+    for (const side of [-1, 1]) {
+      const x = side * 2.62;
+      block(1.55, 0.07, 0.34, x, 1.77, -2.29, timber);
+      block(1.55, 0.07, 0.34, x, 2.11, -2.29, timber);
+      for (let i = 0; i < 4; i++) {
+        block(0.19, 0.25, 0.16, x - 0.51 + i * 0.32, 1.93, -2.23, [cream, timber, teal, 0xd99660][i]);
+        block(0.14, 0.13, 0.12, x - 0.51 + i * 0.32, 2.21, -2.23, cream);
+      }
+      block(0.22, 0.045, 0.22, x, 2.68, -1.3, 0xffd4a0, true);
+      block(0.28, 0.10, 0.28, x, 2.75, -1.3, timber);
+      block(0.025, 0.9, 0.025, x, 3.22, -1.3, metal);
+    }
+    return;
+  }
+
+  if (module === 'it') {
+    block(7.7, 0.12, 0.16, 0, 2.87, -2.3, metal);
+    block(7.7, 0.026, 0.025, 0, 2.81, -2.20, 0x6dcac7, true);
+    for (const x of [-3, -1.5, 1.5, 3]) {
+      block(0.018, 0.62, 0.04, x, 2.55, -2.4, metal);
+    }
+    sign(-2.66, 2.37, 1.19, 'NETWORK', 'OPERATIONS', '#243944');
+    sign(2.66, 2.37, 1.19, 'SERVER ROOM', 'RACK ROW A', '#243944');
+    return;
+  }
+
+  if (module === 'doctor') {
+    block(7.52, 0.09, 0.055, 0, 1.17, -2.43, 0xa7c7c0);
+    sign(0, 2.26, 1.08, 'CONSULTATION', 'ROOM 01', '#406c67');
+    for (const x of [-2.7, 2.64]) {
+      block(0.76, 0.52, 0.055, x, 2.19, -2.43, teal);
+      block(0.69, 0.45, 0.058, x, 2.19, -2.41, 0xe7eeea);
+      for (const dy of [-0.095, 0, 0.095]) block(0.43, 0.024, 0.025, x, 2.19 + dy, -2.37, 0x94b7af);
+    }
+    for (const x of [-2, 0, 2]) block(1.15, 0.035, 0.21, x, 3.05, -0.6, 0xeafcff, true);
+    return;
+  }
+
+  if (module === 'safety') {
+    for (const x of [-3.4, 3.4]) {
+      block(0.11, 1.50, 0.14, x, 2.43, -2.31, metal);
+      block(0.52, 0.20, 0.22, x, 2.88, -2.28, 0xe4b44c);
+      block(0.52, 0.055, 0.22, x, 2.74, -2.28, metal);
+    }
+    block(9.8, 0.12, 0.16, 0, 3.17, -2.33, metal);
+    sign(-3.37, 2.33, 1.06, 'WORKSHOP', 'SECTOR 01', '#323b44');
+    sign(3.37, 2.33, 1.06, 'MAINTENANCE', 'SERVICE AREA', '#323b44');
+  }
+}
+
 function enhanceScene(module) {
   if (typeof scene === 'undefined' || !scene || !renderer) return false;
+  if (currentProfession !== module || !document.getElementById('gameScreen')?.classList.contains('active')) return false;
+  const room = scene.getObjectByName(module + 'Environment');
+  if (!room) return false;
+  dressRoom(module, room);
   const mood = gfxMood(module);
   const size = new THREE.Vector3();
   const scale = new THREE.Vector3();
@@ -177,12 +272,12 @@ function enhanceSoon(module) {
   const run = () => {
     if (enhanceScene(module) || ++tries > 20) {
       // props added a little later (hands, effects) get shadows too
-      setTimeout(() => enhanceScene(module), 1500);
+      runLater(() => enhanceScene(module), 1500);
       return;
     }
-    setTimeout(run, 250);
+    runLater(run, 250);
   };
-  setTimeout(run, 350);
+  runLater(run, 350);
 }
 
 (function wireGraphics() {

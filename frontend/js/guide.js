@@ -124,6 +124,11 @@ function renderGuide(force) {
     g.idx < g.steps.length ? `Гид · шаг ${g.idx + 1} из ${g.steps.length}` : 'Гид · всё готово';
   document.getElementById('guideTask').innerText = g.current.task;
   document.getElementById('guideHow').innerHTML = g.current.how;
+  const guidedAction = document.getElementById('guidedAction');
+  if (guidedAction) {
+    guidedAction.hidden = !g.current.target;
+    guidedAction.textContent = gameText('Действие по подсказке', 'Use the highlighted object', 'Белгіленген затты қолдану');
+  }
   const why = document.getElementById('guideWhy');
   why.innerText = g.current.why;
   why.style.display = g.current.why ? 'block' : 'none';
@@ -137,6 +142,10 @@ function renderGuide(force) {
 
 function setGuideVisible(show) {
   guideVisible = show;
+  if (show && independentRun) {
+    independentRun = false;
+    if (sessionEvents.length) sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'GUIDE_REOPENED', ok: true });
+  }
   document.getElementById('guidePanel')?.classList.toggle('visible', show);
   document.getElementById('guideToggleBtn')?.classList.toggle('visible', !show);
   if (show) renderGuide(true);

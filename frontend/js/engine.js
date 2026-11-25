@@ -108,7 +108,7 @@ function initThreeFPS() {
   camera.position.set(player.pos.x, player.baseEyeHeight, player.pos.z);
 
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setSize(width, height);
+  renderer.setSize(width, height, false);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
   // CLEAN STUDIO COLOR GRADING & ACES TONEMAPPING
@@ -157,6 +157,7 @@ function initThreeFPS() {
     requestAnimationFrame(animate);
     const delta = Math.min(clock.getDelta(), 0.08);
     const time = clock.getElapsedTime();
+    if (!document.getElementById('gameScreen')?.classList.contains('active')) return;
 
     // ================= STANDARD FPS WASD VECTOR MOVEMENT =================
     let inputForward = 0;
@@ -371,7 +372,7 @@ function initThreeFPS() {
     // Dynamic Pulsing Target Beacon Ring (Barista mode)
     const beacon = scene.getObjectByName('targetBeaconRing');
     if (beacon) {
-      if (currentProfession === 'barista' && state.quest === 1) {
+      if (guideVisible && currentProfession === 'barista' && state.quest === 1) {
         beacon.visible = true;
         const pulse = 1.0 + Math.sin(time * 5.0) * 0.18;
         beacon.scale.set(pulse, pulse, pulse);
@@ -394,7 +395,7 @@ function initThreeFPS() {
   animate();
 
   window.triggerCameraShake = function(intensity = 0.035) {
-    shakeIntensity = intensity;
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) shakeIntensity = intensity;
   };
 }
 

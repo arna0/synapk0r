@@ -379,19 +379,19 @@ if (typeof startQuest2Conflict === 'function') {
     if (real) { npcSay(c.text, 7000); if (c.tone !== 'polite') NPC.gesture = { kind: 'shake', t: 0 }; }
     const hud = document.getElementById('hudDockInner') || document.getElementById('hudBottom');
     const opts = [
-      ['A', 'rose', T('«Вы сами так заказали, проверяйте чек перед оплатой»', '“That’s what you ordered. Check your receipt before paying.”')],
-      ['B', 'emerald', T('«Простите за ошибку! Я переделаю за 1 минуту и угощу вас фирменным десертом»', '“Sorry about that! I’ll remake it in a minute, and the dessert is on us.”')],
-      ['C', 'amber', T('«Подождите, я позову управляющего смены»', '“One moment, I’ll get the shift manager.”')],
+      ['A', T('«Вы сами так заказали, проверяйте чек перед оплатой»', '“That’s what you ordered. Check your receipt before paying.”')],
+      ['B', T('«Простите за ошибку! Я переделаю за 1 минуту и угощу вас фирменным десертом»', '“Sorry about that! I’ll remake it in a minute, and the dessert is on us.”')],
+      ['C', T('«Подождите, я позову управляющего смены»', '“One moment, I’ll get the shift manager.”')],
     ];
-    hud.innerHTML = `<div class="speech-bubble" id="typewriterBox">${c.face} <strong>${T('Клиент', 'Customer')}:</strong> <span id="typewriterText"></span></div><div>${opts.map(([k, col, text]) => `
-      <div class="dialog-option" onclick="handleConflictAnswer('${k}')">
-        <div class="dialog-tag" style="background:var(--${col}-bg); color:var(--${col}); border:1px solid var(--${col}-border);">${k}</div>
-        <div>${text}</div>
-      </div>`).join('')}</div>`;
+    hud.innerHTML = `<div class="speech-bubble" id="typewriterBox">${c.face} <strong>${T('Клиент', 'Customer')}:</strong> <span id="typewriterText"></span></div><div>${opts.map(([k, text]) => `
+      <button type="button" class="dialog-option release-choice" onclick="handleConflictAnswer('${k}')">
+        <span class="dialog-tag">${k}</span>
+        <span>${text}</span>
+      </button>`).join('')}</div>`;
     const span = document.getElementById('typewriterText');
     let i = 0;
     const full = `«${c.text}»`;
-    const iv = setInterval(() => {
+    const iv = runEvery(() => {
       if (!span.isConnected || i >= full.length) { clearInterval(iv); return; }
       span.textContent += full[i++];
     }, 22);
@@ -408,7 +408,7 @@ if (typeof handleConflictAnswer === 'function') {
         C: [-0.1, 'shake', T('Мне не нужен управляющий, мне нужен нормальный кофе.', 'I don’t need a manager, I need a proper coffee.')],
       }[opt];
       if (r) { npcMood(r[0], r[1]); npcSay(r[2], 3800); }
-      setTimeout(() => { if (NPC.module === 'barista') npcLeave(CAFE_DOOR); }, 2600);
+      runLater(() => { if (NPC.module === 'barista') npcLeave(CAFE_DOOR); }, 2600);
     }
     return _answer.call(this, opt);
   };
@@ -452,7 +452,7 @@ setInterval(() => {
     NPC.seen.coughAt = Date.now() + 14000 + Math.random() * 10000;
     npcSay(T('*кашляет*', '*coughs*'), 1600);
     NPC.gesture = { kind: 'nod', t: 0 };
-    if (typeof playTone === 'function') { playTone(140, 'sawtooth', 0.09, 0.05); setTimeout(() => playTone(120, 'sawtooth', 0.09, 0.05), 160); }
+    if (typeof playTone === 'function') { playTone(140, 'sawtooth', 0.09, 0.05); runLater(() => playTone(120, 'sawtooth', 0.09, 0.05), 160); }
   }
   if (!clinic.slow && Date.now() - clinic.startedAt > 150000) {
     clinic.slow = true;
@@ -497,7 +497,7 @@ if (typeof mgColleague === 'function') {
         const ok = !(typeof safetyState !== 'undefined' && safetyState.errors > errs);
         if (ok) { npcMood(-0.15, 'nod'); npcSay(T('Ладно, понял. Подожду, пока закончишь.', 'Fine, got it. I’ll wait till you’re done.'), 3200); }
         else { npcMood(0.2, 'nod'); npcSay(T('Спасибо, я быстро!', 'Thanks, I’ll be quick!'), 2600); }
-        setTimeout(() => { if (NPC.module === 'safety') npcLeave([4.0, 3.5]); }, 2600);
+        runLater(() => { if (NPC.module === 'safety') npcLeave([4.0, 3.5]); }, 2600);
         if (done) done(...a);
       }),
     }).then((ok) => { if (!ok) _mgColleague(done); });
@@ -571,7 +571,7 @@ if (typeof answerScenarioDecision === 'function') {
     window[name] = function (...args) {
       npcHide();
       const r = orig.apply(this, args);
-      setTimeout(() => fn(args), 700);
+      runLater(() => fn(args), 700);
       return r;
     };
   };
