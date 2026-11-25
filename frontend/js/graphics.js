@@ -101,10 +101,10 @@ function gfxApply(mesh, kind, repeat, bump) {
 }
 
 const GFX_MOODS = {
-  barista: { floor: 'wood', floorRep: 0.8, exposure: 1.08, key: 0xffd9a8, keyI: 0.55, rim: 0xff9a5a, rimI: 0.35, fog: 0.03 },
+  barista: { floor: 'wood', floorRep: 0.8, exposure: 0.83, key: 0xffd9a8, keyI: 0.44, rim: 0xff9a5a, rimI: 0.35, fog: 0.03 },
   safety: { floor: 'concrete', floorRep: 0.6, exposure: 1.0, key: 0xffe2b0, keyI: 0.5, rim: 0x6fa8ff, rimI: 0.3, fog: 0.04 },
   it: { floor: 'tiles', floorRep: 1.6, exposure: 1.02, key: 0xcfe3ff, keyI: 0.45, rim: 0x2dd4bf, rimI: 0.45, fog: 0.035 },
-  doctor: { floor: 'vinyl', floorRep: 0.9, exposure: 1.12, key: 0xffffff, keyI: 0.6, rim: 0xbfdcff, rimI: 0.25, fog: 0.02 },
+  doctor: { floor: 'vinyl', floorRep: 0.9, exposure: 0.92, key: 0xffffff, keyI: 0.47, rim: 0xbfdcff, rimI: 0.25, fog: 0.02 },
 };
 
 function gfxMood(module) {

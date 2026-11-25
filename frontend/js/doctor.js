@@ -9,7 +9,7 @@ let docLastMonitorFrame = -1;
 const docVitals = { temp: null, spo2: null, bp: null, lungs: null };
 const docTools = {};
 
-const DOC_PATIENT = { x: 1.25, z: -1.55 };
+const DOC_PATIENT = { x: 1.25, z: -1.41 };
 
 function drawDocCard(open) {
   if (!docCardScreen) return;

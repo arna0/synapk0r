@@ -86,13 +86,14 @@ function npcApplyPose(pose) {
 
 // ---------------------------------------------------------------- show, walk, leave
 async function npcShow(module, opts) {
+  const runId = scenarioState.runId;
   try {
     await npcLoad();
   } catch (e) {
     console.warn('[npc] model not loaded, keeping the simple figure', e);
     return false;
   }
-  if (typeof scene === 'undefined' || !scene) return false;
+  if (!scene || module !== currentProfession || !isScenarioRunActive(runId)) return false;
   const o = NPC.src;
   NPC.obj = o;
   NPC.module = module;
@@ -423,7 +424,7 @@ function clinicPatientSeat() {
   clinic.startedAt = Date.now();
   clinic.slow = false;
   NPC.seen.coughAt = Date.now() + 8000;
-  npcShow('doctor', { role: T('Пациент', 'Patient'), mood: 0.55, sit: true, at: [DOC_PATIENT.x, DOC_PATIENT.z], faceYaw: 0, sitY: -0.45 })
+  npcShow('doctor', { role: T('Пациент', 'Patient'), mood: 0.55, sit: true, at: [DOC_PATIENT.x, DOC_PATIENT.z], faceYaw: 0, sitY: -0.32 })
     .then((ok) => {
       if (!ok) return;
       npcHidePlaceholder(scene.getObjectByName('patientBody'));
@@ -571,7 +572,8 @@ if (typeof answerScenarioDecision === 'function') {
     window[name] = function (...args) {
       npcHide();
       const r = orig.apply(this, args);
-      setTimeout(() => fn(args), 700);
+      const runId = scenarioState.runId;
+      setTimeout(() => { if (isScenarioRunActive(runId)) fn(args); }, 700);
       return r;
     };
   };

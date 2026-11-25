@@ -51,6 +51,7 @@ async function openRoom(page, module) {
 
 async function playGuidedIncident(page) {
   await openRoom(page, 'it');
+  await page.screenshot({ path: `${screenshotDir}/it-server-room.png` });
   await chooseObject(page, 'monitorDash');
   const alertChoices = page.locator('.mg-choice');
   for (const text of [/Checkout: 38%/, /db-01 not answering/, /disk 81% full/, /SSL certificate expires/]) {
