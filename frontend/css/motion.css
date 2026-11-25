@@ -1,0 +1,113 @@
+/* Home palette and shared transitions. Simulation colors retain their status meanings. */
+#homeScreen {
+  --home-surface: #f0f2ff;
+  --home-card: #fcfcff;
+  --home-ink: #181b3c;
+  --home-muted: #515775;
+  --home-line: #d5d9ef;
+  --home-accent: #493399;
+  --primary: var(--home-accent);
+  color: var(--home-ink);
+  background: radial-gradient(ellipse at 82% 15%, #d9d9fb 0%, transparent 44rem),
+    linear-gradient(145deg, #fafaff, var(--home-surface) 60%, #e9eefc);
+}
+
+#homeScreen::after { opacity: 0.35; }
+#homeScreen .home-nav {
+  background: rgba(247, 247, 255, 0.93);
+  border-bottom-color: var(--home-line);
+}
+#homeScreen :is(.logo-brand, .home-hero h1, .hero-proof b, .home-strip b, .module-body h3,
+  .stage-npc b, .stage-npc p, .stage-game-head, .stage-fit-title, .stage-fit-row b,
+  .feature h4, .audience h4, .home-footer-brand, .home-footer a, h2) { color: var(--home-ink); }
+#homeScreen :is(.home-hero p, .hero-proof span, .hero-scroll, .home-strip span,
+  .module-body p, .module-games li, .feature p, .audience p, .stage-fit-row, .stage-game small,
+  .stage-npc-tag, .home-footer) { color: var(--home-muted); }
+#homeScreen .home-hero h1 b { color: #443187; }
+#homeScreen :is(.eyebrow, .hero-link:hover, .home-footer a:hover, .lang-btn.active) { color: var(--home-accent); }
+#homeScreen :is(.hero-proof, .home-strip, .home-strip > div, .home-footer, .module-card) { border-color: var(--home-line); }
+#homeScreen :is(.module-card, .feature, .stage-float) { background-color: var(--home-card); }
+#homeScreen .module-games li { background: #eeeffa; border-color: var(--home-line); }
+#homeScreen :is(.hero-cta, .btn-start) { background: var(--home-accent); color: #fff; }
+#homeScreen .hero-cta { box-shadow: 0 10px 26px rgba(73, 51, 153, 0.24); }
+#homeScreen :is(.hero-cta, .btn-start):hover { background: #372573; }
+#homeScreen :is(a, button):focus-visible { outline-color: #5b43bc; }
+#homeScreen .module-card:focus-within { border-color: #8874d2; }
+#homeScreen .stage-window { background: #252344; box-shadow: 0 28px 60px -23px #26265378; }
+#homeScreen .stage-scene { background: #e5e6f9; }
+#homeScreen .stage-steps .now { background: #7057bf; color: #fff; }
+#homeScreen .stage-timer { color: #c9f5e4; background: #39786b38; }
+#homeScreen .stage-track { background: #e7e9f7; }
+
+:root {
+  --motion-fast: 160ms;
+  --motion-panel: 270ms;
+  --motion-enter: 620ms;
+  --motion-ease: cubic-bezier(0.2, 0.75, 0.28, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #homeScreen.active .home-nav > * {
+    animation: synap-fade var(--motion-panel) ease-out both;
+  }
+  #homeScreen.active .hero-copy > * {
+    animation: synap-rise var(--motion-enter) var(--motion-ease) backwards;
+    animation-delay: calc(var(--hero-order, 0) * 65ms);
+  }
+  .hero-copy > :nth-child(2) { --hero-order: 1; }
+  .hero-copy > :nth-child(3) { --hero-order: 2; }
+  .hero-copy > :nth-child(4) { --hero-order: 3; }
+  .hero-copy > :nth-child(5) { --hero-order: 4; }
+
+  #homeScreen.active .hero-stage {
+    animation: synap-preview 720ms var(--motion-ease) 100ms backwards;
+  }
+  #homeScreen .reveal-in {
+    animation: synap-rise 460ms var(--motion-ease) backwards;
+  }
+  #homeScreen :is(.module-grid, .feature-grid, .audience-grid, .how-steps) > :nth-child(2).reveal-in { animation-delay: 60ms; }
+  #homeScreen :is(.module-grid, .feature-grid, .audience-grid, .how-steps) > :nth-child(3).reveal-in { animation-delay: 100ms; }
+  #homeScreen :is(.module-grid, .feature-grid) > :nth-child(4).reveal-in { animation-delay: 140ms; }
+  #homeScreen .hero-scroll .mouse::after { animation: synap-scroll-mark 1.8s ease-in-out 3; }
+
+  #gameScreen.active .vr-status-bar,
+  #gameScreen.active .hud-dock {
+    animation: synap-fade var(--motion-panel) ease-out both;
+  }
+  #gameScreen :is(.intro-card, .victory-card, .mg, .interrupt-card),
+  #gameScreen .guide-panel.visible {
+    animation: synap-panel var(--motion-panel) var(--motion-ease) both;
+  }
+  #gameScreen :is(.step-pill, .safety-hud-pill, .dialog-option, .mg-choice, .mg-btn, .guided-action, .dpad-btn),
+  #resultScreen :is(.survey-opt, .btn-action, .btn-secondary) {
+    transition: background-color var(--motion-fast), color var(--motion-fast),
+      border-color var(--motion-fast), box-shadow var(--motion-fast), scale var(--motion-fast);
+  }
+  #resultScreen.active :is(.score-circle-clean, .report-card) {
+    animation: synap-rise 400ms var(--motion-ease) both;
+  }
+  #resultScreen.active .report-card:nth-child(2) { animation-delay: 55ms; }
+  #resultScreen.active .report-card:nth-child(3) { animation-delay: 95ms; }
+
+  #homeScreen :is(.hero-cta, .btn-start, .module-card, .feature, .audience) {
+    transition: translate 220ms var(--motion-ease), background-color var(--motion-fast),
+      border-color var(--motion-fast), box-shadow 220ms var(--motion-ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    #homeScreen :is(.hero-cta, .btn-start):hover { translate: 0 -2px; }
+    #homeScreen :is(.module-card, .feature, .audience):hover { translate: 0 -4px; }
+  }
+  :is(#homeScreen, #gameScreen, #resultScreen) button:enabled:active { scale: 0.98; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #homeScreen .stage-float, #homeScreen .stage-track .mark, #homeScreen .hero-scroll .mouse::after {
+    animation: none;
+  }
+}
+
+@keyframes synap-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes synap-rise { from { opacity: 0.35; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
+@keyframes synap-preview { from { opacity: 0.2; translate: 0 16px; } to { opacity: 1; translate: 0 0; } }
+@keyframes synap-panel { from { opacity: 0; translate: 0 8px; scale: 0.985; } to { opacity: 1; translate: 0 0; scale: 1; } }
+@keyframes synap-scroll-mark { 0%, 100% { translate: 0 0; } 50% { translate: 0 4px; } }

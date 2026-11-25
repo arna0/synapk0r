@@ -56,3 +56,20 @@ test('device-mode resize keeps the Barista viewport and guided input synchronize
   await expect(page.locator('#homeScreen')).toBeVisible();
   await expect(page.getByRole('dialog').filter({ hasText: 'Grinding' })).toHaveCount(0);
 });
+
+test('homepage uses the updated palette and reveals cards without hiding their content', async ({ page }) => {
+  await page.goto('/?lang=en', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.hero-cta')).toHaveCSS('background-color', 'rgb(73, 51, 153)');
+  const card = page.locator('.module-card').first();
+  await card.scrollIntoViewIfNeeded();
+  await expect(card).toHaveClass(/reveal-in/);
+  await expect(card.getByRole('button')).toBeVisible();
+});
+
+test('reduced motion keeps homepage controls visible and disables decorative loops', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/?lang=en', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.stage-float').first()).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('.hero-copy h1')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('.module-card').first().getByRole('button')).toBeVisible();
+});

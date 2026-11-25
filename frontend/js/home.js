@@ -119,3 +119,17 @@ if (typeof KK !== 'undefined') Object.assign(KK, HOME_KK);
   svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
   slot.appendChild(svg);
 })();
+
+// Keep the layout visible by default. A reveal runs once when an item enters view.
+if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entry.target.classList.add('reveal-in');
+      observer.unobserve(entry.target);
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll(
+    '#homeScreen .module-card, #homeScreen .feature, #homeScreen .audience, #homeScreen .how-steps > li'
+  ).forEach((element) => observer.observe(element));
+}
