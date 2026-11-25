@@ -153,10 +153,12 @@ function initThreeFPS() {
   let guideRenderTimer = 0;
   createGuideArrow();
 
+  const gameScreen = document.getElementById('gameScreen');
   function animate() {
     requestAnimationFrame(animate);
     const delta = Math.min(clock.getDelta(), 0.08);
     const time = clock.getElapsedTime();
+    if (!gameScreen.classList.contains('active')) return;
 
     // ================= STANDARD FPS WASD VECTOR MOVEMENT =================
     let inputForward = 0;

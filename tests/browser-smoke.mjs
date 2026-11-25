@@ -42,6 +42,7 @@ try {
   const page = await desktop.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
+  await desktop.route('https://fonts.googleapis.com/**', route => route.abort());
   await page.route('**/api/**', route => route.abort());
   await page.goto(`${base}/frontend/?lang=en`, { waitUntil: 'domcontentloaded' });
   await page.screenshot({ path: `${screenshotDir}/web-home.png` });
@@ -56,11 +57,22 @@ try {
   await waitForText(page.locator('#localStrengths'), 'You linked the outage to PAYMENT_REGION');
   assert.equal(await page.locator('#localImprovements').getByText('The log shows PAYMENT_REGION was missing', { exact: false }).count(), 0);
   assert.deepEqual(errors, []);
+  await desktop.close();
 
-  const phone = await browser.newContext(devices['Pixel 7']);
+  const phone = await browser.newContext({ ...devices['Pixel 7'], deviceScaleFactor: 1 });
+  await phone.route('https://fonts.googleapis.com/**', route => route.abort());
   const mobile = await phone.newPage();
   await mobile.goto(`${base}/frontend/?module=it&lang=kk`, { waitUntil: 'domcontentloaded' });
-  await mobile.locator('#introOverlay .btn-start').tap();
+  const mobileErrors = [];
+  mobile.on('pageerror', error => mobileErrors.push(error.message));
+  const start = mobile.locator('#introOverlay.visible .btn-start');
+  try {
+    await start.tap();
+  } catch (error) {
+    console.error('Mobile start failed:', mobile.url(), mobileErrors);
+    await mobile.screenshot({ path: `${screenshotDir}/mobile-launch-failure.png`, timeout: 5000 }).catch(() => {});
+    throw error;
+  }
   await mobile.waitForFunction(() => document.getElementById('guideTask').textContent === 'Мониторинг ескертуін оқыңыз');
   await mobile.screenshot({ path: `${screenshotDir}/it-kazakh-mobile.png` });
   console.log('Browser smoke passed: desktop wrong answer and replay, Kazakh mobile launch, offline report.');
