@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import '../providers/game_provider.dart';
 import '../theme/app_theme.dart';
 import 'game_screen.dart';
 
@@ -127,7 +125,6 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () {
-                        context.read<GameProvider>().startSession();
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const GameScreen()),

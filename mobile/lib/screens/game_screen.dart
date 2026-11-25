@@ -20,10 +20,7 @@ class GameScreen extends StatelessWidget {
       ),
       body: SafeArea(
         top: false,
-        child: ThreeDFpsViewport(
-          module: module,
-          onMessageReceived: (_) {},
-        ),
+        child: ThreeDFpsViewport(module: module),
       ),
     );
   }
