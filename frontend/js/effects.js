@@ -2,18 +2,26 @@
 
 function animateHandPunch(onComplete) {
   if (!handsGroup || !rightHand) { if (onComplete) onComplete(); return; }
-  handsGroup.userData.animating = true;
+  const runId = scenarioState.runId;
+  const group = handsGroup;
+  const hand = rightHand;
+  group.userData.animating = true;
   let progress = 0;
 
   function step() {
+    if (!isScenarioRunActive(runId)) {
+      hand.position.z = -0.55;
+      group.userData.animating = false;
+      return;
+    }
     progress += 0.1;
     if (progress <= 0.5) {
-      rightHand.position.z = -0.55 - progress * 0.4;
+      hand.position.z = -0.55 - progress * 0.4;
     } else if (progress <= 1.0) {
-      rightHand.position.z = -0.75 + (progress - 0.5) * 0.4;
+      hand.position.z = -0.75 + (progress - 0.5) * 0.4;
     } else {
-      rightHand.position.z = -0.55;
-      handsGroup.userData.animating = false;
+      hand.position.z = -0.55;
+      group.userData.animating = false;
       if (onComplete) onComplete();
       return;
     }

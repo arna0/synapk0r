@@ -165,11 +165,86 @@ async function checkRoomEffects(page) {
   await page.locator('.btn-exit-vr').click();
   await page.locator('#homeScreen.active').waitFor();
   assert.equal(await page.locator('.mg').count(), 0);
+  await checkSafetyWorkflow(page);
+}
+
+async function checkSafetyWorkflow(page) {
   await openRoom(page, 'safety');
   await page.evaluate(() => operateValve(0));
   await waitForText(page.locator('#safetyAlertBanner'), 'The valve stayed closed');
   assert.deepEqual(await page.evaluate(() => ({ errors: safetyState.errors, open: safetyState.valvesOpened[0] })), { errors: 1, open: false });
   await page.screenshot({ path: `${screenshotDir}/safety-room.png` });
+
+  const game = page.locator('.mg');
+  await page.locator('#invPPE').focus();
+  await page.keyboard.press('Space');
+  await waitForText(game, 'Site walk-round');
+  for (const choice of [/damaged insulation/, /oil puddle/, /exit is blocked/, /guard is off/]) {
+    await game.getByRole('button', { name: choice }).click();
+  }
+  await page.waitForFunction(() => safetyState.ppeEquipped);
+  await chooseObject(page, 'mainBreaker');
+  await page.waitForFunction(() => safetyState.powerState === 'OFF');
+  await page.locator('#invLOTO').click();
+  await chooseObject(page, 'mainBreaker');
+  await waitForText(game, 'A colleague comes to the panel');
+  await game.getByRole('button', { name: /Refuse: only the person/ }).click();
+  await game.waitFor({ state: 'hidden' });
+
+  await page.evaluate(() => { safetyRun.backfeed = true; });
+  await page.locator('#invMultimeter').click();
+  await chooseObject(page, 'testTerminals');
+  await game.getByRole('button', { name: 'It’s dead' }).click();
+  await waitForText(game, /read 231 V/);
+  await game.waitFor({ state: 'hidden' });
+  assert.equal(await page.evaluate(() => safetyState.voltageTested), false);
+
+  await chooseObject(page, 'testTerminals');
+  await game.getByRole('button', { name: 'L3', exact: true }).click();
+  await game.getByRole('button', { name: 'PE', exact: true }).click();
+  await game.getByRole('button', { name: 'Live — stop' }).click();
+  await game.waitFor({ state: 'hidden' });
+  assert.equal(await page.evaluate(() => safetyState.voltageTested), false);
+
+  await chooseObject(page, 'testTerminals');
+  await game.getByRole('button', { name: 'It’s dead' }).click();
+  await waitForText(game, 'Check incomplete');
+  await game.waitFor({ state: 'hidden' });
+  assert.equal(await page.evaluate(() => safetyState.voltageTested), false);
+
+  await chooseObject(page, 'testTerminals');
+  const prove = game.getByRole('button', { name: /Check the meter on the proving unit/ });
+  await prove.click();
+  for (const pair of [['L1', 'L2'], ['L2', 'L3'], ['L1', 'L3'], ['L1', 'PE'], ['L2', 'PE'], ['L3', 'PE']]) {
+    for (const terminal of pair) {
+      await game.getByRole('button', { name: terminal, exact: true }).click();
+    }
+  }
+  await prove.click();
+  await game.getByRole('button', { name: 'It’s dead' }).click();
+  await page.waitForFunction(() => safetyState.voltageTested);
+
+  for (const valve of ['valve1', 'valve2']) {
+    await chooseObject(page, valve);
+    await game.waitFor();
+    const canvas = await game.locator('canvas').boundingBox();
+    assert.ok(canvas);
+    const x = canvas.x + canvas.width * 120 / 460;
+    const y = canvas.y + canvas.height / 2;
+    const radius = canvas.width * 50 / 460;
+    await page.mouse.move(x + radius, y);
+    await page.mouse.down();
+    for (let turn = 1; turn <= 18; turn++) {
+      const angle = turn * Math.PI / 5;
+      await page.mouse.move(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+    }
+    await page.mouse.up();
+    await game.waitFor({ state: 'hidden' });
+  }
+  await page.locator('#victoryModal').waitFor();
+  await page.locator('#victoryModal .btn-action').click();
+  await page.locator('#resultScreen.active').waitFor();
+  await page.screenshot({ path: `${screenshotDir}/safety-result.png`, fullPage: true });
 }
 
 try {
@@ -224,7 +299,7 @@ try {
   }
   await mobile.waitForFunction(() => document.getElementById('guideTask').textContent === 'Мониторинг ескертуін оқыңыз');
   await mobile.screenshot({ path: `${screenshotDir}/it-kazakh-mobile.png` });
-  console.log('Browser smoke passed: three IT cases, guided incident, four room launches, real 3D click after capture rejection, keyboard guide, clinic-to-safety cleanup, exit mid-action, Kazakh touch launch, offline report, café priorities, local reflection, and the safety checklist guard.');
+  console.log('Browser smoke passed: three IT cases, guided incident, four room launches, real 3D click after capture rejection, keyboard guide, clinic-to-safety cleanup, exit mid-action, Kazakh touch launch, offline report, café priorities, local reflection, and full safety workflow with failed and successful checks.');
 } finally {
   await browser.close();
 }

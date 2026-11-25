@@ -118,7 +118,7 @@ function setupFPSControls(container) {
       }
       if (e.code === 'KeyH') toggleGuide();
       if (currentProfession === 'safety') {
-        if (e.code === 'Digit1') togglePPE();
+        if (e.code === 'Digit1') handleSafetyInteraction('ppeStand');
         if (e.code === 'Digit2') selectInventoryTool('multimeter');
         if (e.code === 'Digit3') selectInventoryTool('loto');
       }

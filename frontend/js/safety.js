@@ -976,8 +976,10 @@ function applyLotoLock() {
     showComboPopup('🔒 LOTO ЗАМОК УСТАНОВЛЕН: НЕ ВКЛЮЧАТЬ! +150 XP');
     logAction('APPLY_LOTO_LOCK_SUCCESS', Date.now(), true);
     if (safetyState.selectedTool === 'loto') selectInventoryTool('loto');
-    isActionInProgress = false;
-    checkSafetyCompletion();
+    mgColleague(() => {
+      isActionInProgress = false;
+      checkSafetyCompletion();
+    });
   });
 }
 
