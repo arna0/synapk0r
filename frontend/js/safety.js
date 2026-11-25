@@ -1076,6 +1076,7 @@ function checkSafetyCompletion() {
 function startSafetyVR() {
   currentProfession = 'safety';
   const runId = ++scenarioState.runId;
+  resetSimulationOverlays();
   resetPlayerMotion();
   document.getElementById('gameScreen').classList.remove('milk-pouring');
   document.getElementById('gameScreen').classList.add('safety-mode');

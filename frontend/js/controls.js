@@ -42,7 +42,12 @@ function setupFPSControls(container) {
       ((e.clientX - bounds.left) / bounds.width) * 2 - 1,
       1 - ((e.clientY - bounds.top) / bounds.height) * 2
     );
-    triggerSceneInteraction(getSceneInteractionTarget(point));
+    const object = getSceneInteractionTarget(point);
+    if (!object && !isActionInProgress && getSceneInteractionTarget(point, Infinity)) {
+      showGuideToast('Подойдите ближе к предмету.');
+      return;
+    }
+    triggerSceneInteraction(object);
   });
 
   function showCaptureFallback() {
@@ -298,11 +303,11 @@ function isSceneInteractionBlocked() {
     isIntroVisible() || mgActive || document.getElementById('victoryModal').style.display === 'flex';
 }
 
-function getSceneInteractionTarget(point) {
+function getSceneInteractionTarget(point, maxDistance = 2.5) {
   if (!camera) return null;
   raycaster.setFromCamera(point, camera);
   const [hit] = raycaster.intersectObjects(interactiveObjects, true);
-  if (!hit || hit.distance >= 2.5) return null;
+  if (!hit || hit.distance >= maxDistance) return null;
   let object = hit.object;
   while (object && !interactiveObjects.includes(object)) object = object.parent;
   return object;

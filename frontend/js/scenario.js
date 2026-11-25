@@ -77,6 +77,7 @@ function startScenario(id, { challenge = false } = {}) {
   currentProfession = id;
   scenarioState.definition = def;
   const runId = ++scenarioState.runId;
+  resetSimulationOverlays();
   hideSafetyChrome();
 
   isActionInProgress = false;
@@ -175,7 +176,11 @@ function handleScenarioClick(name) {
     sessionEvents.push({ t: scenarioNow(), action: `STEP_DONE_${step.id}_${scenarioState.step + 1}`, ok: true });
     if (step.popup) showComboPopup(step.popup);
     scenarioState.step++;
-    setTimeout(() => { if (isScenarioRunActive(runId)) isActionInProgress = false; }, 250);
+    setTimeout(() => {
+      if (!isScenarioRunActive(runId)) return;
+      isActionInProgress = false;
+      maybeShowScenarioInterrupt(def);
+    }, 250);
     if (scenarioState.step >= def.steps.length) {
       renderScenarioStepsComplete();
       setTimeout(() => {

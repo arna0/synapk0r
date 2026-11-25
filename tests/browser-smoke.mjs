@@ -145,11 +145,20 @@ async function checkRoomEffects(page) {
   await page.locator('#guideHow').waitFor();
   await page.keyboard.press('Space');
   assert.equal(await details.getAttribute('open'), null);
+  await page.evaluate(() => { interruptAt = 1; });
   await chooseObject(page, 'patientCard');
   await page.waitForFunction(() => scenarioState.step === 1);
+  await page.locator('.interrupt-card').waitFor();
   await page.screenshot({ path: `${screenshotDir}/doctor-room.png` });
 
-  await openRoom(page, 'safety');
+  // Stay on the same document so navigation cannot hide leaked overlays or listeners.
+  await page.locator('.btn-exit-vr').click();
+  await page.locator('#homeScreen.active').waitFor();
+  assert.equal(await page.locator('.interrupt-card').count(), 0);
+  await page.locator('article').filter({ has: page.getByRole('heading', { name: 'Safety engineer', exact: true }) })
+    .getByRole('button', { name: 'Start simulation' }).click();
+  await page.locator('#introOverlay.visible .btn-start').click();
+  assert.equal(await page.locator('.interrupt-card').count(), 0);
   await chooseObject(page, 'ppeStand');
   await page.locator('.mg').waitFor();
   // Leave during the hazard scan and confirm the next room starts clean.
@@ -215,7 +224,7 @@ try {
   }
   await mobile.waitForFunction(() => document.getElementById('guideTask').textContent === 'Мониторинг ескертуін оқыңыз');
   await mobile.screenshot({ path: `${screenshotDir}/it-kazakh-mobile.png` });
-  console.log('Browser smoke passed: three IT cases, guided incident, four room launches, real 3D click after capture rejection, keyboard guide, exit mid-action, Kazakh touch launch, offline report, café priorities, local reflection, and the safety checklist guard.');
+  console.log('Browser smoke passed: three IT cases, guided incident, four room launches, real 3D click after capture rejection, keyboard guide, clinic-to-safety cleanup, exit mid-action, Kazakh touch launch, offline report, café priorities, local reflection, and the safety checklist guard.');
 } finally {
   await browser.close();
 }
