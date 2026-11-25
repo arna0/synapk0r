@@ -125,3 +125,15 @@ test('the Safety question opens while the colleague model is loading', () => {
   vm.runInContext('mgColleague()', ctx);
   assert.equal(questions, 1);
 });
+
+test('Safety requires a complete simulated check before confirming the step', () => {
+  const ctx = vm.createContext({});
+  vm.runInContext(script('session'), ctx);
+  const outcome = properties => vm.runInContext('meterExerciseOutcome(' + JSON.stringify(properties) + ')', ctx);
+  const clean = { decision: 'dead', hasFault: false, observedFault: false, complete: true };
+  assert.equal(outcome(clean), 'ok');
+  assert.equal(outcome({ ...clean, complete: false }), 'retry');
+  assert.equal(outcome({ ...clean, hasFault: true }), 'retry');
+  assert.equal(outcome({ ...clean, decision: 'live' }), 'retry');
+  assert.equal(outcome({ ...clean, decision: 'live', hasFault: true, observedFault: true, complete: false }), 'fault');
+});

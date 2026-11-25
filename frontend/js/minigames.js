@@ -384,7 +384,8 @@ function mgVoltage(done) {
       const pair = [first, name].sort((a, c) => terms.indexOf(a) - terms.indexOf(c)).join('-');
       first = null;
       tested.add(pair);
-      const v = pair === live ? '231.4 V' : pair.includes('N') ? '0.0 V' : '0.0 V';
+      provedAfter = false;
+      const v = pair === live ? '231.4 V' : '0.0 V';
       setLcd(v, pair === live ? 'bad' : 'ok');
       if (typeof playMultimeterBeep === 'function') playMultimeterBeep();
       count.textContent = T(`Пар проверено: ${PAIRS.filter((x) => tested.has(x)).length} из 6`, `Pairs tested: ${PAIRS.filter((x) => tested.has(x)).length} of 6`);
@@ -399,21 +400,24 @@ function mgVoltage(done) {
   const verdict = (says) => {
     const covered = PAIRS.filter((x) => tested.has(x)).length;
     let score = covered / 6 * 70 + (provedBefore ? 15 : 0) + (provedAfter ? 15 : 0);
-    let ok = true;
-    if (says === 'dead' && live) { score = Math.min(score, 20); ok = false; }
-    if (says === 'live' && !sawLive()) score -= 30;
-    const notes = [];
-    if (!provedBefore) notes.push(T('прибор не проверен до замера', 'meter not checked before'));
-    if (!provedAfter) notes.push(T('и после', 'or after'));
-    if (covered < 6) notes.push(T(`пропущено пар: ${6 - covered}`, `pairs missed: ${6 - covered}`));
-    if (!ok) {
+    const outcome = meterExerciseOutcome({
+      decision: says,
+      hasFault: !!live,
+      observedFault: !!sawLive(),
+      complete: covered === PAIRS.length && provedBefore && provedAfter,
+    });
+    if (outcome === 'fault') score = 100;
+    if (outcome === 'retry') {
+      score = Math.min(score, 55);
       safetyState.errors++;
-      logAction('VOLTAGE_CONFIRMED_WHILE_LIVE', Date.now(), false);
+      logAction(says === 'dead' && live ? 'VOLTAGE_CONFIRMED_WHILE_LIVE' : 'VOLTAGE_CHECK_INCOMPLETE', Date.now(), false);
     }
-    const text = !ok ? T('На L3–PE было 231 В: обратное питание. Подтверждать «нет напряжения» было нельзя.', 'L3–PE read 231 V: back-feed. You couldn’t confirm it was dead.')
-      : says === 'live' ? T('Верно: напряжение есть — работы остановлены, питание снимут на вводе', 'Right: it’s live — work stopped, power will be cut at the supply')
-        : notes.length ? T('Засчитано, но: ', 'Accepted, but: ') + notes.join(', ') : T('Полная проверка по правилу «проверь–замерь–проверь»', 'A full prove–test–prove');
-    p.finish(score, 'thoroughness', text, () => done(says === 'live' && live ? 'fault' : 'ok'));
+    const text = outcome === 'fault'
+      ? gameText('Обнаружено напряжение. Тренажёр остановил работу.', 'Voltage detected. The simulation paused the job.', 'Кернеу анықталды. Симуляция жұмысты тоқтатты.')
+      : outcome === 'ok'
+        ? gameText('Проверка завершена.', 'Check complete.', 'Тексеру аяқталды.')
+        : gameText('Проверка не пройдена. Повторите упражнение.', 'Check incomplete or incorrect. Retry the exercise.', 'Тексеру толық емес немесе қате. Жаттығуды қайталаңыз.');
+    p.finish(score, 'thoroughness', text, () => done(outcome));
   };
   mgButton(p, T('Напряжения нет', 'It’s dead'), () => verdict('dead'));
   const stopBtn = mgButton(p, T('Есть напряжение — стоп', 'Live — stop'), () => verdict('live'));
@@ -855,6 +859,10 @@ testVoltageWithMultimeter = function () {
     isActionInProgress = false;
     if (result === 'fault') {
       showGuideToast(T('Мастер снял питание на вводе. Повторите проверку.', 'The supervisor cut power at the supply. Test again.'));
+      return;
+    }
+    if (result === 'retry') {
+      showGuideToast(gameText('Повторите проверку в симуляции.', 'Retry the check in the simulation.', 'Симуляциядағы тексеруді қайталаңыз.'));
       return;
     }
     _testVoltage2();

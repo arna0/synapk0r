@@ -81,3 +81,9 @@ function extractionOutcome(seconds) {
   if (seconds > 30) return 'over';
   return 'in-range';
 }
+
+function meterExerciseOutcome({ decision, hasFault, observedFault, complete }) {
+  if (decision === 'live') return observedFault ? 'fault' : 'retry';
+  if (hasFault || !complete) return 'retry';
+  return 'ok';
+}
