@@ -98,7 +98,7 @@ async function checkRoomEffects(page) {
   await waitForText(page.locator('.service-outcome'), 'waited without an explanation');
   await page.screenshot({ path: `${screenshotDir}/cafe-tradeoff.png` });
   await page.getByRole('button', { name: /Sorry about the mistake/ }).click();
-  await page.locator('.dialog-option').filter({ hasText: '90 000' }).click();
+  await page.locator('.dialog-option').filter({ hasText: /90[ ,]000/ }).click();
   await page.locator('#victoryModal .btn-action').click();
   const form = page.locator('#careerReflection form');
   const score = await page.locator('#resFitScore').textContent();
@@ -109,6 +109,8 @@ async function checkRoomEffects(page) {
   await waitForText(form, 'Reflection saved on this device');
   assert.equal(await page.locator('#resFitScore').textContent(), score);
   await page.screenshot({ path: `${screenshotDir}/career-reflection.png`, fullPage: true });
+  await page.locator('#resultScreen button').filter({ hasText: 'Main menu' }).click();
+  await waitForText(page.locator('#careerProfile'), 'I’d try this again');
 
   await openRoom(page, 'doctor');
   const details = page.locator('#guideDetails');
