@@ -7,6 +7,13 @@
   --home-line: #d5d9ef;
   --home-accent: #493399;
   --primary: var(--home-accent);
+  --primary-hover: #372573;
+  --surface-white: var(--home-card);
+  --border-light: var(--home-line);
+  --text-primary: var(--home-ink);
+  --text-secondary: var(--home-muted);
+  --blue-bg: #e8e2f8;
+  --blue-text: var(--home-accent);
   color: var(--home-ink);
   background: radial-gradient(ellipse at 82% 15%, #d9d9fb 0%, transparent 44rem),
     linear-gradient(145deg, #fafaff, var(--home-surface) 60%, #e9eefc);
@@ -16,7 +23,19 @@
 #homeScreen .home-nav {
   background: rgba(247, 247, 255, 0.93);
   border-bottom-color: var(--home-line);
+  flex-wrap: wrap;
+  gap: 8px 12px;
 }
+#homeScreen .nav-right { min-width: 0; max-width: 100%; margin-left: auto; flex-wrap: wrap; }
+#homeScreen .feature-icon { color: var(--home-accent); background: #e8e2f8; }
+#homeScreen .audience-num { color: var(--home-accent); }
+.mode-mobile-frame #homeScreen .home-hero { grid-template-columns: minmax(0, 1fr); min-height: auto; gap: 30px; }
+.mode-mobile-frame #homeScreen .hero-stage { padding: 24px 0 72px; margin: 0 auto; }
+.mode-mobile-frame #homeScreen .stage-npc { width: 200px; top: -6px; }
+.mode-mobile-frame #homeScreen .stage-game { left: 0; bottom: 0; width: 190px; }
+.mode-mobile-frame #homeScreen :is(.hero-scroll, .stage-fit) { display: none; }
+.mode-mobile-frame #homeScreen .hero-proof { gap: 16px; flex-wrap: wrap; }
+.mode-mobile-frame #homeScreen .home-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #homeScreen :is(.logo-brand, .home-hero h1, .hero-proof b, .home-strip b, .module-body h3,
   .stage-npc b, .stage-npc p, .stage-game-head, .stage-fit-title, .stage-fit-row b,
   .feature h4, .audience h4, .home-footer-brand, .home-footer a, h2) { color: var(--home-ink); }

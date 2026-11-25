@@ -73,3 +73,17 @@ test('reduced motion keeps homepage controls visible and disables decorative loo
   await expect(page.locator('.hero-copy h1')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('.module-card').first().getByRole('button')).toBeVisible();
 });
+
+test('phone preview fits the homepage and keeps the device switcher reachable', async ({ page }) => {
+  await page.goto('/?lang=en', { waitUntil: 'domcontentloaded' });
+  await page.locator('#btnModeMobile').click();
+  await expect(page.locator('#appContainer')).toHaveClass(/mode-mobile-frame/);
+  await expect.poll(() => page.locator('#homeScreen').evaluate(screen => {
+    const nav = screen.querySelector('.home-nav');
+    const lastControl = screen.querySelector('#btnFullscreen').getBoundingClientRect();
+    return screen.scrollWidth <= screen.clientWidth + 1 &&
+      lastControl.right <= nav.getBoundingClientRect().right + 1;
+  })).toBe(true);
+  await page.locator('#btnModeDesktop').click();
+  await expect(page.locator('#appContainer')).toHaveClass(/mode-desktop/);
+});
