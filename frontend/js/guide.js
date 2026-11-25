@@ -116,6 +116,8 @@ function renderGuide(force) {
   const panel = document.getElementById('guidePanel');
   if (!panel) return;
   const g = getGuideState();
+  const actionButton = document.getElementById('guidedAction');
+  if (actionButton) actionButton.disabled = isActionInProgress || isIntroVisible();
   const signature = currentProfession + '|' + g.idx + '|' + g.current.task + '|' + g.steps.map(s => s.done ? 1 : 0).join('');
   if (!force && signature === lastGuideSignature) return;
   lastGuideSignature = signature;

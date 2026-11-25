@@ -3,12 +3,12 @@
 function animateHandPunch(onComplete) {
   if (!handsGroup || !rightHand) { if (onComplete) onComplete(); return; }
   handsGroup.userData.animating = true;
-  let progress = 0;
+  const started = performance.now();
   const owner = runNumber;
 
-  function step() {
+  function step(now) {
     if (owner !== runNumber) return;
-    progress += 0.1;
+    const progress = (now - started) / 210;
     if (progress <= 0.5) {
       rightHand.position.z = -0.55 - progress * 0.4;
     } else if (progress <= 1.0) {
@@ -21,7 +21,7 @@ function animateHandPunch(onComplete) {
     }
     requestAnimationFrame(step);
   }
-  step();
+  requestAnimationFrame(step);
 }
 
 function showActionProgressBar(title, durationMs, onFinished) {
