@@ -105,6 +105,7 @@ function startBaristaVR() {
 
   isActionInProgress = false;
   resetSafetyToolsUI();
+  cafeServicePriority = '';
   state.quest = 1;
   state.step = 0;
   state.timer = 0;

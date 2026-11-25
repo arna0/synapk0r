@@ -10,6 +10,14 @@ let itDisplayMode = 'alert';
 let itChartTime = 0;
 let itLastChartUpdate = -1;
 let itCaseIndex = -1;
+let itRecoveryRetries = 0;
+let itLastRecovery = '';
+
+const IT_RECOVERY_OPTIONS = {
+  PAYMENT_REGION: 'Вернуть последнюю рабочую версию',
+  POOL_TIMEOUT: 'Снизить нагрузку на сервис бронирования',
+  READ_ONLY: 'Направить запись на доступный для записи узел'
+};
 
 const IT_PORT_POS = { x: 1.53, y: 1.255, z: -1.19 };
 const IT_CABLE_LOOSE = { x: 1.6, y: 0.95, z: -1.12 };
@@ -80,6 +88,7 @@ function itCase() { return IT_CASES[itCaseIndex]; }
 
 function resetItEnvironment() {
   itWorldStatus = 'down';
+  itLastRecovery = '';
   itDisplayMode = 'alert';
   itChartTime = 0;
   itLastChartUpdate = -1;
@@ -140,7 +149,7 @@ function drawItDashboard(mode) {
     ctx.fillText('Подозрение: база данных db-01', 22, 322);
   } else {
     ctx.fillStyle = '#6EE7B7';
-    ctx.fillText('HTTP 200 OK · ответ 84 мс', 22, 296);
+    ctx.fillText(itLastRecovery || 'HTTP 200 OK · ответ 84 мс', 22, 296);
     ctx.fillText('Инцидент #412 закрыт', 22, 322);
   }
   tex.needsUpdate = true;
@@ -412,6 +421,7 @@ registerScenario({
   reset: resetItEnvironment,
   build: buildItEnvironment,
   update: updateItEnvironment,
+  briefing() { return '<div class="work-tickets"><span>#412 · shop.kz</span><span>/checkout</span></div>'; },
   steps: [
     {
       id: 'monitorDash', name: 'Изучите алерт мониторинга', short: 'Алерт', hint: 'Открыть алерт',
@@ -550,9 +560,11 @@ registerScenario({
 SCENARIOS.it.challenge = {
   ...SCENARIOS.it,
   variant: 'challenge',
+  briefing() { return `<div class="work-tickets"><span>shop.kz</span><span>${itCase().endpoint}</span></div>`; },
   reset() {
     resetItEnvironment();
     itCaseIndex = (itCaseIndex + 1) % IT_CASES.length;
+    itRecoveryRetries = 0;
   },
   questTitle: 'IT · Новый инцидент',
   intro: {
@@ -598,14 +610,46 @@ SCENARIOS.it.challenge = {
         drawItDashboard('incident');
       }
     }
+  }, {
+    key: 'recovery', kind: 'hard', stepLabel: 'Выберите действие и проверьте результат',
+    questTitle: 'IT · Проверка восстановления',
+    guideTask: 'Выберите действие по журналу',
+    guideHow: 'Сравните ошибку в журнале с предложенными действиями.',
+    prompt() {
+      return `
+        ${itRecoveryRetries ? `<p class="service-outcome" role="status" id="itRecoveryStatus">${itCase().endpoint} · HTTP 503 · <span>Сбой сохраняется. Сверьтесь с журналом и попробуйте другой вариант.</span></p>` : ''}
+        <p class="case-question">Что поможет восстановить сервис в этом сценарии?</p>
+        <pre class="case-log">${itCase().lines.join('\n')}</pre>`;
+    },
+    get options() {
+      return Object.entries(IT_RECOVERY_OPTIONS).map(([id, text]) => ({
+        id, text, label: id.toLowerCase(),
+        score: id === itCase().code ? (itRecoveryRetries > 0 ? 50 : 100) : 0
+      }));
+    },
+    onAnswer(option) {
+      if (option.id !== itCase().code) {
+        itRecoveryRetries++;
+        itWorldStatus = 'down';
+        drawItDashboard('incident');
+        return false;
+      }
+      itWorldStatus = 'restored';
+      itLastRecovery = `${itCase().endpoint} · HTTP 200`;
+      drawItDashboard('ok');
+      return true;
+    }
   }],
-  victory: { title: 'Разбор инцидента завершён', text: 'Отчёт объяснит, какая строка журнала указывает на причину.' },
+  victory: { title: 'Разбор инцидента завершён', text: 'Контрольный запрос успешен: HTTP 200. В отчёте указана причина сбоя.' },
   report: {
     stepsLabel: 'Точность действий при инциденте',
     hardLabel: 'Причина сбоя по журналу',
     softLabel: 'Коммуникация с заказчиком',
     timeLabel: 'Время сценария',
     evidence: () => itCase().code,
-    competencies: ({ answers }) => [Number(answers.evidence) === itCase().correct ? itCase().success : itCase().explanation]
+    competencies: ({ answers }) => [
+      Number(answers.evidence) === itCase().correct ? itCase().success : itCase().explanation,
+      itRecoveryRetries ? 'После повторной попытки контрольный запрос прошёл успешно.' : 'Вы восстановили сервис с первой попытки и получили HTTP 200.'
+    ]
   }
 };

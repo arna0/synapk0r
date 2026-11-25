@@ -21,3 +21,10 @@ test('component results are bounded and a perfect run earns 100', () => {
   assert.equal(scope.evaluateBaristaRun(60, 'C', 'high').procedure, 0);
   assert.equal(scope.evaluateBaristaRun(60, 'C', 'high').score, 13);
 });
+
+test('handling the queue and the guest measures two different decisions', () => {
+  const result = scope.evaluateBaristaRun(0, 'B', 'optimal', 'queue');
+  assert.equal(result.service, 40);
+  assert.equal(result.guest, 100);
+  assert.equal(result.score, 94);
+});

@@ -198,6 +198,7 @@ function renderScenarioHUD() {
   if (!def || !hud || scenarioState.phase !== 'steps') return;
   const cur = def.steps[scenarioState.step];
   hud.innerHTML = `
+    ${def.briefing?.(scenarioState.step) ?? ''}
     <div class="steps-bar">
       ${def.steps.map((s, idx) => `
         <div class="step-pill ${idx < scenarioState.step ? 'done' : (idx === scenarioState.step ? 'active' : '')}">
@@ -259,7 +260,11 @@ function answerScenarioDecision(optionId) {
   sessionEvents.push({ t: scenarioNow(), action: `DECISION_${d.key.toUpperCase()}_${opt.label}`, ok: opt.score >= 100 });
   if (opt.score >= 100) playSuccessChime();
   else playTone(205, 'triangle', 0.14, 0.10);
-  d.onAnswer?.(opt);
+  if (d.onAnswer?.(opt) === false) {
+    startScenarioDecision(scenarioState.decision);
+    document.querySelector('#hudDockInner .scenario-option')?.focus();
+    return;
+  }
 
   if (scenarioState.decision + 1 < def.decisions.length) {
     startScenarioDecision(scenarioState.decision + 1);
@@ -334,13 +339,13 @@ function showScenarioReport(def) {
 
   setResultTexts({
     hardLabel: r.stepsLabel, hard: accuracy + '%',
-    handsLabel: r.hardLabel, hands: hard >= 100 ? 'Верно' : (hard >= 40 ? 'Частично' : 'Неверно'),
+    handsLabel: r.hardLabel, hands: isChallenge ? (def.decisions[0].options.find(o => o.id === scenarioState.answers.evidence)?.score === 100 ? 'Верно' : 'Неверно') : (hard >= 100 ? 'Верно' : hard >= 40 ? 'Частично' : 'Неверно'),
     softLabel: isChallenge ? 'Найдено в журнале' : r.softLabel, soft: isChallenge ? r.evidence() : soft + '%',
     timeLabel: r.timeLabel, time: state.timer + ' сек',
     xp: '⚡ +' + Math.max(100, score * 9) + ' XP'
   });
   const handsEl = document.getElementById('statHands');
-  if (handsEl) handsEl.style.color = hard >= 100 ? 'var(--emerald-text)' : 'var(--rose)';
+  if (handsEl) handsEl.style.color = handsEl.textContent === 'Верно' ? 'var(--emerald-text)' : 'var(--rose)';
   showScreen('resultScreen');
   renderScenarioScore(score);
 

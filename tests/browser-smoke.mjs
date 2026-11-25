@@ -33,11 +33,23 @@ async function finishChallenge(page, option, expectedDecision, evidence) {
   await waitForText(page, evidence);
   assert.match(await page.locator('.case-log').textContent(), new RegExp(evidence));
   await page.getByRole('button', { name: option }).click();
+  const recoveryOptions = {
+    PAYMENT_REGION: 'Roll back to the last working release',
+    POOL_TIMEOUT: 'Reduce load on the booking service',
+    READ_ONLY: 'Route writes to the writable node'
+  };
+  if (evidence === 'PAYMENT_REGION') {
+    await page.getByRole('button', { name: recoveryOptions.POOL_TIMEOUT }).click();
+    await waitForText(page.locator('#itRecoveryStatus'), 'The outage persists');
+    assert.equal(await page.evaluate(() => itWorldStatus), 'down');
+  }
+  await page.getByRole('button', { name: recoveryOptions[evidence] }).click();
+  await waitForText(page.locator('#victoryModal'), 'HTTP 200');
   await page.locator('#victoryModal .btn-action').click();
   await page.locator('#localDebrief').waitFor();
   assert.equal(await page.locator('#statHands').textContent(), expectedDecision);
   assert.equal(await page.locator('#statSoft').textContent(), evidence);
-  assert.equal(await page.evaluate(() => itWorldStatus), expectedDecision === 'Correct' ? 'working' : 'down');
+  assert.equal(await page.evaluate(() => itWorldStatus), 'restored');
 }
 
 async function openRoom(page, module) {
@@ -81,8 +93,29 @@ async function checkRoomEffects(page) {
   await chooseObject(page, 'portafilter');
   await page.waitForFunction(() => state.step === 1 && Math.abs(portafilterObj.position.x + 1.18) < 0.01);
   await page.screenshot({ path: `${screenshotDir}/barista-room.png` });
+  await page.evaluate(() => startQuest2Conflict());
+  await page.getByRole('button', { name: 'Serve the two queued orders first' }).click();
+  await waitForText(page.locator('.service-outcome'), 'waited without an explanation');
+  await page.screenshot({ path: `${screenshotDir}/cafe-tradeoff.png` });
+  await page.getByRole('button', { name: /Sorry about the mistake/ }).click();
+  await page.locator('.dialog-option').filter({ hasText: '90 000' }).click();
+  await page.locator('#victoryModal .btn-action').click();
+  const form = page.locator('#careerReflection form');
+  const score = await page.locator('#resFitScore').textContent();
+  await form.locator('[name=enjoyed]').selectOption('Приготовление напитка');
+  await form.locator('[name=drained]').selectOption('Распределение заказов');
+  await form.locator('[name=again]').selectOption('Хочу попробовать ещё');
+  await form.getByRole('button', { name: 'Save reflection' }).click();
+  await waitForText(form, 'Reflection saved on this device');
+  assert.equal(await page.locator('#resFitScore').textContent(), score);
+  await page.screenshot({ path: `${screenshotDir}/career-reflection.png`, fullPage: true });
 
   await openRoom(page, 'doctor');
+  const details = page.locator('#guideDetails');
+  assert.equal(await details.getAttribute('open'), null);
+  await details.locator('summary').click();
+  await page.locator('#guideHow').waitFor();
+  await details.locator('summary').click();
   await chooseObject(page, 'patientCard');
   await page.waitForFunction(() => scenarioState.step === 1);
   await page.screenshot({ path: `${screenshotDir}/doctor-room.png` });
@@ -95,6 +128,9 @@ async function checkRoomEffects(page) {
   await page.locator('#homeScreen.active').waitFor();
   assert.equal(await page.locator('.mg').count(), 0);
   await openRoom(page, 'safety');
+  await page.evaluate(() => operateValve(0));
+  await waitForText(page.locator('#safetyAlertBanner'), 'The valve stayed closed');
+  assert.deepEqual(await page.evaluate(() => ({ errors: safetyState.errors, open: safetyState.valvesOpened[0] })), { errors: 1, open: false });
   await page.screenshot({ path: `${screenshotDir}/safety-room.png` });
 }
 
@@ -141,7 +177,7 @@ try {
   }
   await mobile.waitForFunction(() => document.getElementById('guideTask').textContent === 'Мониторинг ескертуін оқыңыз');
   await mobile.screenshot({ path: `${screenshotDir}/it-kazakh-mobile.png` });
-  console.log('Browser smoke passed: three IT cases, guided incident, four room launches, exit mid-action, Kazakh touch launch, and offline report.');
+  console.log('Browser smoke passed: three IT cases, guided incident, four room launches, exit mid-action, Kazakh touch launch, offline report, café priorities, local reflection, and the safety checklist guard.');
 } finally {
   await browser.close();
 }

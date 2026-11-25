@@ -345,6 +345,9 @@ registerScenario({
   },
   build: buildDoctorEnvironment,
   update: updateDoctorEnvironment,
+  briefing(step) {
+    return step > 0 ? '<div class="work-tickets"><span>Карта пациента</span><span>Осмотр и измерения</span></div>' : '';
+  },
   steps: [
     {
       id: 'patientCard', name: 'Изучите карту и жалобы', short: 'Карта', hint: 'Открыть карту пациента',

@@ -844,6 +844,10 @@ function testVoltageWithMultimeter() {
       safetyState.errors++;
       logAction('TEST_VOLTAGE_LIVE_DANGER', Date.now(), false);
       showSafetyAlert('⚡ ВНИМАНИЕ! Напряжение 380V НЕ снято! Опасность поражения током!');
+    } else if (!safetyState.ppeEquipped || !safetyState.lockoutApplied) {
+      safetyState.errors++;
+      logAction('VIOLATION_VOLTAGE_BEFORE_CHECKLIST', Date.now(), false);
+      showSafetyAlert('Сначала выполните предыдущие шаги задания. Проверка не засчитана.');
     } else {
       safetyState.voltageTested = true;
       logAction('TEST_VOLTAGE_CONFIRMED_ZERO', Date.now(), true);
@@ -958,6 +962,7 @@ function applyLotoLock() {
   animateHandPunch(() => {
     if (lotoPadlockMesh) lotoPadlockMesh.visible = true;
     safetyState.lockoutApplied = true;
+    safetyState.voltageTested = false;
     playBreakerClack();
     playSuccessChime();
 
@@ -976,7 +981,16 @@ function applyLotoLock() {
   });
 }
 
+function canOperateScenarioValve() {
+  if (safetyState.ppeEquipped && safetyState.powerState === 'OFF' && safetyState.lockoutApplied && safetyState.voltageTested) return true;
+  safetyState.errors++;
+  logAction('VIOLATION_VALVE_BEFORE_CHECKLIST', Date.now(), false);
+  showSafetyAlert('Сначала выполните предыдущие шаги задания. Клапан остался закрыт.');
+  return false;
+}
+
 function operateValve(idx) {
+  if (!canOperateScenarioValve()) return;
   if (safetyState.valvesOpened[idx]) {
     showSafetyAlert(`Клапан ${idx + 1} уже открыт, давление стравливается.`);
     return;

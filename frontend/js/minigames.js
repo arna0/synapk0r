@@ -850,7 +850,7 @@ handleSafetyInteraction = function (targetName) {
 const _testVoltage2 = testVoltageWithMultimeter;
 testVoltageWithMultimeter = function () {
   if (isActionInProgress || mgActive) return;
-  if (safetyState.powerState === 'ON') return _testVoltage2();  // the original flags the live test
+  if (safetyState.powerState === 'ON' || !safetyState.ppeEquipped || !safetyState.lockoutApplied) return _testVoltage2();
   isActionInProgress = true;
   mgVoltage((result) => {
     isActionInProgress = false;
@@ -864,7 +864,9 @@ testVoltageWithMultimeter = function () {
 
 const _operateValve2 = operateValve;
 operateValve = function (idx) {
-  if (safetyState.valvesOpened[idx] || isActionInProgress || mgActive) return _operateValve2(idx);
+  if (isActionInProgress || mgActive) return;
+  if (safetyState.valvesOpened[idx]) return _operateValve2(idx);
+  if (!canOperateScenarioValve()) return;
   isActionInProgress = true;
   mgValve(idx, () => { isActionInProgress = false; _operateValve2(idx); });
 };

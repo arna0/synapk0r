@@ -337,7 +337,7 @@ The base prototype was created before the qualifying stage started: the commits 
 2. Include the file in `frontend/index.html` after `scenario.js` and add a card with `onclick="startScenario('<id>')"`.
 3. Add `<id>` to `MODULES` (`backend/src/validate.js`), a description to `MODULE_CONTEXT` (`backend/src/feedback.js`), and a rule-based debrief to `backend/src/rules.js`.
 
-Direct link to a module: `index.html?module=<id>` (`safety`, `barista`, `it`, `doctor`). The rotating IT evidence challenge opens at `frontend/?module=it&variant=challenge&lang=en`.
+Direct link to a module: `index.html?module=<id>` (`safety`, `barista`, `it`, `doctor`). The rotating IT evidence challenge asks for a diagnosis, then a recovery action with a status check and retry. It opens at `frontend/?module=it&variant=challenge&lang=en`.
 
 ## 10. Team
 
@@ -350,6 +350,10 @@ Direct link to a module: `index.html?module=<id>` (`safety`, `barista`, `it`, `d
 
 - Walking person: Renderpeople "Nathan" (animated), from rigmodels.com. Free for personal use by students; commercial use needs a licence from rigmodels.com.
 - Scanned hand: from rigmodels.com, same terms.
+
+### Career exploration in the simulator
+
+The café rush asks players to balance two waiting orders with a remake. The report records the effect of that choice. Each profession ends with an optional reflection about enjoyment, effort and interest in a second run. Reflections stay on the current device. The career report includes an activity students can try during the week.
 
 ### Browser tests and headed demos
 

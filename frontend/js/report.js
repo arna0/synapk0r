@@ -12,7 +12,7 @@ function triggerEpicVictory() {
 
   // Show Victory Overlay Modal (texts may have been replaced by the safety module)
   document.getElementById('victoryTitle').innerText = 'Симуляция успешно пройдена!';
-  document.getElementById('victoryText').innerText = 'Вы приготовили напиток и приняли два решения. В отчёте видно, как вы справились с каждым заданием.';
+  document.getElementById('victoryText').innerText = 'Вы приготовили напиток и приняли решения. В отчёте видно, как вы справились с каждым заданием.';
   const victoryModal = document.getElementById('victoryModal');
   if (victoryModal) victoryModal.style.display = 'flex';
 }
@@ -34,11 +34,12 @@ function renderScenarioScore(score) {
 }
 
 // Recipe execution, communication and purchasing are separate parts of the run.
-function evaluateBaristaRun(misclicks, conflictChoice, budgetChoice) {
+function evaluateBaristaRun(misclicks, conflictChoice, budgetChoice, priority) {
   const procedure = Math.max(0, 100 - misclicks * 2);
   const guest = { A: 0, B: 100, C: 50 }[conflictChoice] ?? 0;
   const inventory = budgetChoice === 'optimal' ? 100 : 0;
-  return { procedure, guest, inventory, score: Math.round(procedure * 0.5 + guest * 0.25 + inventory * 0.25) };
+  const service = priority === 'guest' ? 65 : priority === 'queue' ? 40 : priority === 'coordinate' ? 100 : guest;
+  return { procedure, guest, inventory, service, score: Math.round(procedure * 0.5 + guest * 0.15 + service * 0.10 + inventory * 0.25) };
 }
 
 function showSafetyReportScreen() {
@@ -83,7 +84,7 @@ function showAIReportScreen() {
     return;
   }
   const { procedure: accuracy, guest, inventory, score } = evaluateBaristaRun(
-    state.misclicks, state.conflictChoice, state.budgetChoice
+    state.misclicks, state.conflictChoice, state.budgetChoice, cafeServicePriority
   );
   setResultTexts({
     hardLabel: 'Точность действий по рецепту', hard: accuracy + '%',
@@ -107,10 +108,12 @@ function showAIReportScreen() {
       total_time_sec: state.timer,
       conflict_choice: conflictLabels[state.conflictChoice] || 'none',
       conflict_response_sec: state.conflictResponseSec,
+      service_priority: cafeServicePriority || 'none',
       budget_choice: state.budgetChoice || 'none'
     },
     events: sessionEvents,
     observations: [
+      [cafeServicePriority === 'coordinate', CAFE_SERVICE_OPTIONS.coordinate[1], CAFE_SERVICE_OPTIONS[cafeServicePriority]?.[1] || ''],
       [accuracy === 100, 'Рецепт выполнен без лишних действий.', 'При повторе сначала найдите нужный предмет, затем действуйте.'],
       [guest === 100, 'Вы извинились и предложили переделать напиток.', 'В ответе гостю стоило признать ошибку и предложить переделать напиток.'],
       [inventory === 100, 'Выбран заказ, покрывающий расход в пределах бюджета.', 'Заказ должен покрывать недельные 35 кг и укладываться в бюджет.']

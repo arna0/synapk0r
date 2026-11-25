@@ -81,7 +81,7 @@ function getGuideState() {
   const cookSteps = state.stepsConfig.map((st, i) => ({ task: st.name, done: state.quest > 1 || i < state.step }));
   const steps = [
     ...cookSteps,
-    { task: 'Ответить гостю', done: state.quest > 2 },
+    { task: 'Очередь и ответ гостю', done: state.quest > 2 },
     { task: 'Рассчитать закупку', done: !!state.budgetChoice }
   ];
   if (state.quest === 1) {
@@ -94,8 +94,8 @@ function getGuideState() {
   }
   if (state.quest === 2) {
     return { steps, idx: cookSteps.length, current: {
-      task: 'Успокойте недовольного гостя',
-      how: 'Прочитайте жалобу и выберите ответ <b>внизу экрана</b>.',
+      task: cafeServicePriority ? 'Ответьте гостю' : 'Распределите задачи в час пик',
+      how: 'Посмотрите очередь и выберите действие <b>внизу экрана</b>.',
       why: 'Оценивается умение признать ошибку и предложить решение, а не спорить.',
       target: null } };
   }
@@ -302,6 +302,7 @@ function isIntroVisible() {
 }
 
 function showIntro(profession, content = INTRO_CONTENT[profession]) {
+  document.getElementById('guideDetails').open = false;
   const overlay = document.getElementById('introOverlay');
   if (!overlay) return;
   let skip = false;
