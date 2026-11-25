@@ -24,6 +24,29 @@ async function chooseObject(page, name) {
   }, name);
 }
 
+async function clickSceneObject(page, name) {
+  const point = await page.evaluate(objectName => {
+    const object = interactiveObjects.find(item => item.name === objectName);
+    const projected = new THREE.Box3().setFromObject(object).getCenter(new THREE.Vector3()).project(camera);
+    const bounds = renderer.domElement.getBoundingClientRect();
+    const centerX = ((projected.x + 1) * bounds.width) / 2 + bounds.left;
+    const centerY = ((1 - projected.y) * bounds.height) / 2 + bounds.top;
+    const sample = new THREE.Vector2();
+    for (const offset of [0, 8, -8, 16, -16, 24, -24, 32, -32]) {
+      for (const dx of [0, 8, -8, 16, -16, 24, -24, 32, -32]) {
+        const x = Math.round(centerX + dx);
+        const y = Math.round(centerY + offset);
+        if (document.elementFromPoint(x, y) !== renderer.domElement) continue;
+        sample.set(((x - bounds.left) / bounds.width) * 2 - 1, 1 - ((y - bounds.top) / bounds.height) * 2);
+        if (getSceneInteractionTarget(sample) === object) return { x, y };
+      }
+    }
+    return null;
+  }, name);
+  assert.ok(point, `No unobstructed click target found for ${name}`);
+  await page.mouse.click(point.x, point.y);
+}
+
 async function finishChallenge(page, option, expectedDecision, evidence) {
   await page.locator('#introOverlay .btn-start').click();
   await chooseObject(page, 'serverDb'); // A wrong object gets a hint and leaves the step active.
@@ -90,7 +113,9 @@ async function playGuidedIncident(page) {
 
 async function checkRoomEffects(page) {
   await openRoom(page, 'barista');
-  await chooseObject(page, 'portafilter');
+  await page.getByRole('button', { name: 'Capture mouse' }).click();
+  await waitForText(page.locator('#desktopAimHint'), 'Mouse capture unavailable');
+  await clickSceneObject(page, 'portafilter');
   await page.waitForFunction(() => state.step === 1 && Math.abs(portafilterObj.position.x + 1.18) < 0.01);
   await page.screenshot({ path: `${screenshotDir}/barista-room.png` });
   await page.evaluate(() => startQuest2Conflict());
@@ -115,9 +140,11 @@ async function checkRoomEffects(page) {
   await openRoom(page, 'doctor');
   const details = page.locator('#guideDetails');
   assert.equal(await details.getAttribute('open'), null);
-  await details.locator('summary').click();
+  await details.locator('summary').focus();
+  await page.keyboard.press('Space');
   await page.locator('#guideHow').waitFor();
-  await details.locator('summary').click();
+  await page.keyboard.press('Space');
+  assert.equal(await details.getAttribute('open'), null);
   await chooseObject(page, 'patientCard');
   await page.waitForFunction(() => scenarioState.step === 1);
   await page.screenshot({ path: `${screenshotDir}/doctor-room.png` });
@@ -137,7 +164,16 @@ async function checkRoomEffects(page) {
 }
 
 try {
-  const desktop = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const desktop = await browser.newContext({
+    viewport: { width: 1280, height: 720 },
+    ...(process.env.SYNAPKOR_RECORD_VIDEO === '1' && {
+      recordVideo: { dir: `${screenshotDir}/video`, size: { width: 960, height: 540 } }
+    })
+  });
+  await desktop.addInitScript(() => {
+    Element.prototype.requestPointerLock = () =>
+      Promise.reject(new DOMException('Pointer capture unavailable in test', 'NotAllowedError'));
+  });
   const page = await desktop.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -179,7 +215,7 @@ try {
   }
   await mobile.waitForFunction(() => document.getElementById('guideTask').textContent === 'Мониторинг ескертуін оқыңыз');
   await mobile.screenshot({ path: `${screenshotDir}/it-kazakh-mobile.png` });
-  console.log('Browser smoke passed: three IT cases, guided incident, four room launches, exit mid-action, Kazakh touch launch, offline report, café priorities, local reflection, and the safety checklist guard.');
+  console.log('Browser smoke passed: three IT cases, guided incident, four room launches, real 3D click after capture rejection, keyboard guide, exit mid-action, Kazakh touch launch, offline report, café priorities, local reflection, and the safety checklist guard.');
 } finally {
   await browser.close();
 }

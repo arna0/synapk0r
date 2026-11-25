@@ -877,7 +877,9 @@ applyLotoLock = function () {
   const r = _applyLotoLock2();
   if (!wasLocked && safetyState.lockoutApplied && !safetyRun.colleagueDone) {
     safetyRun.colleagueDone = true;
+    const runId = scenarioState.runId;
     setTimeout(() => {
+      if (!isScenarioRunActive(runId)) return;
       if (safetyState.completed || mgActive) { safetyRun.colleagueDone = false; return; }
       isActionInProgress = true;
       mgColleague(() => { isActionInProgress = false; });

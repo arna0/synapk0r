@@ -1046,8 +1046,10 @@ function checkSafetyCompletion() {
 
   if (isReady && !safetyState.completed) {
     safetyState.completed = true;
+    const runId = scenarioState.runId;
     clearInterval(state.timerInterval);
     setTimeout(() => {
+      if (!isScenarioRunActive(runId)) return;
       // Deactivate Emergency Strobe & turn on steady Green Safe Beacon
       if (emergencyBeaconLight) emergencyBeaconLight.intensity = 0;
       if (greenLedMesh) greenLedMesh.material.emissiveIntensity = 2.0;

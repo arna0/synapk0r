@@ -501,6 +501,17 @@ html, body {
   z-index: 22;
   pointer-events: none;
 }
+.desktop-aim-hint button {
+  pointer-events: auto;
+  color: var(--text-dark, #f8fafc);
+  background: #1e293b;
+  border: 1px solid #64748b;
+  border-radius: 12px;
+  padding: 3px 8px;
+  font: inherit;
+  cursor: pointer;
+}
+.mode-mobile-frame .desktop-aim-hint { display: none; }
 @media (max-width: 768px) {
   .desktop-aim-hint { display: none !important; }
 }
