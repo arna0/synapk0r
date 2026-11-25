@@ -221,6 +221,7 @@ function mgShot(done) {
   const stop = () => {
     if (stopped) return;
     stopped = true;
+    state.extractionOutcome = extractionOutcome(t);
     const err = t < 25 ? 25 - t : t > 30 ? t - 30 : 0;
     const score = 100 - err * 12;
     p.finish(score, 'timing',

@@ -301,7 +301,7 @@ function cafeOnSkill(trait, score) {
     npcMood(-0.15, 'shake');
     const r = CAFE_REACT()[trait];
     npcSay(r[0]);
-    cafe.issues.push(r[1]);
+    cafe.issues.push(trait === 'timing' && state.extractionOutcome === 'under' ? 'sour' : r[1]);
   }
 }
 
@@ -329,6 +329,11 @@ function cafeComplaint() {
   const tone = m >= 0.6 ? 'polite' : m >= 0.35 ? 'annoyed' : 'angry';
   const main = cafe.issues.find((i) => i !== 'fumble') || (cafe.issues.includes('fumble') ? 'fumble' : 'sugar');
   const lines = {
+    sour: {
+      polite: gameText('Извините, кофе получился кислым. Можно переделать?', 'Sorry, this coffee tastes sour. Could you remake it?', 'Кешіріңіз, кофе қышқыл болып қалды. Қайта дайындай аласыз ба?'),
+      annoyed: gameText('Кофе получился кислым. Кажется, экстракция закончилась слишком рано.', 'The coffee tastes sour. I think the shot finished too early.', 'Кофе қышқыл. Экстракция тым ерте аяқталған сияқты.'),
+      angry: gameText('Кофе слишком кислый. Пожалуйста, переделайте его.', 'This coffee is far too sour. Please remake it.', 'Кофе тым қышқыл. Қайта дайындап беріңізші.'),
+    },
     taste: {
       polite: T('Извините, кофе получился горьким. Можно переделать?', 'Sorry, the coffee came out bitter. Could you redo it?'),
       annoyed: T('Это горько. Вы же видели, как долго шёл кофе?', 'This is bitter. Didn’t you see how long the shot ran?'),
@@ -423,7 +428,7 @@ function clinicPatientSeat() {
   clinic.startedAt = Date.now();
   clinic.slow = false;
   NPC.seen.coughAt = Date.now() + 8000;
-  npcShow('doctor', { role: T('Пациент', 'Patient'), mood: 0.55, sit: true, at: [DOC_PATIENT.x, DOC_PATIENT.z], faceYaw: 0, sitY: -0.45 })
+  npcShow('doctor', { role: T('Пациент', 'Patient'), mood: 0.55, sit: true, at: [DOC_PATIENT.x, DOC_PATIENT.z + 0.16], faceYaw: 0, sitY: -0.25 })
     .then((ok) => {
       if (!ok) return;
       npcHidePlaceholder(scene.getObjectByName('patientBody'));

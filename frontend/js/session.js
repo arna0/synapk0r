@@ -75,3 +75,9 @@ function baristaOrder() {
 function formatTenge(value) {
   return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₸';
 }
+
+function extractionOutcome(seconds) {
+  if (seconds < 25) return 'under';
+  if (seconds > 30) return 'over';
+  return 'in-range';
+}

@@ -219,7 +219,7 @@ function startQuest3Management() {
     `Сұраныс: ${order.demand} кг. Қоймада: ${order.stock} кг. Бюджет: ${formatTenge(order.budget)}.`
   );
   const title = gameText('Заказ зерна на неделю', 'Weekly coffee order', 'Апталық кофе дәні тапсырысы');
-  hud.innerHTML = `<p><strong>${title}</strong></p><p>${statement}</p><div>
+  hud.innerHTML = `<div class="release-order-prompt"><strong>${title}</strong><p>${statement}</p></div><div>
     ${Object.entries(order.options).map(([id, [mass, price]], i) =>
       `<button type="button" class="dialog-option release-choice" onclick="handleBudgetAnswer('${id}')">
         <span class="dialog-tag">${i + 1}</span>

@@ -114,6 +114,7 @@ function startBaristaVR() {
   state.timer = 0;
   state.misclicks = 0;
   state.conflictChoice = '';
+  state.extractionOutcome = null;
   state.budgetChoice = '';
   resetSessionEvents();
   document.getElementById('vrTimer').innerText = '00:00';

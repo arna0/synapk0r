@@ -99,3 +99,12 @@ test('the Barista replay uses a different purchasing case with one valid order',
     assert.equal(valid[0][0], 'optimal');
   }
 });
+
+test('espresso feedback distinguishes short and long extraction', () => {
+  const ctx = vm.createContext({});
+  vm.runInContext(script('session'), ctx);
+  assert.equal(vm.runInContext('extractionOutcome(17)', ctx), 'under');
+  assert.equal(vm.runInContext('extractionOutcome(25)', ctx), 'in-range');
+  assert.equal(vm.runInContext('extractionOutcome(30)', ctx), 'in-range');
+  assert.equal(vm.runInContext('extractionOutcome(35)', ctx), 'over');
+});

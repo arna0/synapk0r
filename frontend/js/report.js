@@ -31,6 +31,8 @@ function setResultTexts(t) {
   set('resVerdictGrade', t.grade); set('resVerdictDesc', t.desc);
   set('resPraiseTitle', t.praise); set('resVerdictBadge', t.badge);
   set('resTotalXp', t.xp);
+  set('scenarioScoreLabel', gameText('БАЛЛ СИМУЛЯЦИИ', 'SCENARIO SCORE', 'СИМУЛЯЦИЯ БАЛЫ'));
+  set('reportFeedbackTitle', gameText('Разбор симуляции', 'Scenario debrief', 'Симуляция талдауы'));
   set('retryModeLabel', gameText('Самостоятельная попытка', 'Try independently', 'Өз бетіңізше орындау'));
   const comp = document.getElementById('resCompetencies');
   if (comp) comp.innerHTML = t.competencies.map(c => '• ' + c).join('<br>');
@@ -112,7 +114,7 @@ function showAIReportScreen() {
     desc: baristaPurchasingFeedback(state.budgetChoice),
     praise: gameText('Результат симуляции', 'Scenario performance', 'Симуляция нәтижесі'),
     badge: gameText('СМЕНА БАРИСТА', 'BARISTA SHIFT', 'БАРИСТА АУЫСЫМЫ'),
-    xp: '⚡ +950 XP',
+    xp: '⚡ +' + score * 9 + ' XP',
     competencies: [
       gameText('Техника: ', 'Drink technique: ', 'Сусын дайындау: ') + accuracy + '%',
       gameText('Ответ гостю: ', 'Customer response: ', 'Қонаққа жауап: ') + service + '%',

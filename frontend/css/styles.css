@@ -2160,3 +2160,13 @@ html[lang="kk"] .obj-label.target::before { content: 'Осында · '; }
 @media (prefers-reduced-motion: reduce) {
   #homeScreen *, #gameScreen * { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+#gameScreen .release-order-prompt { color: #edf2ff; margin-bottom: 12px; font-size: 14px; }
+#gameScreen .release-order-prompt p { color: #c8d1e2; margin: 4px 0 0; }
+.mode-mobile-frame .vr-status-left { min-width: 0; }
+.mode-mobile-frame .vr-status-pill { min-width: 0; }
+.mode-mobile-frame #vrQuestTitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 580px) {
+  .vr-status-left, .vr-status-pill { min-width: 0; }
+  #vrQuestTitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
