@@ -578,7 +578,8 @@ function mgLogs(done) {
 // Dead port: activity LEDs blink on every port except one.
 function mgPorts(done) {
   const p = mgPanel(T('Сервер db-01, задняя панель', 'db-01, rear panel'), T('На рабочих портах мигает индикатор. Найдите порт без связи.', 'Working ports blink. Find the port with no link.'));
-  const n = 8, dead = Math.floor(Math.random() * n);
+  const n = 8;
+  const dead = 0; // The same eth0 connector that is unplugged in the room.
   const wrap = document.createElement('div');
   wrap.className = 'mg-ports';
   p.body.appendChild(wrap);

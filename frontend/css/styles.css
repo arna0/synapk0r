@@ -2136,3 +2136,17 @@ html[lang="kk"] .obj-label.target::before { content: 'Осында · '; }
 #localDebrief h4 { margin: 12px 0 4px; }
 #localDebrief ul { margin: 4px 0 12px; padding-inline-start: 20px; }
 #itChallengeButton[hidden] { display: none; }
+
+/* Keep the evidence and its answer choices usable inside the HUD on narrow screens. */
+.case-log {
+  padding: 10px 12px;
+  border-inline-start: 2px solid #5ba9ce;
+  border-radius: 4px;
+  background: #0a141d;
+  color: #b9d7e7;
+  line-height: 1.55;
+  max-height: 10em;
+}
+.case-question { margin: 0; font-weight: 700; }
+#gameScreen .scenario-option:hover,
+#gameScreen .scenario-option:focus-visible { border-color: #73bfdc; }

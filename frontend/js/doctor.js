@@ -5,6 +5,7 @@
 
 let docCardScreen = null, docVitalsScreen = null;
 let docPatientTorso = null;
+let docLastMonitorFrame = -1;
 const docVitals = { temp: null, spo2: null, bp: null, lungs: null };
 const docTools = {};
 
@@ -47,7 +48,7 @@ function drawDocCard(open) {
   tex.needsUpdate = true;
 }
 
-function drawDocVitals() {
+function drawDocVitals(time = 0) {
   if (!docVitalsScreen) return;
   const { ctx, canvas, tex } = docVitalsScreen;
   ctx.fillStyle = '#0B1220';
@@ -64,7 +65,7 @@ function drawDocVitals() {
     ['Лёгкие', docVitals.lungs, docVitals.lungs ? '#FCA5A5' : null]
   ];
   rows.forEach(([label, val, color], i) => {
-    const y = 88 + i * 52;
+    const y = 74 + i * 43;
     ctx.fillStyle = '#94A3B8';
     ctx.font = '600 22px "Plus Jakarta Sans", sans-serif';
     ctx.fillText(label, 24, y);
@@ -72,11 +73,30 @@ function drawDocVitals() {
     ctx.font = '700 24px "JetBrains Mono", monospace';
     ctx.fillText(val || '— не измерено', 270, y);
   });
+  const y = 263;
+  ctx.strokeStyle = '#214638';
+  ctx.lineWidth = 1;
+  for (let x = 24; x <= canvas.width - 24; x += 18) {
+    ctx.beginPath(); ctx.moveTo(x, y - 17); ctx.lineTo(x, y + 18); ctx.stroke();
+  }
+  ctx.strokeStyle = docVitals.spo2 ? '#6ee7b7' : '#39544b';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  const width = canvas.width - 48;
+  for (let dx = 0; dx <= width; dx += 3) {
+    const phase = (dx / 130 - time * 1.6 + 10000) % 1;
+    const crest = Math.exp(-Math.pow((phase - 0.28) / 0.09, 2));
+    const wave = docVitals.spo2 ? crest * 21 - Math.exp(-Math.pow((phase - 0.42) / 0.06, 2)) * 5 : 0;
+    if (dx === 0) ctx.moveTo(24, y - wave);
+    else ctx.lineTo(24 + dx, y - wave);
+  }
+  ctx.stroke();
   tex.needsUpdate = true;
 }
 
 function buildDoctorEnvironment(group) {
   docVitals.temp = docVitals.spo2 = docVitals.bp = docVitals.lungs = null;
+  docLastMonitorFrame = -1;
 
   // Room: light tiles, mint walls, window light
   const tile = makeCanvasScreen(128, 128);
@@ -289,6 +309,10 @@ function useDoctorTool(name, target, title, ms, onMeasured, done) {
 }
 
 function updateDoctorEnvironment(time) {
+  if (docVitals.spo2 && time - docLastMonitorFrame >= 0.16) {
+    docLastMonitorFrame = time;
+    drawDocVitals(time);
+  }
   if (docPatientTorso) {
     const breath = 1 + Math.sin(time * 2.4) * 0.025;
     docPatientTorso.scale.set(breath, 1, breath);

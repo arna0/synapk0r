@@ -86,6 +86,8 @@ function startScenario(id, { challenge = false } = {}) {
   resetSessionEvents();
   Object.assign(scenarioState, { phase: 'steps', step: 0, decision: 0, answers: {}, answerTimes: {}, phaseStartedAt: Date.now() });
   if (def.reset) def.reset();
+  resetPlayerMotion();
+  document.getElementById('gameScreen').classList.remove('milk-pouring');
 
   document.getElementById('vrQuestTitle').innerText = def.questTitle;
   document.getElementById('vrTimer').innerText = '00:00';
@@ -116,6 +118,7 @@ function startScenario(id, { challenge = false } = {}) {
       def.build(group);
       group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
       scene.add(group);
+      enhanceScene(id);
       rebuildObjectLabels();
     }
     renderScenarioHUD();
@@ -254,7 +257,9 @@ function answerScenarioDecision(optionId) {
   scenarioState.answers[d.key] = opt.id;
   scenarioState.answerTimes[d.key] = Math.round((Date.now() - scenarioState.phaseStartedAt) / 100) / 10;
   sessionEvents.push({ t: scenarioNow(), action: `DECISION_${d.key.toUpperCase()}_${opt.label}`, ok: opt.score >= 100 });
-  playSuccessChime();
+  if (opt.score >= 100) playSuccessChime();
+  else playTone(205, 'triangle', 0.14, 0.10);
+  d.onAnswer?.(opt);
 
   if (scenarioState.decision + 1 < def.decisions.length) {
     startScenarioDecision(scenarioState.decision + 1);
@@ -330,7 +335,7 @@ function showScenarioReport(def) {
   setResultTexts({
     hardLabel: r.stepsLabel, hard: accuracy + '%',
     handsLabel: r.hardLabel, hands: hard >= 100 ? 'Верно' : (hard >= 40 ? 'Частично' : 'Неверно'),
-    softLabel: isChallenge ? 'Найдено в журнале' : r.softLabel, soft: isChallenge ? 'PAYMENT_REGION' : soft + '%',
+    softLabel: isChallenge ? 'Найдено в журнале' : r.softLabel, soft: isChallenge ? r.evidence() : soft + '%',
     timeLabel: r.timeLabel, time: state.timer + ' сек',
     xp: '⚡ +' + Math.max(100, score * 9) + ' XP'
   });
@@ -374,7 +379,9 @@ function tweenObject(obj, to, ms, done) {
   const from = obj.position.clone();
   const fromRot = obj.rotation.clone();
   const start = performance.now();
+  const runId = scenarioState.runId;
   function tick(now) {
+    if (!isScenarioRunActive(runId)) return;
     const k = Math.min(1, (now - start) / ms);
     const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
     obj.position.set(

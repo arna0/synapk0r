@@ -987,8 +987,14 @@ function operateValve(idx) {
     playValveHiss();
     const wheel = idx === 0 ? valve1Wheel : valve2Wheel;
     const particles = idx === 0 ? steamParticles1 : steamParticles2;
-    if (wheel) wheel.rotation.z += Math.PI * 2;
-    if (particles) particles.visible = true;
+    if (wheel) {
+      const { x, y, z } = wheel.position;
+      tweenObject(wheel, { x, y, z, rot: [wheel.rotation.x, wheel.rotation.y, wheel.rotation.z + Math.PI * 2] }, 760);
+    }
+    if (particles) {
+      particles.visible = true;
+      setTimeout(() => { particles.visible = false; }, 1650);
+    }
 
     safetyState.valvesOpened[idx] = true;
 
@@ -1053,6 +1059,9 @@ function checkSafetyCompletion() {
 // ================= START SAFETY VR ENTRY POINT =================
 function startSafetyVR() {
   currentProfession = 'safety';
+  const runId = ++scenarioState.runId;
+  resetPlayerMotion();
+  document.getElementById('gameScreen').classList.remove('milk-pouring');
   document.getElementById('gameScreen').classList.add('safety-mode');
   isActionInProgress = false;
 
@@ -1111,6 +1120,7 @@ function startSafetyVR() {
   showScreen('gameScreen');
 
   setTimeout(() => {
+    if (!isScenarioRunActive(runId)) return;
     initThreeFPS();
     if (scene) {
       // Remove barista objects if present
@@ -1121,6 +1131,7 @@ function startSafetyVR() {
       removeScenarioScenes();
 
       build3DSafetyEnvironment();
+      enhanceScene('safety');
     }
     startTransformerHum();
     handleWindowResize();
@@ -1129,6 +1140,7 @@ function startSafetyVR() {
   clearInterval(state.timerInterval);
   state.timer = 0;
   state.timerInterval = setInterval(() => {
+    if (isIntroVisible()) return;
     state.timer++;
     const m = String(Math.floor(state.timer / 60)).padStart(2, '0');
     const s = String(state.timer % 60).padStart(2, '0');

@@ -5,7 +5,7 @@
 //  - shadows on every prop, sharper shadow maps
 //  - lighting mood per profession: warm café, sodium-lit plant room, cool server room, clean clinic
 
-const GFX = { cache: {}, lights: null, module: null };
+const GFX = { cache: {}, lights: null, room: null, roomFrame: null };
 
 function gfxCanvas(size, draw) {
   const c = document.createElement('canvas');
@@ -109,21 +109,25 @@ const GFX_MOODS = {
 
 function gfxMood(module) {
   const mood = GFX_MOODS[module] || GFX_MOODS.barista;
-  if (GFX.lights) scene.remove(GFX.lights);
-  const g = new THREE.Group();
-  const key = new THREE.DirectionalLight(mood.key, mood.keyI);
-  key.position.set(-3, 5, 2.5);
-  key.castShadow = window.innerWidth > 768;
-  key.shadow.mapSize.set(2048, 2048);
-  key.shadow.camera.left = -6; key.shadow.camera.right = 6; key.shadow.camera.top = 6; key.shadow.camera.bottom = -6;
-  key.shadow.camera.near = 0.5; key.shadow.camera.far = 20;
-  key.shadow.bias = -0.0004;
-  key.shadow.normalBias = 0.02;
-  const rim = new THREE.DirectionalLight(mood.rim, mood.rimI);
-  rim.position.set(3, 2.5, -4);
-  g.add(key, rim);
-  scene.add(g);
-  GFX.lights = g;
+  if (!GFX.lights) {
+    const key = new THREE.DirectionalLight();
+    key.position.set(-3, 5, 2.5);
+    key.shadow.mapSize.set(1024, 1024);
+    Object.assign(key.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 0.5, far: 20 });
+    key.shadow.camera.updateProjectionMatrix();
+    key.shadow.bias = -0.0004;
+    key.shadow.normalBias = 0.02;
+    const rim = new THREE.DirectionalLight();
+    rim.position.set(3, 2.5, -4);
+    scene.add(key, rim);
+    GFX.lights = { key, rim };
+  }
+  const { key, rim } = GFX.lights;
+  key.castShadow = window.innerWidth > 768 && !window.matchMedia('(pointer: coarse)').matches;
+  key.color.setHex(mood.key);
+  key.intensity = mood.keyI;
+  rim.color.setHex(mood.rim);
+  rim.intensity = mood.rimI;
   renderer.toneMappingExposure = mood.exposure;
   if (scene.fog && scene.fog.density !== undefined) scene.fog.density = mood.fog;
   return mood;
@@ -131,11 +135,22 @@ function gfxMood(module) {
 
 function enhanceScene(module) {
   if (typeof scene === 'undefined' || !scene || !renderer) return false;
+  const room = scene.getObjectByName(module + 'Environment');
+  if (!room) return false;
   const mood = gfxMood(module);
+  if (GFX.room !== room) {
+    const previous = GFX.room?.getObjectByName('roomAtmosphere');
+    previous?.traverse(object => {
+      object.geometry?.dispose();
+      object.material?.dispose();
+    });
+    GFX.room = room;
+    GFX.roomFrame = decorateRoom(room, module);
+  }
   const size = new THREE.Vector3();
   const scale = new THREE.Vector3();
   const pos = new THREE.Vector3();
-  scene.traverse((o) => {
+  room.traverse((o) => {
     if (!o.isMesh || !o.visible || o.userData.gfxDone) return;
     o.userData.gfxDone = true;
     const mat = o.material;
@@ -167,35 +182,138 @@ function enhanceScene(module) {
       return;
     }
     // everything else: fine grain, scaled to the object's size
-    if (big > 0.12) gfxApply(o, 'grain', [Math.max(1, big * 2), Math.max(1, big * 2)], 0.002);
+    if (big > 0.12) {
+      // Keep the original material: indicators and liquids update it during play.
+      mat.map = gfxTexture('grain');
+      mat.needsUpdate = true;
+    }
   });
   return true;
 }
 
-function enhanceSoon(module) {
-  let tries = 0;
-  const run = () => {
-    if (enhanceScene(module) || ++tries > 20) {
-      // props added a little later (hands, effects) get shadows too
-      setTimeout(() => enhanceScene(module), 1500);
-      return;
-    }
-    setTimeout(run, 250);
+
+function decorateRoom(room, module) {
+  const props = new THREE.Group();
+  props.name = 'roomAtmosphere';
+  room.add(props);
+  const place = (mesh, x, y, z) => {
+    mesh.position.set(x, y, z);
+    mesh.userData.gfxDone = true;
+    props.add(mesh);
+    return mesh;
   };
-  setTimeout(run, 350);
+  const panel = (w, h, depth, color, x, y, z) =>
+    place(box(w, h, depth, color, { roughness: 0.7 }), x, y, z);
+  const glow = (w, h, d, color, x, y, z) =>
+    place(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({
+      color, emissive: color, emissiveIntensity: 1.1, roughness: 0.42
+    })), x, y, z);
+  const lamp = (x, y, z, color, intensity) =>
+    place(new THREE.PointLight(color, intensity, 4), x, y, z);
+  const lens = (w, h, color, x, y, z) => panel(w, h, 0.045, color, x, y, z);
+
+  if (module === 'it') {
+    // Junction boxes, conduit and overhead task lights frame the working area.
+    panel(7.4, 0.13, 0.08, 0x263748, 0, 0.13, -2.43);
+    panel(7, 0.13, 0.17, 0x283843, 0, 2.68, -2.31);
+    for (const x of [-2.65, -2.5, 3.0, 3.15]) panel(0.045, 2.35, 0.055, 0x384957, x, 1.49, -2.43);
+    lens(0.42, 0.26, 0x4d6579, -2.58, 1.29, -2.35);
+    lens(0.5, 0.34, 0x314659, 3.07, 1.76, -2.35);
+    for (const x of [-2.25, 0.1, 2.45]) {
+      panel(1.48, 0.09, 0.32, 0x26323b, x, 2.88, -1.05);
+      glow(1.32, 0.018, 0.19, 0xb9dcff, x, 2.825, -1.05);
+    }
+    const status = glow(0.34, 0.035, 0.026, 0xff6754, 3.07, 1.84, -2.317);
+    const accent = lamp(2.1, 2.2, -1.25, 0x419ac8, 0.4);
+    const statusColors = { down: 0xff6754, working: 0xffc66c, restored: 0x45dfbc };
+    return time => {
+      const phase = itWorldStatus;
+      status.material.color.setHex(statusColors[phase]);
+      status.material.emissive.copy(status.material.color);
+      status.material.emissiveIntensity = phase === 'restored' ? 0.8 : 0.7 + Math.sin(time * 4) * 0.32;
+      accent.intensity = phase === 'restored' ? 0.6 : 0.35;
+    };
+  }
+  if (module === 'barista') {
+    const wood = 0x61412d;
+    for (const x of [-1.35, 0, 1.35]) {
+      panel(0.018, 1.4, 0.02, 0x272321, x, 3.1, -0.55);
+      place(cyl(0.09, 0.22, 0.20, 0x28211e, { metalness: 0.48 }), x, 2.41, -0.55);
+      glow(0.24, 0.016, 0.16, 0xffdeac, x, 2.303, -0.55);
+    }
+    const warm = lamp(0, 2.25, -0.48, 0xffbb76, 0.75);
+    for (const y of [1.46, 1.9, 2.34]) {
+      panel(1.13, 0.058, 0.28, wood, 2.05, y, -2.29);
+      for (const x of [1.7, 1.93, 2.16, 2.39]) {
+        place(cyl(0.069, 0.06, 0.13, y === 1.9 ? 0xc6976f : 0xece0ce, { roughness: 0.35 }), x, y + 0.094, -2.27);
+      }
+    }
+    lens(0.94, 1.23, 0x4f3021, -2.15, 1.02, -2.44);
+    lens(0.76, 1.08, 0xafc1be, -2.15, 1.02, -2.408);
+    lens(0.035, 1.09, wood, -2.15, 1.02, -2.38);
+    const stream = place(cyl(0.008, 0.013, 1, 0xe6d9c4), 0, 0, 0);
+    stream.visible = false;
+    const start = new THREE.Vector3();
+    const end = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+    const up = new THREE.Vector3(0, 1, 0);
+    const latte = new THREE.Color(0xe5d4c0);
+    const game = document.getElementById('gameScreen');
+    return (time, delta) => {
+      stream.visible = game.classList.contains('milk-pouring');
+      if (stream.visible && pitcherObj && cupObj && cupLiquidMesh) {
+        start.copy(pitcherObj.position).addScaledVector(up, 0.07);
+        start.x -= 0.09;
+        end.copy(cupObj.position).addScaledVector(up, 0.14);
+        direction.subVectors(start, end);
+        stream.position.copy(start).lerp(end, 0.5);
+        stream.scale.set(1, direction.length(), 1);
+        stream.quaternion.setFromUnitVectors(up, direction.normalize());
+        cupLiquidMesh.scale.y = Math.min(0.75, cupLiquidMesh.scale.y + delta * 0.60);
+        cupLiquidMesh.material.color.lerp(latte, Math.min(1, delta * 3.4));
+      }
+      const brewing = espressoStreamParticles?.visible || steamParticles?.visible;
+      warm.intensity = brewing ? 0.82 + Math.sin(time * 4) * 0.05 : 0.75;
+    };
+  }
+  if (module === 'doctor') {
+    panel(7.2, 0.12, 0.07, 0xacc8be, 0, 0.12, -2.42);
+    panel(7.2, 0.09, 0.06, 0x99b7a9, 0, 1.04, -2.42);
+    panel(1.5, 0.09, 0.45, 0xcfdedc, 0.7, 2.85, -0.54);
+    glow(1.39, 0.018, 0.36, 0xebfffd, 0.7, 2.797, -0.54);
+    panel(1.26, 0.05, 0.07, 0x9daeab, 2.46, 2.54, -2.16);
+    for (let i = 0; i < 12; i++) {
+      place(cyl(0.072, 0.072, 1.39, i % 2 ? 0x79aaa3 : 0x9ac6bb), 1.96 + i * 0.088, 1.815, -2.22 + (i % 2) * 0.04);
+    }
+    const sensor = glow(0.025, 0.025, 0.02, 0x51e6bf, 1.81, 1.74, -2.437);
+    return time => {
+      sensor.material.emissiveIntensity = docVitals.spo2 ? 0.35 + Math.pow(Math.max(0, Math.sin(time * 10)), 3) : 0.02;
+    };
+  }
+
+  // Guard rail and status fixtures in the maintenance bay.
+  for (const x of [-3.65, 3.65]) {
+    panel(0.15, 2.78, 0.15, 0x3d4b52, x, 1.39, -2.26);
+    panel(0.36, 0.10, 0.23, 0xb48732, x, 0.05, -2.25);
+    panel(0.32, 0.79, 0.06, 0x243238, x, 1.71, -2.14);
+  }
+  for (const x of [-2.65, 2.65]) {
+    panel(1.16, 0.13, 0.50, 0x343738, x, 3.16, -0.94);
+    glow(1.02, 0.02, 0.37, 0xffe2b7, x, 3.084, -0.94);
+  }
+  const power = glow(0.125, 0.07, 0.025, 0xf25f4c, -3.65, 1.86, -2.092);
+  const pressure = glow(0.125, 0.07, 0.025, 0xffbd5b, 3.65, 1.86, -2.092);
+  return time => {
+    const energized = safetyState.powerState === 'ON';
+    const vented = safetyState.valvePressure === 'ZERO';
+    power.material.emissive.setHex(energized ? 0xf25f4c : 0x48d8af);
+    pressure.material.emissive.setHex(vented ? 0x48d8af : 0xffbd5b);
+    power.material.emissiveIntensity = energized ? 0.9 + Math.sin(time * 3) * 0.22 : 0.75;
+  };
 }
 
-(function wireGraphics() {
-  const wrap = (name, moduleOf) => {
-    const orig = window[name];
-    if (typeof orig !== 'function') return;
-    window[name] = function (...args) {
-      const r = orig.apply(this, args);
-      enhanceSoon(moduleOf(args));
-      return r;
-    };
-  };
-  wrap('startScenario', (a) => a[0]);
-  wrap('startBaristaVR', () => 'barista');
-  wrap('startSafetyVR', () => 'safety');
-})();
+function updateRoomAtmosphere(time, delta) {
+  if (!GFX.room?.parent || GFX.room.name !== currentProfession + 'Environment') return;
+  GFX.roomFrame?.(time, delta);
+}
+

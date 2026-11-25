@@ -92,7 +92,7 @@ The scenario is simplified and for learning only. It is not medical advice.
 **Russian, Kazakh and English interface**
 - a "Рус / Қаз / Eng" switch on the home page, or the `?lang=kk` / `?lang=en` link;
 - the home page, intro screens, report, career path and survey are translated; the Claude debrief is written in the selected language;
-- in English the whole game is translated, including the 3D guide, step bar, tooltips and text on 3D screens; the IT module also includes Kazakh gameplay guidance and a second incident. Some gameplay in the other modules still uses Russian.
+- in English the whole game is translated, including the 3D guide, step bar, tooltips and text on 3D screens; the IT module also includes Kazakh gameplay guidance and replay incidents that cycle through a missing setting, a saturated connection pool, and a read-only database. Some gameplay in the other modules still uses Russian.
 
 **Career path in Kazakhstan and student profile**
 - in the report: the UNT (national exam) subjects for the profession, university programme groups, the college route, and a fact about the Kazakhstan labour market;
@@ -337,7 +337,7 @@ The base prototype was created before the qualifying stage started: the commits 
 2. Include the file in `frontend/index.html` after `scenario.js` and add a card with `onclick="startScenario('<id>')"`.
 3. Add `<id>` to `MODULES` (`backend/src/validate.js`), a description to `MODULE_CONTEXT` (`backend/src/feedback.js`), and a rule-based debrief to `backend/src/rules.js`.
 
-Direct link to a module: `index.html?module=<id>` (`safety`, `barista`, `it`, `doctor`). The IT evidence challenge opens at `frontend/?module=it&variant=challenge&lang=en`.
+Direct link to a module: `index.html?module=<id>` (`safety`, `barista`, `it`, `doctor`). The rotating IT evidence challenge opens at `frontend/?module=it&variant=challenge&lang=en`.
 
 ## 10. Team
 
