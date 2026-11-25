@@ -108,3 +108,20 @@ test('espresso feedback distinguishes short and long extraction', () => {
   assert.equal(vm.runInContext('extractionOutcome(30)', ctx), 'in-range');
   assert.equal(vm.runInContext('extractionOutcome(35)', ctx), 'over');
 });
+
+test('the Safety question opens while the colleague model is loading', () => {
+  const source = script('npc');
+  const start = source.indexOf("if (typeof mgColleague === 'function')");
+  const end = source.indexOf('// wiring', start);
+  let questions = 0;
+  const ctx = vm.createContext({
+    mgColleague: () => questions++,
+    player: { pos: { x: 0, z: 0 } },
+    safetyState: { errors: 0 },
+    npcShow: () => new Promise(() => {}),
+    T: (ru, en) => en,
+  });
+  vm.runInContext(source.slice(start, end), ctx);
+  vm.runInContext('mgColleague()', ctx);
+  assert.equal(questions, 1);
+});

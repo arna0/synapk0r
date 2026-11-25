@@ -86,13 +86,14 @@ function npcApplyPose(pose) {
 
 // ---------------------------------------------------------------- show, walk, leave
 async function npcShow(module, opts) {
+  const owner = runNumber;
   try {
     await npcLoad();
   } catch (e) {
     console.warn('[npc] model not loaded, keeping the simple figure', e);
     return false;
   }
-  if (typeof scene === 'undefined' || !scene) return false;
+  if (owner !== runNumber || typeof scene === 'undefined' || !scene) return false;
   const o = NPC.src;
   NPC.obj = o;
   NPC.module = module;
@@ -288,7 +289,7 @@ function cafeCustomerArrive() {
 // what he noticed while you worked
 const CAFE_REACT = () => ({
   precision: [T('Вы кофе вообще взвешиваете?', 'Do you actually weigh the coffee?'), 'watery'],
-  timing: [T('Хм, пахнет как-то… горьковато.', 'Hmm, that smells… a bit off.'), 'taste'],
+  timing: [T('Хм, запах какой-то странный.', 'Hmm, that smells… a bit off.'), 'taste'],
   feel: [T('Молоко так шипит… это нормально?', 'The milk is screeching… is that normal?'), 'foam'],
 });
 
@@ -497,15 +498,16 @@ if (typeof mgColleague === 'function') {
     const p = typeof player !== 'undefined' ? player.pos : { x: 0, z: 1 };
     const at = [Math.min(4.2, p.x + 1.1), Math.max(-0.4, Math.min(4, p.z + 0.4))];
     const errs = typeof safetyState !== 'undefined' ? safetyState.errors : 0;
-    npcShow('safety', { role: T('Коллега', 'Colleague'), mood: errs ? 0.6 : 0.75, from: [4.0, 3.5], at,
-      onArrive: () => _mgColleague((...a) => {
-        const ok = !(typeof safetyState !== 'undefined' && safetyState.errors > errs);
+    npcShow('safety', { role: T('Коллега', 'Colleague'), mood: errs ? 0.6 : 0.75, at });
+    _mgColleague((...args) => {
+      const ok = safetyState.errors <= errs;
+      if (NPC.module === 'safety') {
         if (ok) { npcMood(-0.15, 'nod'); npcSay(T('Ладно, понял. Подожду, пока закончишь.', 'Fine, got it. I’ll wait till you’re done.'), 3200); }
         else { npcMood(0.2, 'nod'); npcSay(T('Спасибо, я быстро!', 'Thanks, I’ll be quick!'), 2600); }
         runLater(() => { if (NPC.module === 'safety') npcLeave([4.0, 3.5]); }, 2600);
-        if (done) done(...a);
-      }),
-    }).then((ok) => { if (!ok) _mgColleague(done); });
+      }
+      if (done) done(...args);
+    });
   };
 }
 
