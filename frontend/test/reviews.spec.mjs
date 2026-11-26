@@ -19,6 +19,21 @@ test.beforeEach(async ({ page }) => {
   await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
 });
 
+test('slow queued uploads do not block public reading and language switching works', async ({ page }) => {
+  await page.addInitScript((answers) => {
+    localStorage.setItem('synapkor_survey_v1', JSON.stringify([{ id: crypto.randomUUID(), module: 'barista', publish: true, synced: false, answers }]));
+  }, answers);
+  await page.route('**/api/survey', async route => {
+    await new Promise(resolve => setTimeout(resolve, 4000));
+    await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }).catch(() => {});
+  });
+  await page.goto('/testers-opinion.html?lang=en', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#opinionList')).toHaveAttribute('aria-busy', 'false', { timeout: 2500 });
+  await page.locator('#opinionsLanguage').selectOption('kk');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'kk');
+  await expect(page.locator('#opinionRefresh')).toHaveText('Жаңарту');
+});
+
 test('submission appears for a second visitor, renders text safely, and retains all answers', async ({ page, browser }) => {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   const comment = 'Review ' + Date.now() + ' <img src=x onerror="window.reviewInjected=true">';

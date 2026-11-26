@@ -4,7 +4,11 @@ The main-menu link opens `frontend/testers-opinion.html`. Each submitted questio
 
 The questionnaire explains that new submissions are published anonymously. Earlier private questionnaires remain in storage and in the existing summary; they are not silently made public. Old responses stored only on another device cannot be retrieved from that device by the website.
 
-## Running shared storage
+## Hosted shared storage
+
+The public GitHub Pages site connects to the managed database backend. See [HOSTED_BACKEND.md](HOSTED_BACKEND.md) for production endpoints, schema, deployment, and moderation. The hosted database persists across code deployments and is separate from local JSONL files.
+
+## Running local storage
 
 ```sh
 npm ci --prefix backend
@@ -23,7 +27,7 @@ Run **one backend process** and put `SURVEY_FILE` on a persistent, writable data
 
 For a separately hosted backend, add its origin to `ALLOWED_API_ORIGINS` in `frontend/js/config.js`, set the server's `ALLOWED_ORIGINS` to the frontend origin, and open the game with `?api=https://your-backend`. Navigation to the review page preserves this configuration. Hosting the frontend through Express works without extra configuration.
 
-**GitHub Pages has no backend.** Until one is connected, responses remain queued on the submitting device, and the review page explains why shared reviews are unavailable. The UI never treats an HTTP error as successful publication. Pending responses retry on the next visit, when connectivity returns, or with the Retry button. A full/unavailable local store is reported if server upload also fails.
+GitHub Pages serves the frontend and calls the hosted API for shared storage. During an outage, responses remain queued on the submitting device. The UI never treats an HTTP error as successful publication. Pending responses retry on the next visit, when connectivity returns, or with the Retry button. A full/unavailable local store is reported if server upload also fails.
 
 ## Validation
 

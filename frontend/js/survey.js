@@ -102,6 +102,7 @@ function markSurveySynced(id) {
     rows.forEach(row => { if (row.id === id) row.synced = true; });
     localStorage.setItem(SURVEY_KEY, JSON.stringify(rows));
   } catch { /* The server deduplicates by ID if a device cannot save this status. */ }
+  window.dispatchEvent(new Event('survey-synced'));
 }
 
 let surveySyncPromise;
@@ -109,7 +110,7 @@ function syncSurveyQueue() {
   if (surveySyncPromise) return surveySyncPromise;
   if (!navigator.onLine) return Promise.resolve();
   surveySyncPromise = (async () => {
-    for (const row of loadSurveyResponses().filter(row => row.id && row.publish === true && !row.synced)) {
+    for (const row of loadSurveyResponses().filter(row => row.id && row.publish === true && !row.synced).slice(0, 10)) {
       try { await sendSurvey(row); markSurveySynced(row.id); }
       catch { break; }
     }

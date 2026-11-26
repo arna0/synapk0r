@@ -35,17 +35,34 @@ jobs:
 
   browser-tests:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        cloud: ['0', '1']
+    env:
+      TEST_CLOUD: ${{ matrix.cloud }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
       - run: npm ci --prefix backend
-      - run: npm install --no-save --no-package-lock @playwright/test@1.56.1
+      - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: browser-test-results
+          name: browser-test-results-${{ matrix.cloud }}
           path: test-results
+
+  cloud-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:cloud
+      - run: npm run build

@@ -1,0 +1,12 @@
+{
+  "name": "synapkor", "private": true, "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve-cloud.mjs",
+    "build": "node scripts/build-cloud.mjs",
+    "db:generate": "drizzle-kit generate",
+    "test:cloud": "node --test cloud/test/*.test.mjs",
+    "test:game": "node --test frontend/test/*.test.mjs",
+    "test:browser": "playwright test --workers=1"
+  },
+  "devDependencies": { "@playwright/test": "1.56.1", "drizzle-kit": "0.31.8", "drizzle-orm": "0.44.7", "esbuild": "0.25.12" }
+}

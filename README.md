@@ -1,5 +1,7 @@
 # SynapKor: a 3D career simulator with skills assessment
 
+**Shared tester reviews:** the public site connects automatically to the hosted database API. [Testers opinion](https://arna0.github.io/synapk0r/frontend/testers-opinion.html?lang=en) shows submissions across devices. [Backend operation and testing](docs/HOSTED_BACKEND.md).
+
 **VentureHack 2026 · Track 2: EdTech and the future of education**
 Track focus areas: *career guidance and exploring career paths · skills development and vocational training · interactive hands-on environments · assessment and feedback*.
 
@@ -7,7 +9,7 @@ Track focus areas: *career guidance and exploring career paths · skills develop
 
 - **Live demo (runs in the browser, nothing to install):** https://arna0.github.io/synapk0r/
   - jump straight into a module: [IT engineer](https://arna0.github.io/synapk0r/frontend/?module=it) · [Doctor](https://arna0.github.io/synapk0r/frontend/?module=doctor) · [Safety engineer](https://arna0.github.io/synapk0r/frontend/?module=safety) · [Barista](https://arna0.github.io/synapk0r/frontend/?module=barista) · [in English](https://arna0.github.io/synapk0r/?lang=en) · [in Kazakh](https://arna0.github.io/synapk0r/?lang=kk)
-  - GitHub Pages has no server, so the written debrief there is rule-based. The Claude debrief works when you run `backend/` (section 6)
+  - The frontend runs on GitHub Pages and shared reviews use a hosted database API. Debriefs remain rule-based; Claude requires a separately configured AI key (section 6).
 - **Android app:** [download SynapKor.apk](https://github.com/arna0/synapk0r/releases/download/android-latest/SynapKor.apk), all four professions, rebuilt automatically on every change
 - **Code:** https://github.com/arna0/synapk0r
 - **Demo video (60 seconds, narrated):** [docs/demo.mp4](docs/demo.mp4): the IT module from the alert to the report, the Kazakh interface, and the career path
@@ -19,7 +21,7 @@ Track focus areas: *career guidance and exploring career paths · skills develop
 
 The menu now has pointer-responsive depth, layered motion and reduced-motion support. Tool transfers, hand reaches, valves and gauge response use elapsed time, and leaving a simulation cancels pending transfers. Old room resources are released when restarting or switching professions, with rendering paused in the menu and hidden tabs.
 
-**[Testers opinion](frontend/testers-opinion.html)** shows anonymous questionnaires from the shared backend, with profession filtering and pagination. Failed uploads remain queued on the device. Shared reviews require the Express backend and a persistent data volume; GitHub Pages alone cannot store or share them. See [storage and connection setup](docs/REVIEW_STORAGE.md).
+**[Testers opinion](frontend/testers-opinion.html)** shows anonymous questionnaires from the hosted database, with profession filtering and pagination. Failed uploads remain queued on the device. GitHub Pages connects automatically to the hosted API; local Express development keeps a separate JSONL store. See [storage and connection setup](docs/REVIEW_STORAGE.md).
 
 ## 1. Problem
 

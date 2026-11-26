@@ -22,6 +22,7 @@ const moreEl = document.getElementById('opinionMore');
 const refreshEl = document.getElementById('opinionRefresh');
 const filterEl = document.getElementById('opinionModule');
 let opinionPage = 0;
+let opinionSnapshot;
 let opinionRequest;
 const displayedReviews = new Set();
 function textElement(tag, value) { const el = document.createElement(tag); el.textContent = value; return el; }
@@ -49,15 +50,16 @@ async function loadOpinions(reset = false) {
   const request = new AbortController(); opinionRequest = request;
   let timeout;
   const nextPage = reset ? 1 : opinionPage + 1;
-  if (reset) { listEl.replaceChildren(); displayedReviews.clear(); opinionPage = 0; }
+  if (reset) { listEl.replaceChildren(); displayedReviews.clear(); opinionPage = 0; opinionSnapshot = undefined; }
   listEl.setAttribute('aria-busy', 'true'); refreshEl.disabled = true; moreEl.disabled = true;
   statusEl.textContent = ot('Loading reviews…', 'Загрузка отзывов…', 'Пікірлер жүктелуде…');
   try {
-    await syncSurveyQueue();
-    if (opinionRequest !== request) return;
+    // Public reading must not wait behind uploads on a slow connection.
+    syncSurveyQueue();
     timeout = setTimeout(() => request.abort(), 10000);
     const base = getApiBase(); if (base === null) throw new Error('No backend');
     const query = new URLSearchParams({ page: String(nextPage), module: filterEl.value });
+    if (opinionSnapshot !== undefined) query.set('snapshot', opinionSnapshot);
     const res = await fetch(base + '/api/reviews?' + query, { signal: request.signal, cache: 'no-store' });
     if (!res.ok) throw new Error('Reviews unavailable');
     const data = await res.json();
@@ -68,6 +70,7 @@ async function loadOpinions(reset = false) {
       displayedReviews.add(row.id); listEl.append(renderOpinion(row));
     }
     opinionPage = nextPage;
+    opinionSnapshot = data.snapshot;
     moreEl.hidden = !data.hasMore;
     statusEl.textContent = data.total ? data.total + ' ' + ot('reviews', 'отзывов', 'пікір') : ot('No reviews yet. Yours can be the first.', 'Отзывов пока нет. Ваш может стать первым.', 'Әзірге пікір жоқ. Бірінші болыңыз.');
   } catch {
@@ -93,4 +96,11 @@ document.getElementById('opinionsBack').href = backUrl.href;
 refreshEl.onclick = () => loadOpinions(true);
 filterEl.onchange = () => loadOpinions(true);
 moreEl.onclick = () => loadOpinions();
+window.addEventListener('survey-synced', () => loadOpinions(true));
+window.addEventListener('online', () => loadOpinions(true));
+const languageEl = document.getElementById('opinionsLanguage');
+languageEl.value = document.documentElement.lang;
+languageEl.onchange = () => {
+  const url = new URL(location.href); url.searchParams.set('lang', languageEl.value); location.assign(url);
+};
 loadOpinions(true);

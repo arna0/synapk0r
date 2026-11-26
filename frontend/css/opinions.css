@@ -20,5 +20,12 @@ body.opinions-page { --primary: #493399; display: block; height: auto; overflow:
 .opinion-card dl { display: grid; grid-template-columns: minmax(0, 2fr) minmax(70px, 1fr); gap: 10px 18px; margin: 16px 0 0; font-size: 13px; line-height: 1.6; }
 .opinion-card dt { color: #515775; }.opinion-card dd { margin: 0; font-weight: 600; }
 .opinions-main footer { margin-top: 40px; font-size: 13px; }
+.opinions-main { font-size: 16px; }
+.opinion-card time, .opinion-card summary, .opinion-card dl, .opinions-main footer { font-size: 14px; }
+.opinions-nav span { font-size: 12px; }
+.opinions-main select { min-height: 44px; max-width: 100%; }
+.opinion-card summary { min-height: 44px; }
+#opinionStatus { min-height: 2em; }
+.opinion-list[aria-busy="true"] { opacity: .7; }
 @media (prefers-reduced-motion: no-preference) { .opinion-card { animation: opinion-enter 300ms ease-out; } }
 @keyframes opinion-enter { from { opacity: .4; transform: translateY(8px); } }

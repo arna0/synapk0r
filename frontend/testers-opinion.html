@@ -5,16 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Testers opinion · SynapKor</title>
   <link rel="stylesheet" href="css/styles.css?v=20261138">
-  <link rel="stylesheet" href="css/opinions.css">
-  <script src="js/config.js" defer></script>
-  <script src="js/survey.js" defer></script>
-  <script src="js/opinions.js" defer></script>
+  <meta name="description" content="Read anonymous SynapKor tester reviews and survey answers from all four career simulations.">
+  <meta name="theme-color" content="#493399">
+  <link rel="stylesheet" href="css/opinions.css?v=20261126-cloud">
+  <script src="js/config.js?v=20261126-cloud" defer></script>
+  <script src="js/survey.js?v=20261126-cloud" defer></script>
+  <script src="js/opinions.js?v=20261126-cloud" defer></script>
 </head>
 <body class="opinions-page">
   <main class="opinions-main">
     <nav class="opinions-nav" aria-label="Navigation"><a id="opinionsBack" href="index.html">← SynapKor</a><span>PLAYER FEEDBACK</span></nav>
     <header class="opinions-hero"><span class="eyebrow" id="opinionsEyebrow">From the people who tried it</span><h1>Testers opinion</h1><p id="opinionsIntro">Anonymous answers and reviews from the post-simulation survey.</p></header>
     <div class="opinions-controls">
+      <select id="opinionsLanguage" aria-label="Language"><option value="en">English</option><option value="ru">Русский</option><option value="kk">Қазақша</option></select>
       <label for="opinionModule" id="opinionFilterLabel">Simulation</label>
       <select id="opinionModule"><option value="">All simulations</option><option value="safety">Safety engineer</option><option value="barista">Barista</option><option value="it">IT specialist</option><option value="doctor">Doctor</option></select>
       <button id="opinionRefresh" type="button">Refresh</button>

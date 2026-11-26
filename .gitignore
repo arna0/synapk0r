@@ -32,3 +32,10 @@ backend/data/
 node_modules/
 test-results/
 playwright-report/
+dist/
+outputs/
+.sites-runtime/
+.wrangler/
+.env*
+!.env.example
+!backend/.env.example
