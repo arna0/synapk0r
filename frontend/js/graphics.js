@@ -119,7 +119,7 @@ function gfxMood(module) {
   const key = new THREE.DirectionalLight(mood.key, mood.keyI);
   key.position.set(-3, 5, 2.5);
   key.castShadow = window.innerWidth > 768;
-  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.mapSize.set(window.innerWidth > 768 ? 1024 : 512, window.innerWidth > 768 ? 1024 : 512);
   key.shadow.camera.left = -6; key.shadow.camera.right = 6; key.shadow.camera.top = 6; key.shadow.camera.bottom = -6;
   key.shadow.camera.near = 0.5; key.shadow.camera.far = 20;
   key.shadow.bias = -0.0004;

@@ -1,0 +1,24 @@
+html.opinions-document { display: block; height: auto; overflow: auto; }
+body.opinions-page { --primary: #493399; display: block; height: auto; overflow: visible; background: #f0f2ff; color: #181b3c; }
+.opinions-main { max-width: 1040px; margin: auto; padding: 24px clamp(18px, 5vw, 64px) 56px; }
+.opinions-nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0 28px; border-bottom: 1px solid #d5d9ef; }
+.opinions-nav a { color: #493399; font-weight: 800; text-decoration: none; }
+.opinions-nav span { font-size: 10px; letter-spacing: .15em; color: #515775; }
+.opinions-hero { padding: 48px 0 30px; }
+.opinions-hero h1 { font-size: clamp(36px, 7vw, 64px); letter-spacing: -.055em; margin: 12px 0; }
+.opinions-hero p, #opinionStatus, .opinions-main footer { line-height: 1.65; color: #515775; }
+.opinions-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 22px; }
+.opinions-main :is(button, select) { padding: 11px 16px; border: 1px solid #d5d9ef; border-radius: 12px; background: #fcfcff; color: #493399; font: inherit; cursor: pointer; }
+.opinions-main button:disabled { opacity: .55; cursor: wait; }
+.opinions-main :is(button, a, select):focus-visible { outline: 3px solid #8874d2; outline-offset: 3px; }
+.opinion-list { display: grid; gap: 18px; margin: 22px 0; }
+.opinion-card { padding: clamp(18px, 3vw, 28px); border: 1px solid #d5d9ef; border-radius: 20px; background: #fcfcff; overflow-wrap: anywhere; }
+.opinion-card header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.opinion-card h2 { font-size: 19px; }.opinion-card time { color: #515775; font-size: 12px; }
+.opinion-card blockquote { margin: 20px 0; border-left: 3px solid #8874d2; padding-left: 16px; white-space: pre-wrap; user-select: text; line-height: 1.7; }
+.opinion-card summary { cursor: pointer; color: #493399; font-size: 13px; padding-top: 12px; }
+.opinion-card dl { display: grid; grid-template-columns: minmax(0, 2fr) minmax(70px, 1fr); gap: 10px 18px; margin: 16px 0 0; font-size: 13px; line-height: 1.6; }
+.opinion-card dt { color: #515775; }.opinion-card dd { margin: 0; font-weight: 600; }
+.opinions-main footer { margin-top: 40px; font-size: 13px; }
+@media (prefers-reduced-motion: no-preference) { .opinion-card { animation: opinion-enter 300ms ease-out; } }
+@keyframes opinion-enter { from { opacity: .4; transform: translateY(8px); } }

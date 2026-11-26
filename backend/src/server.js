@@ -3,7 +3,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdirSync, appendFileSync, readFileSync, existsSync } from 'node:fs';
+import { createSurveyStore } from './surveys.js';
 import { validateReport, validateSurvey } from './validate.js';
 import { aiConfigured, generateFeedback } from './feedback.js';
 
@@ -29,7 +29,8 @@ setInterval(() => {
   for (const [ip, times] of hits) if (!times.some(t => now - t < 60_000)) hits.delete(ip);
 }, 60_000).unref();
 
-export function createApp() {
+export function createApp({ surveyFile = SURVEY_FILE } = {}) {
+  const surveys = createSurveyStore(surveyFile);
   const app = express();
   app.disable('x-powered-by');
   // Behind a reverse proxy (Render, Nginx) set TRUST_PROXY=1 so rate limiting sees the real client IP
@@ -73,20 +74,17 @@ export function createApp() {
   });
 
   // Validation survey: answers are appended to data/survey.jsonl (one JSON per line)
-  app.post('/api/survey', (req, res) => {
+  app.post('/api/survey', async (req, res) => {
     if (rateLimited(req.ip)) return res.status(429).json({ error: 'Too many requests, try again in a minute' });
     const result = validateSurvey(req.body);
     if (!result.ok) return res.status(400).json({ error: result.error });
-    mkdirSync(path.dirname(SURVEY_FILE), { recursive: true });
-    appendFileSync(SURVEY_FILE, JSON.stringify(result.survey) + '\n');
-    res.status(201).json({ ok: true });
+    const saved = await surveys.add(result.survey);
+    res.status(saved.duplicate ? 200 : 201).json({ ok: true, ...saved });
   });
 
   // Aggregated counts only (no comments or raw rows) for the team and the pitch
-  app.get('/api/survey/summary', (req, res) => {
-    const rows = existsSync(SURVEY_FILE)
-      ? readFileSync(SURVEY_FILE, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l))
-      : [];
+  app.get('/api/survey/summary', async (req, res) => {
+    const rows = await surveys.all();
     const n = rows.length;
     const count = (k, v) => rows.filter(r => (Array.isArray(v) ? v.includes(r.answers[k]) : r.answers[k] === v)).length;
     const byModule = {};
@@ -99,6 +97,25 @@ export function createApp() {
       h3_learned: count('learned', 'Да'),
       want_more: count('more', 'Да')
     });
+  });
+
+  // Old questionnaires were private. Only submissions made under the public disclosure appear.
+  app.get('/api/reviews', async (req, res) => {
+    const module = req.query.module || '';
+    if (module && !['safety', 'barista', 'it', 'doctor'].includes(module)) {
+      return res.status(400).json({ error: 'Invalid module' });
+    }
+    const pageValue = req.query.page || '1';
+    if (typeof pageValue !== 'string' || !/^[1-9]\d{0,6}$/.test(pageValue)) {
+      return res.status(400).json({ error: 'Invalid page' });
+    }
+    const page = Number(pageValue);
+    const rows = (await surveys.all()).filter(row => row.publish === true && (!module || row.module === module)).reverse();
+    const reviews = rows.slice((page - 1) * 20, page * 20).map(row => ({
+      id: row.id, at: row.at, module: row.module, answers: row.answers, comment: row.comment
+    }));
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ reviews, total: rows.length, page, pageSize: 20, hasMore: page * 20 < rows.length });
   });
 
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));

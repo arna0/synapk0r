@@ -27,3 +27,8 @@ mobile/.dart_tool/
 mobile/build/
 mobile/assets/sim/
 backend/data/
+
+# Local browser test tooling and results
+node_modules/
+test-results/
+playwright-report/

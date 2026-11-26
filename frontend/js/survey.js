@@ -1,6 +1,6 @@
 // SynapKor — Post-session survey for validation (docs/VALIDATION.md).
-// Answers are kept on this device (localStorage) and, when the backend is reachable,
-// also sent to POST /api/survey. Summary for the team: open index.html?survey=results
+// Public responses are queued on this device and sent to POST /api/survey.
+// Shared reviews: testers-opinion.html. Private device summary: index.html?survey=results
 
 const SURVEY_KEY = 'synapkor_survey_v1';
 
@@ -19,7 +19,7 @@ let surveyContext = null;
 let surveyAnswers = {};
 
 function loadSurveyResponses() {
-  try { return JSON.parse(localStorage.getItem(SURVEY_KEY) || '[]'); } catch (e) { return []; }
+  try { const rows = JSON.parse(localStorage.getItem(SURVEY_KEY) || '[]'); return Array.isArray(rows) ? rows.filter(row => row && typeof row === 'object') : []; } catch (e) { return []; }
 }
 
 function saveSurveyResponse(resp) {
@@ -27,7 +27,8 @@ function saveSurveyResponse(resp) {
     const all = loadSurveyResponses();
     all.push(resp);
     localStorage.setItem(SURVEY_KEY, JSON.stringify(all));
-  } catch (e) { /* storage unavailable: backend copy only */ }
+    return true;
+  } catch (e) { return false; }
 }
 
 // Called when the report screen opens (from requestAiFeedback)
@@ -45,7 +46,7 @@ function showSurvey(report) {
   card.innerHTML = `
     <div class="survey-head">
       <span class="survey-title">Анкета · 1 минута</span>
-      <span class="survey-note">${gameText('По желанию. Ответы сохраняются на устройстве и могут отправляться на сервер. Не указывайте имя или контакты.', 'Optional. Answers are saved on this device and may be sent to the server. Please leave out names and contact details.', 'Қатысу ерікті. Жауаптар құрылғыда сақталады және серверге жіберілуі мүмкін. Атыңыз бен байланыс деректерін жазбаңыз.')}</span>
+      <span class="survey-note">${gameText('По желанию. Ответы и комментарий будут опубликованы анонимно на странице Testers opinion. Не указывайте имя или контакты.', 'Optional. Your answers and comment will be published anonymously on Testers opinion. Please leave out names and contact details.', 'Қатысу ерікті. Жауаптарыңыз бен пікіріңіз Testers opinion бетінде анонимді жарияланады. Атыңыз бен байланыс деректерін жазбаңыз.')}</span>
     </div>
     <div class="survey-list">
       ${SURVEY_QUESTIONS.map(q => `
@@ -72,29 +73,94 @@ function showSurvey(report) {
   document.getElementById('surveySubmit').addEventListener('click', submitSurvey);
 }
 
+function surveyText(ru, en, kk) {
+  const lang = typeof getLanguage === 'function' ? getLanguage() : document.documentElement.lang;
+  return lang === 'en' ? en : lang === 'kk' ? kk : ru;
+}
+
+function opinionPageUrl() {
+  const url = new URL('testers-opinion.html', location.href);
+  url.search = location.search;
+  url.searchParams.delete('module'); url.searchParams.delete('survey');
+  if (typeof getLanguage === 'function') url.searchParams.set('lang', getLanguage());
+  return url.href;
+}
+
+async function sendSurvey(resp) {
+  const base = getApiBase();
+  if (base === null) throw new Error('No backend');
+  const res = await fetch(base + '/api/survey', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(resp), signal: AbortSignal.timeout(8000)
+  });
+  if (!res.ok || (await res.json()).ok !== true) throw new Error('Survey upload failed');
+}
+
+function markSurveySynced(id) {
+  try {
+    const rows = loadSurveyResponses();
+    rows.forEach(row => { if (row.id === id) row.synced = true; });
+    localStorage.setItem(SURVEY_KEY, JSON.stringify(rows));
+  } catch { /* The server deduplicates by ID if a device cannot save this status. */ }
+}
+
+let surveySyncPromise;
+function syncSurveyQueue() {
+  if (surveySyncPromise) return surveySyncPromise;
+  if (!navigator.onLine) return Promise.resolve();
+  surveySyncPromise = (async () => {
+    for (const row of loadSurveyResponses().filter(row => row.id && row.publish === true && !row.synced)) {
+      try { await sendSurvey(row); markSurveySynced(row.id); }
+      catch { break; }
+    }
+  })().finally(() => { surveySyncPromise = null; });
+  return surveySyncPromise;
+}
+
 async function submitSurvey() {
   const card = document.getElementById('surveyCard');
+  const button = document.getElementById('surveySubmit');
+  if (!surveyContext || !button || button.disabled || SURVEY_QUESTIONS.some(q => surveyAnswers[q.id] === undefined)) return;
+  button.disabled = true;
   const resp = {
-    at: new Date().toISOString(),
-    ...surveyContext,
+    id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2),
+    publish: true, synced: false, at: new Date().toISOString(), ...surveyContext,
     answers: { ...surveyAnswers },
     comment: (document.getElementById('surveyComment').value || '').trim().slice(0, 300)
   };
-  saveSurveyResponse(resp);
-  card.innerHTML = '<div class="survey-thanks">Спасибо! Ответы сохранены.</div>';
-
-  const apiBase = getApiBase();
-  if (apiBase === null || (apiBase === '' && location.hostname.endsWith('.github.io'))) return;
-  try {
-    await fetch(`${apiBase}/api/survey`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(resp)
-    });
-  } catch (e) {
-    console.info('[SynapKor] survey kept locally only:', e.message);
-  }
+  const localSaved = saveSurveyResponse(resp);
+  card.innerHTML = '<div class="survey-thanks" role="status"></div>';
+  const status = card.querySelector('.survey-thanks');
+  const upload = async () => {
+    status.textContent = surveyText('Сохраняем отзыв…', 'Saving your review…', 'Пікір сақталуда…');
+    try {
+      await sendSurvey(resp);
+      markSurveySynced(resp.id);
+      status.textContent = surveyText('Спасибо! Отзыв опубликован.', 'Thank you! Your review is published.', 'Рақмет! Пікіріңіз жарияланды.');
+      const link = document.createElement('a');
+      link.href = opinionPageUrl(); link.textContent = 'Testers opinion →'; link.className = 'testers-link';
+      status.append(document.createElement('br'), link);
+    } catch {
+      status.textContent = localSaved
+        ? surveyText('Сохранено на устройстве. Отправим при подключении или следующем посещении.', 'Saved on this device. We’ll retry when connected or on your next visit.', 'Құрылғыда сақталды. Байланыс орнағанда немесе келесі кіргенде қайта жіберіледі.')
+        : surveyText('Не удалось сохранить отзыв. Проверьте подключение и повторите.', 'Your review could not be saved. Check your connection and retry.', 'Пікір сақталмады. Байланысты тексеріп, қайталаңыз.');
+      const retry = document.createElement('button');
+      retry.type = 'button'; retry.className = 'btn-secondary';
+      retry.textContent = surveyText('Повторить', 'Retry', 'Қайталау'); retry.onclick = upload;
+      status.append(document.createElement('br'), retry);
+    }
+  };
+  await upload();
 }
+
+window.addEventListener('online', syncSurveyQueue);
+window.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.testers-link').forEach(link => {
+    link.href = opinionPageUrl();
+    link.addEventListener('click', () => { link.href = opinionPageUrl(); });
+  });
+  syncSurveyQueue();
+});
 
 // ---------- Team view: index.html?survey=results ----------
 function summarizeSurvey(list) {
@@ -156,5 +222,5 @@ function showSurveyResults() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  if (new URLSearchParams(location.search).get('survey') === 'results') showSurveyResults();
+  if (document.getElementById('appContainer') && new URLSearchParams(location.search).get('survey') === 'results') showSurveyResults();
 });

@@ -352,7 +352,7 @@ registerScenario({
           playTone(900, 'square', 0.06, 0.12);
           itDbLed.material.color.setHex(0xFBBF24);
           itDbLed.material.emissive.setHex(0xF59E0B);
-          setTimeout(() => {
+          runLater(() => {
             itDbLed.material.color.setHex(0x22C55E);
             itDbLed.material.emissive.setHex(0x22C55E);
           }, 700);

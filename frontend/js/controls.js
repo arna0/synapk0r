@@ -259,10 +259,11 @@ function setupFPSControls(container) {
   viewportWrap.addEventListener('touchcancel', onTouchEnd, { passive: true });
 }
 
+const centerRayPoint = new THREE.Vector2(0, 0);
 function checkCenterRaycast() {
   if (!camera) return;
 
-  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+  raycaster.setFromCamera(centerRayPoint, camera);
   const intersects = raycaster.intersectObjects(interactiveObjects, true);
 
   const tip = document.getElementById('hoverTooltip');

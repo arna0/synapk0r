@@ -1,6 +1,12 @@
 import { defineConfig } from '@playwright/test';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+const surveyFile = join(mkdtempSync(join(tmpdir(), 'synapkor-browser-')), 'survey.jsonl');
 
 export default defineConfig({
+  // Software WebGL scenes are expensive; keep CI resource measurements deterministic.
+  workers: process.env.CI ? 1 : undefined,
   testDir: './frontend/test',
   testMatch: '**/*.spec.mjs',
   use: {
@@ -12,6 +18,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'node backend/src/server.js',
+    env: { SURVEY_FILE: surveyFile, RATE_LIMIT_PER_MIN: '500' },
     url: 'http://127.0.0.1:8787/api/health',
   },
 });

@@ -29,6 +29,26 @@ let portafilterObj, grinderObj, tamperObj, machineObj, pitcherObj, oatMilkObj, c
 let espressoStreamParticles, steamParticles, iceCubesGroup;
 let cupLiquidMesh;
 let baristaGroup = null;
+let renderPixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+let requestSceneFrame = () => {};
+
+// Character models, hands and studio lighting live outside room groups.
+function disposeRoom(room) {
+  if (!room) return;
+  const geometries = new Set(), materials = new Set(), textures = new Set();
+  room.traverse(object => {
+    if (object.geometry) geometries.add(object.geometry);
+    for (const material of (Array.isArray(object.material) ? object.material : [object.material])) {
+      if (!material) continue;
+      materials.add(material);
+      for (const value of Object.values(material)) if (value?.isTexture) textures.add(value);
+    }
+  });
+  room.parent?.remove(room);
+  geometries.forEach(value => value.dispose());
+  materials.forEach(value => value.dispose());
+  textures.forEach(value => value.dispose());
+}
 
 const player = {
   pos: new THREE.Vector3(0, 1.65, 0.95),
@@ -109,7 +129,7 @@ function initThreeFPS() {
 
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setSize(width, height, false);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(renderPixelRatio);
 
   // CLEAN STUDIO COLOR GRADING & ACES TONEMAPPING
   renderer.outputEncoding = THREE.sRGBEncoding;
@@ -151,13 +171,33 @@ function initThreeFPS() {
   let clock = new THREE.Clock();
   let shakeIntensity = 0;
   let guideRenderTimer = 0;
+  let labelTimer = 0;
+  const targetLook = new THREE.Vector3();
+  let frame = 0, frameSamples = 0, frameTotal = 0;
+  function scheduleFrame() {
+    if (!frame && !document.hidden && document.getElementById('gameScreen')?.classList.contains('active')) {
+      frame = requestAnimationFrame(animate);
+    }
+  }
+  requestSceneFrame = () => { clock.getDelta(); scheduleFrame(); };
+  document.addEventListener('visibilitychange', requestSceneFrame);
   createGuideArrow();
 
   function animate() {
-    requestAnimationFrame(animate);
+    frame = 0;
     const delta = Math.min(clock.getDelta(), 0.08);
     const time = clock.getElapsedTime();
-    if (!document.getElementById('gameScreen')?.classList.contains('active')) return;
+    if (document.hidden || !document.getElementById('gameScreen')?.classList.contains('active')) return;
+    scheduleFrame();
+    frameTotal += delta;
+    if (++frameSamples === 180) {
+      // Resolution changes are infrequent; slow devices spend less work on pixels.
+      if (frameTotal / frameSamples > 0.026 && renderPixelRatio > 1) {
+        renderPixelRatio = Math.max(1, renderPixelRatio - 0.25);
+        renderer.setPixelRatio(renderPixelRatio);
+      }
+      frameSamples = 0; frameTotal = 0;
+    }
 
     // ================= STANDARD FPS WASD VECTOR MOVEMENT =================
     let inputForward = 0;
@@ -188,7 +228,7 @@ function initThreeFPS() {
     }
 
     // Snappy, silky-smooth standard FPS responsiveness (instant reaction + micro-easing)
-    const accelFactor = Math.min(delta * 24.0, 1.0);
+    const accelFactor = 1 - Math.exp(-24 * delta);
     player.velocity.x = THREE.MathUtils.lerp(player.velocity.x, targetVelX, accelFactor);
     player.velocity.z = THREE.MathUtils.lerp(player.velocity.z, targetVelZ, accelFactor);
 
@@ -227,7 +267,7 @@ function initThreeFPS() {
     if (shakeIntensity > 0) {
       camera.position.x += (Math.random() - 0.5) * shakeIntensity;
       camera.position.y += (Math.random() - 0.5) * shakeIntensity;
-      shakeIntensity *= 0.88;
+      shakeIntensity *= Math.exp(-7.7 * delta);
       if (shakeIntensity < 0.001) shakeIntensity = 0;
     }
 
@@ -237,7 +277,7 @@ function initThreeFPS() {
     const dirY = Math.sin(player.pitch);
     const dirZ = -Math.cos(player.yaw) * cosPitch;
 
-    const targetLook = new THREE.Vector3(
+    targetLook.set(
       camera.position.x + dirX,
       camera.position.y + dirY,
       camera.position.z + dirZ
@@ -261,8 +301,12 @@ function initThreeFPS() {
       }
     }
 
-    checkCenterRaycast();
-    updateObjectLabels();
+    labelTimer += delta;
+    if (labelTimer >= 1 / 30) {
+      checkCenterRaycast();
+      updateObjectLabels();
+      labelTimer = 0;
+    }
     updateGuideArrow(time);
     guideRenderTimer += delta;
     if (guideRenderTimer > 0.2) { guideRenderTimer = 0; renderGuide(); }
@@ -284,7 +328,9 @@ function initThreeFPS() {
     if (steamParticles && steamParticles.visible) {
       const sp = steamParticles.geometry.attributes.position.array;
       for (let i = 1; i < sp.length; i += 3) {
-        sp[i] += delta * 0.45;
+        sp[i] += delta * 0.28;
+        sp[i - 1] += Math.sin(time * 2.4 + i) * delta * 0.018;
+        sp[i + 1] += Math.cos(time * 1.8 + i) * delta * 0.012;
         if (sp[i] > 1.55) sp[i] = 1.30;
       }
       steamParticles.geometry.attributes.position.needsUpdate = true;
@@ -309,7 +355,7 @@ function initThreeFPS() {
       // Voltmeter needle (380V -> 0V)
       if (meter1Needle) {
         const voltTarget = (safetyState.powerState === 'ON') ? (0.65 + Math.sin(time * 24.0) * 0.015) : -1.25;
-        meter1Needle.rotation.z = THREE.MathUtils.lerp(meter1Needle.rotation.z, voltTarget, 0.08);
+        meter1Needle.rotation.z = THREE.MathUtils.lerp(meter1Needle.rotation.z, voltTarget, 1 - Math.exp(-5 * delta));
       }
 
       // Manometer 1 (Steam line: 8.5 bar -> 4 bar -> 0 bar)
@@ -321,7 +367,7 @@ function initThreeFPS() {
           p1Target = -0.15; // 4 bar
         }
         if (safetyState.valvePressure !== 'ZERO') p1Target += Math.sin(time * 18.0) * 0.012;
-        meter2Needle.rotation.z = THREE.MathUtils.lerp(meter2Needle.rotation.z, p1Target, 0.06);
+        meter2Needle.rotation.z = THREE.MathUtils.lerp(meter2Needle.rotation.z, p1Target, 1 - Math.exp(-3.7 * delta));
       }
 
       // Manometer 2 (Pneumatic line: 6.2 bar -> 0 bar)
@@ -333,7 +379,7 @@ function initThreeFPS() {
           p2Target = -0.30;
         }
         if (safetyState.valvePressure !== 'ZERO') p2Target += Math.sin(time * 20.0) * 0.01;
-        meter3Needle.rotation.z = THREE.MathUtils.lerp(meter3Needle.rotation.z, p2Target, 0.06);
+        meter3Needle.rotation.z = THREE.MathUtils.lerp(meter3Needle.rotation.z, p2Target, 1 - Math.exp(-3.7 * delta));
       }
 
       // 3. Steam particle discharge
@@ -390,9 +436,10 @@ function initThreeFPS() {
       }
     }
 
+    if (typeof npcTick === 'function') npcTick(delta);
     renderer.render(scene, camera);
   }
-  animate();
+  scheduleFrame();
 
   window.triggerCameraShake = function(intensity = 0.035) {
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) shakeIntensity = intensity;

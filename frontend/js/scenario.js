@@ -53,7 +53,7 @@ function removeScenarioScenes() {
   if (!scene) return;
   Object.keys(SCENARIOS).forEach(id => {
     const old = scene.getObjectByName(id + 'Environment');
-    if (old) scene.remove(old);
+    if (old) disposeRoom(old);
   });
   scenarioState.group = null;
 }
@@ -100,7 +100,7 @@ function startScenario(id) {
     if (scene) {
       ['baristaEnvironment', 'safetyEnvironment'].forEach(n => {
         const old = scene.getObjectByName(n);
-        if (old) scene.remove(old);
+        if (old) disposeRoom(old);
       });
       removeScenarioScenes();
       interactiveObjects = [];
@@ -348,28 +348,9 @@ function showScenarioReport(def) {
 // ================= SMALL ANIMATION HELPERS =================
 // Smoothly moves an object to a position (and optional rotation), then calls done.
 function tweenObject(obj, to, ms, done) {
-  const from = obj.position.clone();
-  const fromRot = obj.rotation.clone();
-  const start = performance.now();
-  const owner = runNumber;
-  function tick(now) {
-    if (owner !== runNumber) return;
-    const k = Math.min(1, (now - start) / ms);
-    const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-    obj.position.set(
-      from.x + (to.x - from.x) * e,
-      from.y + (to.y - from.y) * e,
-      from.z + (to.z - from.z) * e
-    );
-    if (to.rot) obj.rotation.set(
-      fromRot.x + (to.rot[0] - fromRot.x) * e,
-      fromRot.y + (to.rot[1] - fromRot.y) * e,
-      fromRot.z + (to.rot[2] - fromRot.z) * e
-    );
-    if (k < 1) requestAnimationFrame(tick);
-    else if (done) done();
-  }
-  requestAnimationFrame(tick);
+  const targets = { position: [to.x, to.y, to.z] };
+  if (to.rot) targets.rotation = to.rot;
+  animateProp(obj, targets, ms, done, 0.06);
 }
 
 // Re-draws a canvas texture in place (screens, vitals board)

@@ -205,7 +205,7 @@ function updateObjectLabels() {
     entry.obj.getWorldPosition(_labelVec);
     _labelVec.y += entry.offset;
     const dist = _labelVec.distanceTo(camera.position);
-    const p = _labelVec.clone().project(camera);
+    const p = _labelVec.project(camera);
     const onScreen = p.z < 1 && p.x > -1 && p.x < 1 && p.y > -1 && p.y < 1;
     // Non-target labels only nearby to keep the view clean
     if (!onScreen || (!isTarget && dist > 3.2)) {

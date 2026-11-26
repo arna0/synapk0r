@@ -133,3 +133,30 @@ if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-mot
     '#homeScreen .module-card, #homeScreen .feature, #homeScreen .audience, #homeScreen .how-steps > li'
   ).forEach((element) => observer.observe(element));
 }
+
+// Pointer depth is coalesced into one update per frame; touch retains the static composition.
+(() => {
+  const stage = document.querySelector('.hero-stage');
+  const home = document.getElementById('homeScreen');
+  if (!stage || !home) return;
+  const motion = matchMedia('(prefers-reduced-motion: reduce)');
+  let pending = 0, x = 0, y = 0;
+  const reset = () => { stage.style.setProperty('--stage-x', '0deg'); stage.style.setProperty('--stage-y', '0deg'); };
+  stage.addEventListener('pointermove', event => {
+    if (motion.matches || event.pointerType !== 'mouse') return;
+    const rect = stage.getBoundingClientRect();
+    x = ((event.clientX - rect.left) / rect.width - 0.5) * 7;
+    y = -((event.clientY - rect.top) / rect.height - 0.5) * 5;
+    if (!pending) pending = requestAnimationFrame(() => {
+      pending = 0;
+      if (motion.matches) return;
+      stage.style.setProperty('--stage-x', x.toFixed(2) + 'deg');
+      stage.style.setProperty('--stage-y', y.toFixed(2) + 'deg');
+    });
+  });
+  stage.addEventListener('pointerleave', () => { cancelAnimationFrame(pending); pending = 0; reset(); });
+  motion.addEventListener('change', reset);
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => home.classList.toggle('hero-out-of-view', !entry.isIntersecting)).observe(stage);
+  }
+})();

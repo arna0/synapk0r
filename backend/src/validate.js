@@ -74,9 +74,14 @@ export function validateSurvey(body) {
     clean[key] = answers[key];
   }
   const num = v => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+  if (body.id !== undefined && (typeof body.id !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(body.id))) {
+    return { ok: false, error: 'Invalid submission id' };
+  }
   return {
     ok: true,
     survey: {
+      ...(body.id ? { id: body.id } : {}),
+      publish: body.publish === true,
       at: new Date().toISOString(),
       module: body.module,
       score: num(body.score),

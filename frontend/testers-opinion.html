@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" class="opinions-document">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Testers opinion · SynapKor</title>
+  <link rel="stylesheet" href="css/styles.css?v=20261138">
+  <link rel="stylesheet" href="css/opinions.css">
+  <script src="js/config.js" defer></script>
+  <script src="js/survey.js" defer></script>
+  <script src="js/opinions.js" defer></script>
+</head>
+<body class="opinions-page">
+  <main class="opinions-main">
+    <nav class="opinions-nav" aria-label="Navigation"><a id="opinionsBack" href="index.html">← SynapKor</a><span>PLAYER FEEDBACK</span></nav>
+    <header class="opinions-hero"><span class="eyebrow" id="opinionsEyebrow">From the people who tried it</span><h1>Testers opinion</h1><p id="opinionsIntro">Anonymous answers and reviews from the post-simulation survey.</p></header>
+    <div class="opinions-controls">
+      <label for="opinionModule" id="opinionFilterLabel">Simulation</label>
+      <select id="opinionModule"><option value="">All simulations</option><option value="safety">Safety engineer</option><option value="barista">Barista</option><option value="it">IT specialist</option><option value="doctor">Doctor</option></select>
+      <button id="opinionRefresh" type="button">Refresh</button>
+    </div>
+    <p id="opinionStatus" role="status" aria-live="polite">Loading reviews…</p>
+    <section id="opinionList" class="opinion-list" aria-label="Tester reviews" aria-busy="true"></section>
+    <button id="opinionMore" type="button" hidden>Load more</button>
+    <footer id="opinionsFooter">Finish a simulation and complete its survey to add your opinion.</footer>
+  </main>
+</body>
+</html>

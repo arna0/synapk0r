@@ -41,7 +41,7 @@ function handleWindowResize() {
   if (w <= 0 || h <= 0) return;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const ratio = renderPixelRatio;
   if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
   renderer.setSize(w, h, false);
 }
@@ -88,6 +88,7 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const scr = document.getElementById(id);
   if (scr) scr.classList.add('active');
+  requestSceneFrame();
   setTimeout(handleWindowResize, 50);
 }
 
@@ -167,11 +168,11 @@ function startBaristaVR() {
     initThreeFPS();
     if (scene) {
       const oldSafety = scene.getObjectByName('safetyEnvironment');
-      if (oldSafety) scene.remove(oldSafety);
+      if (oldSafety) disposeRoom(oldSafety);
       removeScenarioScenes();
       // Always rebuild so objects, interactive list and quest props start fresh
       const oldBarista = scene.getObjectByName('baristaEnvironment');
-      if (oldBarista) scene.remove(oldBarista);
+      if (oldBarista) disposeRoom(oldBarista);
       build3DEnvironment();
     }
     renderHUD();

@@ -887,23 +887,24 @@ function handleSafetyInteraction(targetName) {
     if (safetyState.powerState === 'ON') {
       isActionInProgress = true;
       animateHandPunch(() => {
-        playBreakerClack();
-        stopTransformerHum();
-        if (mainBreakerLever) mainBreakerLever.rotation.z = 0.6; // Angled DOWN (OFF)
-        safetyState.powerState = 'OFF';
+        animateProp(mainBreakerLever, { rotation: [0, 0, 0.6] }, 300, () => {
+          playBreakerClack();
+          stopTransformerHum();
+          safetyState.powerState = 'OFF';
 
-        // Update HUD Pill
-        const pill = document.getElementById('pillPower');
-        const dot = document.getElementById('dotPower');
-        const text = document.getElementById('textPower');
-        if (pill) pill.className = 'safety-hud-pill safe';
-        if (dot) dot.className = 'status-dot safe';
-        if (text) text.innerText = 'ПИТАНИЕ: 0.0V OFF (ОБЕСТОЧЕНО)';
+          // Update HUD Pill
+          const pill = document.getElementById('pillPower');
+          const dot = document.getElementById('dotPower');
+          const text = document.getElementById('textPower');
+          if (pill) pill.className = 'safety-hud-pill safe';
+          if (dot) dot.className = 'status-dot safe';
+          if (text) text.innerText = 'ПИТАНИЕ: 0.0V OFF (ОБЕСТОЧЕНО)';
 
-        showComboPopup('⚡ РУБИЛЬНИК ВЫКЛЮЧЕН! ПОРЯДОК ВЕРЕН +150 XP');
-        logAction('SWITCH_POWER_BREAKER_OFF', Date.now(), true);
-        isActionInProgress = false;
-        checkSafetyCompletion();
+          showComboPopup('⚡ РУБИЛЬНИК ВЫКЛЮЧЕН! ПОРЯДОК ВЕРЕН +150 XP');
+          logAction('SWITCH_POWER_BREAKER_OFF', Date.now(), true);
+          isActionInProgress = false;
+          checkSafetyCompletion();
+        });
       });
     } else {
       showSafetyAlert('💡 Рубильник уже обесточен. Установите замок LOTO [3] и проверьте напряжение [2].');
@@ -1000,31 +1001,32 @@ function operateValve(idx) {
     playValveHiss();
     const wheel = idx === 0 ? valve1Wheel : valve2Wheel;
     const particles = idx === 0 ? steamParticles1 : steamParticles2;
-    if (wheel) wheel.rotation.z += Math.PI * 2;
-    if (particles) particles.visible = true;
+    animateProp(wheel, { rotation: [wheel.rotation.x, wheel.rotation.y, wheel.rotation.z + Math.PI * 2] }, 750, () => {
+      if (particles) particles.visible = true;
 
-    safetyState.valvesOpened[idx] = true;
+      safetyState.valvesOpened[idx] = true;
 
-    if (safetyState.valvesOpened[0] && safetyState.valvesOpened[1]) {
-      safetyState.valvePressure = 'ZERO';
-      const pill = document.getElementById('pillPressure');
-      const dot = document.getElementById('dotPressure');
-      const text = document.getElementById('textPressure');
-      if (pill) pill.className = 'safety-hud-pill safe';
-      if (dot) dot.className = 'status-dot safe';
-      if (text) text.innerText = 'ДАВЛЕНИЕ: 0.0 БАР (СБРОШЕНО)';
-      showComboPopup('💨 ДАВЛЕНИЕ В КОНТУРАХ ПОЛНОСТЬЮ СБРОШЕНО! +150 XP');
-      logAction('PRESSURE_VALVES_RELIEVED_ZERO', Date.now(), true);
-    } else {
-      safetyState.valvePressure = 'NORMAL';
-      const text = document.getElementById('textPressure');
-      if (text) text.innerText = 'ДАВЛЕНИЕ: 4.0 БАР (СТРАВЛИВАНИЕ)';
-      showComboPopup(`💨 Клапан ${idx + 1} открыт: стравливание давления +75 XP`);
-      logAction(`OPEN_VALVE_${idx + 1}_PRESSURE_RELIEF`, Date.now(), true);
-    }
+      if (safetyState.valvesOpened[0] && safetyState.valvesOpened[1]) {
+        safetyState.valvePressure = 'ZERO';
+        const pill = document.getElementById('pillPressure');
+        const dot = document.getElementById('dotPressure');
+        const text = document.getElementById('textPressure');
+        if (pill) pill.className = 'safety-hud-pill safe';
+        if (dot) dot.className = 'status-dot safe';
+        if (text) text.innerText = 'ДАВЛЕНИЕ: 0.0 БАР (СБРОШЕНО)';
+        showComboPopup('💨 ДАВЛЕНИЕ В КОНТУРАХ ПОЛНОСТЬЮ СБРОШЕНО! +150 XP');
+        logAction('PRESSURE_VALVES_RELIEVED_ZERO', Date.now(), true);
+      } else {
+        safetyState.valvePressure = 'NORMAL';
+        const text = document.getElementById('textPressure');
+        if (text) text.innerText = 'ДАВЛЕНИЕ: 4.0 БАР (СТРАВЛИВАНИЕ)';
+        showComboPopup(`💨 Клапан ${idx + 1} открыт: стравливание давления +75 XP`);
+        logAction(`OPEN_VALVE_${idx + 1}_PRESSURE_RELIEF`, Date.now(), true);
+      }
 
-    isActionInProgress = false;
-    checkSafetyCompletion();
+      isActionInProgress = false;
+      checkSafetyCompletion();
+    });
   });
 }
 
@@ -1129,9 +1131,9 @@ function startSafetyVR() {
     if (scene) {
       // Remove barista objects if present
       const oldBarista = scene.getObjectByName('baristaEnvironment');
-      if (oldBarista) scene.remove(oldBarista);
+      if (oldBarista) disposeRoom(oldBarista);
       const oldSafety = scene.getObjectByName('safetyEnvironment');
-      if (oldSafety) scene.remove(oldSafety);
+      if (oldSafety) disposeRoom(oldSafety);
       removeScenarioScenes();
 
       build3DSafetyEnvironment();

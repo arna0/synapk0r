@@ -25,100 +25,68 @@ function handleFPSObjectClick(name) {
 
 function executeStepAction(stepIdx, onComplete) {
   const config = state.stepsConfig[stepIdx];
-
-  switch(stepIdx) {
-    case 0: // Portafilter -> Grinder Fork
+  const finish = () => {
+    showComboPopup(config.popup);
+    advanceStep();
+    onComplete?.();
+  };
+  switch (stepIdx) {
+    case 0:
       playTone(520, 'sine', 0.15, 0.1);
-      animateHandPunch(() => {
-        portafilterObj.position.set(-1.18, 1.28, -0.27);
-        showComboPopup(config.popup);
-        advanceStep();
-        if (onComplete) onComplete();
-      });
+      animateHandPunch(() => animateProp(portafilterObj, { position: [-1.18, 1.28, -0.27] }, 520, finish, 0.12));
       break;
-
-    case 1: // Grinder -> Tamping Mat
+    case 1:
       playGrinderSound();
       showActionProgressBar('ПОМОЛ ЗЕРНА (18 грамм)...', 1400, () => {
         playSuccessChime();
-        portafilterObj.position.set(-0.42, 1.18, 0.05);
-        showComboPopup(config.popup);
-        advanceStep();
-        if (onComplete) onComplete();
+        animateProp(portafilterObj, { position: [-0.42, 1.18, 0.05] }, 480, finish, 0.09);
       });
       break;
-
-    case 2: // Tamper -> Lock into Left Group Head
+    case 2:
       animateHandPunch(() => {
-        playTamperThud();
-        if (window.triggerCameraShake) window.triggerCameraShake(0.04);
-
-        // Realistic smooth tamping sequence
-        tamperObj.position.set(-0.42, 1.30, 0.05);
-        runLater(() => {
-          tamperObj.position.set(-0.42, 1.22, 0.05);
-          runLater(() => {
-            tamperObj.position.set(-0.18, 1.16, 0.05);
-            portafilterObj.position.set(-0.70, 1.32, -0.17);
-            showComboPopup(config.popup);
-            advanceStep();
-            if (onComplete) onComplete();
-          }, 250);
-        }, 200);
+        animateProp(tamperObj, { position: [-0.42, 1.30, 0.05] }, 320, () => {
+          animateProp(tamperObj, { position: [-0.42, 1.22, 0.05] }, 260, () => {
+            playTamperThud();
+            window.triggerCameraShake?.(0.02);
+            animateProp(tamperObj, { position: [-0.18, 1.16, 0.05] }, 360, () => {
+              animateProp(portafilterObj, { position: [-0.70, 1.32, -0.17] }, 480, finish, 0.08);
+            }, 0.08);
+          });
+        }, 0.04);
       });
       break;
-
-    case 3: // Espresso Extraction into Cup
+    case 3:
       playEspressoFlowSound();
       espressoStreamParticles.visible = true;
       cupLiquidMesh.visible = true;
-      cupLiquidMesh.scale.set(1, 0.30, 1);
       cupLiquidMesh.material.color.setHex(0x3E271E);
-
+      animateProp(cupLiquidMesh, { scale: [1, 0.30, 1] }, 1800);
       showActionProgressBar('ЭКСТРАКЦИЯ ЭСПРЕССО (9 БАР)...', 2000, () => {
         espressoStreamParticles.visible = false;
-        playSuccessChime();
-        showComboPopup(config.popup);
-        advanceStep();
-        if (onComplete) onComplete();
+        playSuccessChime(); finish();
       });
       break;
-
-    case 4: // Steaming Milk under Right Wand -> Pour into Cup
+    case 4:
       playSteamSound();
-      pitcherObj.position.set(-0.04, 1.18, -0.19);
+      animateProp(pitcherObj, { position: [-0.04, 1.18, -0.19] }, 420);
       steamParticles.visible = true;
-
       showActionProgressBar('ВЗБИВАНИЕ ОВСЯНОГО МОЛОКА...', 1800, () => {
         steamParticles.visible = false;
         playSuccessChime();
-
-        // Animate silky milk pouring over cup
-        pitcherObj.position.set(-0.62, 1.36, -0.15);
-        pitcherObj.rotation.z = -0.40;
-        cupLiquidMesh.scale.set(1, 0.75, 1);
-        cupLiquidMesh.material.color.setHex(0xE5D4C0);
-
-        runLater(() => {
-          pitcherObj.rotation.z = 0;
-          pitcherObj.position.set(0.20, 1.16, -0.05);
-          showComboPopup(config.popup);
-          advanceStep();
-          if (onComplete) onComplete();
-        }, 700);
+        animateProp(pitcherObj, { position: [-0.62, 1.36, -0.15], rotation: [0, 0, -0.40] }, 550, () => {
+          cupLiquidMesh.material.color.setHex(0xE5D4C0);
+          animateProp(cupLiquidMesh, { scale: [1, 0.75, 1] }, 650);
+          runLater(() => animateProp(pitcherObj, { position: [0.20, 1.16, -0.05], rotation: [0, 0, 0] }, 550, finish, 0.05), 700);
+        }, 0.08);
       });
       break;
-
-    case 5: // Assemble Final Iced Latte & Present to Customer
+    case 5:
       playIceDropSound();
       iceCubesGroup.visible = true;
-      animateHandPunch(() => {
-        cupLiquidMesh.scale.set(1, 0.90, 1);
-        cupObj.position.set(0.0, 1.16, 0.12);
-        advanceStep();
-        renderQuestSuccess();
-        if (onComplete) onComplete();
-      });
+      animateProp(cupLiquidMesh, { scale: [1, 0.90, 1] }, 420);
+      animateHandPunch(() => animateProp(cupObj, { position: [0.0, 1.16, 0.12] }, 650, () => {
+        advanceStep(); renderQuestSuccess(); onComplete?.();
+      }, 0.045));
       break;
   }
 }

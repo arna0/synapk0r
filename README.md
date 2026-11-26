@@ -14,6 +14,13 @@ Track focus areas: *career guidance and exploring career paths · skills develop
 
 ---
 
+
+## Animation and tester reviews
+
+The menu now has pointer-responsive depth, layered motion and reduced-motion support. Tool transfers, hand reaches, valves and gauge response use elapsed time, and leaving a simulation cancels pending transfers. Old room resources are released when restarting or switching professions, with rendering paused in the menu and hidden tabs.
+
+**[Testers opinion](frontend/testers-opinion.html)** shows anonymous questionnaires from the shared backend, with profession filtering and pagination. Failed uploads remain queued on the device. Shared reviews require the Express backend and a persistent data volume; GitHub Pages alone cannot store or share them. See [storage and connection setup](docs/REVIEW_STORAGE.md).
+
 ## 1. Problem
 
 When choosing a career, a school or university student usually relies on descriptions, tests and other people's stories. They only find out what the job is actually like once they have already spent years studying or have started working.

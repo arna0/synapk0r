@@ -185,12 +185,9 @@ function npcMood(delta, gesture) {
 
 // ---------------------------------------------------------------- per-frame update
 const _npcV = new THREE.Vector3();
-let npcLast = performance.now();
-function npcTick() {
-  requestAnimationFrame(npcTick);
+function npcTick(delta) {
   const now = performance.now();
-  const dt = Math.min(0.1, (now - npcLast) / 1000);
-  npcLast = now;
+  const dt = Math.min(0.05, delta);
   const o = NPC.obj;
   if (!o || NPC.state === 'hidden' || !o.parent) return;
   const game = document.getElementById('gameScreen');
@@ -261,7 +258,6 @@ function npcTick() {
     }
   }
 }
-requestAnimationFrame(npcTick);
 
 // hide the old block figures once the real person is in the room
 function npcHidePlaceholder(obj) {
