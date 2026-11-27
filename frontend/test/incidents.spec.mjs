@@ -15,8 +15,12 @@ test('three IT incidents require different repairs and verified checkout; weak r
   ];
   async function openExercise() {
     await expect(page.locator('.mg')).toHaveCount(0);
-    await page.locator('#guidedAction').click();
-    await expect(page.locator('.mg')).toBeVisible();
+    // A queued manager call may consume the attempted action before the exercise opens.
+    await expect(async () => {
+      if (await page.locator('.mg').count()) return;
+      await page.locator('#guidedAction').click();
+      await expect(page.locator('.mg')).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 20000 });
   }
   async function choose(pattern) {
     await page.locator('.mg').getByRole('button', { name: pattern }).click();

@@ -233,6 +233,7 @@ function showInterrupt(def) {
   const data = INTERRUPTS[def.id];
   if (!data) return;
   isActionInProgress = true;
+  renderGuide(true);
   const host = document.getElementById('viewportWrap') || document.body;
   const total = secondsFor(12);
   const box = document.createElement('div');
@@ -259,7 +260,7 @@ function showInterrupt(def) {
     sessionEvents.push({ t: scenarioNow(), action: timedOut ? 'INTERRUPT_TIMEOUT' : ok ? 'INTERRUPT_HANDLED' : 'INTERRUPT_POOR', ok });
     showGuideToast(timedOut ? 'Время вышло: на звонок никто не ответил' : ok ? 'Хорошо: коротко, по делу, работа продолжается' : 'Так делать не стоит: это засчитано как ошибка');
     box.remove();
-    runLater(() => { isActionInProgress = false; }, 200);
+    runLater(() => { isActionInProgress = false; renderGuide(true); }, 200);
   };
   shuffled.forEach((o, i) => {
     const b = document.createElement('button');

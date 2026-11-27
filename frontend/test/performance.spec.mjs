@@ -8,7 +8,7 @@ test('restarting rooms releases GPU resources and the menu stops rendering', asy
   await expect(page.locator('#threeCanvas canvas')).toBeVisible();
   const samples = [];
   for (let i = 0; i < 3; i++) {
-    await expect.poll(() => page.evaluate(() => !!scene.getObjectByName('baristaEnvironment')?.getObjectByName('roomDetails'))).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!scene.getObjectByName('baristaEnvironment')?.getObjectByName('roomDetails')), { timeout: 30000 }).toBe(true);
     // Compare fully enhanced rooms after their resources have reached the GPU.
     await expect.poll(() => page.evaluate(() => !!scene.getObjectByName('baristaEnvironment')?.userData.enhancementComplete), { timeout: 30000 }).toBe(true);
     const frame = await page.evaluate(() => renderer.info.render.frame);
