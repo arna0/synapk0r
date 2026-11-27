@@ -164,9 +164,13 @@ function handleConflictAnswer(opt) {
   if (opt === 'B' && (fit.scores.timing ?? 0) < 85) {
     isActionInProgress = true;
     const before = fit.scores.timing ?? 0;
+    const remakeEventStart = sessionEvents.length;
     mgShot(() => {
       isActionInProgress = false;
-      sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'BARISTA_REMAKE', ok: fit.scores.timing > before });
+      // The assessment retains earlier mistakes; recovery uses this attempt's own score.
+      const attempt = sessionEvents.slice(remakeEventStart).reverse().find(event => /^MINIGAME_TIMING_\d+$/.test(event.action));
+      const after = attempt ? Number(attempt.action.split('_').pop()) : before;
+      sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'BARISTA_REMAKE', ok: after > before, before_score: before, after_score: after });
       startQuest3Management();
     });
     return;

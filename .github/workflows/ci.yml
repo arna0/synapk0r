@@ -32,6 +32,8 @@ jobs:
         run: for f in frontend/js/*.js; do node --check "$f" || exit 1; done
       - name: Gameplay regression tests
         run: node --test frontend/test/*.test.mjs
+      - name: Verify release asset provenance
+        run: node scripts/check-assets.mjs
 
   browser-tests:
     runs-on: ubuntu-24.04

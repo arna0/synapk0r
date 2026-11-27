@@ -56,7 +56,7 @@ test('pagination and module filter include every public response and protect old
   const filtered = await (await fetch(base + '/api/reviews?module=doctor')).json();
   assert.equal(filtered.total, 1);
   const summary = await (await fetch(base + '/api/survey/summary')).json();
-  assert.equal(summary.n, 24);
+  assert.equal(summary.n, 23);
   assert.equal((await fetch(base + '/api/reviews?page=-1')).status, 400);
   assert.equal((await fetch(base + '/api/reviews?page=1.5')).status, 400);
   assert.equal((await fetch(base + '/api/reviews?module=unknown')).status, 400);

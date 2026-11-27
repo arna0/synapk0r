@@ -29,6 +29,10 @@ const scenarioState = {
   answers: {},          // decision key -> option id
   answerTimes: {},      // decision key -> seconds spent
   phaseStartedAt: 0,
+  restorationTime: null,
+  totalTime: null,
+  caseId: null,
+  scenarioVersion: null,
   group: null
 };
 
@@ -80,7 +84,7 @@ function startScenario(id) {
   state.timer = 0;
   state.misclicks = 0;
   resetSessionEvents();
-  Object.assign(scenarioState, { phase: 'steps', step: 0, decision: 0, answers: {}, answerTimes: {}, phaseStartedAt: Date.now() });
+  Object.assign(scenarioState, { phase: 'steps', step: 0, decision: 0, answers: {}, answerTimes: {}, phaseStartedAt: Date.now(), restorationTime: null, totalTime: null, caseId: id + '-standard', scenarioVersion: def.version || id + '-1' });
   if (def.reset) def.reset();
 
   document.getElementById('vrQuestTitle').innerText = def.questTitle;
@@ -117,12 +121,12 @@ function startScenario(id) {
     handleWindowResize();
   }, 100);
 
-  sessionEvents.push({ t: 0, action: 'SESSION_START_' + id.toUpperCase(), ok: true });
+  sessionEvents.push({ t: 0, action: 'SESSION_START_' + id.toUpperCase(), ok: true, case_id: scenarioState.caseId, scenario_version: scenarioState.scenarioVersion });
   setGuideVisible(guideVisible);
   showIntro(id);
 
   clearInterval(state.timerInterval);
-  state.timerInterval = setInterval(() => {
+  state.timerInterval = runEvery(() => {
     state.timer++;
     const m = String(Math.floor(state.timer / 60)).padStart(2, '0');
     const s = String(state.timer % 60).padStart(2, '0');
@@ -156,8 +160,15 @@ function handleScenarioClick(name) {
   }
 
   isActionInProgress = true;
-  const finish = () => {
-    sessionEvents.push({ t: scenarioNow(), action: `STEP_DONE_${step.id}_${scenarioState.step + 1}`, ok: true });
+  const startingRun = runNumber;
+  const startingStep = scenarioState.step;
+  let finished = false;
+  const stillCurrent = () => startingRun === runNumber && currentProfession === def.id && scenarioState.phase === 'steps' && scenarioState.step === startingStep;
+  const finish = (result) => {
+    if (finished || !stillCurrent()) return;
+    if (step.exerciseId && def.acceptExercise && !def.acceptExercise(step.exerciseId, result)) return;
+    finished = true;
+    sessionEvents.push({ t: scenarioNow(), action: `STEP_DONE_${step.stepId || step.id}_${startingStep + 1}`, ok: true, exercise_id: step.exerciseId || null, case_id: scenarioState.caseId, scenario_version: scenarioState.scenarioVersion });
     if (step.popup) showComboPopup(step.popup);
     scenarioState.step++;
     runLater(() => { isActionInProgress = false; }, 250);
@@ -172,7 +183,13 @@ function handleScenarioClick(name) {
       renderScenarioHUD();
     }
   };
-  animateHandPunch(() => step.run ? step.run(finish) : finish());
+  animateHandPunch(() => {
+    if (!stillCurrent()) return;
+    if (step.exerciseId) {
+      runScenarioExercise(step.exerciseId, def.exerciseContext ? def.exerciseContext(step) : {}, finish);
+    } else if (step.run) step.run(finish);
+    else finish();
+  });
 }
 
 function renderScenarioHUD() {
@@ -213,6 +230,8 @@ function startScenarioDecision(idx) {
   const def = getActiveScenario();
   if (!def) return;
   const d = def.decisions[idx];
+  if (!d) { finishScenario(); return; }
+  isActionInProgress = false;
   scenarioState.phase = 'decision';
   scenarioState.decision = idx;
   scenarioState.phaseStartedAt = Date.now();
@@ -261,12 +280,16 @@ function handleScenarioKey(code) {
 function finishScenario() {
   const def = getActiveScenario();
   scenarioState.phase = 'done';
+  scenarioState.totalTime = scenarioNow();
   clearInterval(state.timerInterval);
-  playVictoryFanfare();
+  const assessment = scenarioAssessment({ module: def.id, miniScores: typeof fit !== 'undefined' ? fit.scores : {}, accuracy: Math.max(0, 100 - state.misclicks * 5), hard: scenarioDecisionPercent(def, 'hard'), soft: scenarioDecisionPercent(def, 'soft'), events: sessionEvents, independent: independentRun });
+  if (!assessment.requiresRetry) playVictoryFanfare();
   sessionEvents.push({ t: scenarioNow(), action: 'SCENARIO_COMPLETE', ok: true });
   document.getElementById('hudDockInner').innerHTML = '';
   document.getElementById('victoryTitle').innerText = def.victory.title;
-  document.getElementById('victoryText').innerText = def.victory.text;
+  document.getElementById('victoryText').innerText = assessment.requiresRetry
+    ? gameText('Смена завершена. Некоторые упражнения требуют повторной практики; откройте отчёт, чтобы выбрать следующий шаг.', 'The shift is complete. Some exercises need more practice; open the report to choose your next step.', 'Ауысым аяқталды. Кейбір жаттығуларды қайталау керек; келесі қадамды таңдау үшін есепті ашыңыз.')
+    : def.victory.text;
   document.getElementById('victoryModal').style.display = 'flex';
 }
 
@@ -295,31 +318,34 @@ function getScenarioObjectHint(def, name) {
 }
 
 // ================= REPORT =================
+function scenarioDecisionPercent(def, kind) {
+  const decisions = def.decisions.filter(decision => decision.kind === kind);
+  if (!decisions.length) return 100;
+  return Math.round(decisions.reduce((sum, decision) => {
+    const option = decision.options.find(item => item.id === scenarioState.answers[decision.key]);
+    return sum + (option ? option.score : 0);
+  }, 0) / decisions.length);
+}
+
 function showScenarioReport(def) {
   const r = def.report;
   const accuracy = Math.max(0, 100 - state.misclicks * 5);
-  const pct = (kind) => {
-    const ds = def.decisions.filter(d => d.kind === kind);
-    if (!ds.length) return 100;
-    return Math.round(ds.reduce((sum, d) => {
-      const o = d.options.find(x => x.id === scenarioState.answers[d.key]);
-      return sum + (o ? o.score : 0);
-    }, 0) / ds.length);
-  };
-  const hard = pct('hard');
-  const soft = pct('soft');
-  const score = Math.max(20, Math.min(99, Math.round(accuracy * 0.35 + hard * 0.4 + soft * 0.25)));
-  const tier = score >= 85 ? 'top' : (score >= 60 ? 'mid' : 'low');
+  const hard = scenarioDecisionPercent(def, 'hard');
+  const soft = scenarioDecisionPercent(def, 'soft');
+  const miniScores = typeof fit !== 'undefined' && fit.module === def.id ? { ...fit.scores } : {};
+  const assessment = scenarioAssessment({ module: def.id, miniScores, accuracy, hard, soft, events: sessionEvents, independent: independentRun });
+  const { score, tier } = assessment;
   const ctx = { accuracy, hard, soft, score, answers: scenarioState.answers };
+  const reportTime = def.id === 'it' ? scenarioState.restorationTime : state.timer;
 
   setResultTexts({
-    hardLabel: r.stepsLabel, hard: accuracy + '%',
-    handsLabel: r.hardLabel, hands: hard >= 100 ? 'Верно' : (hard >= 40 ? 'Частично' : 'Неверно'),
+    hardLabel: gameText('Практические упражнения', 'Practical exercises', 'Практикалық жаттығулар'), hard: assessment.practical + '%',
+    handsLabel: r.hardLabel, hands: hard >= 100 ? gameText('Верно', 'Correct', 'Дұрыс') : (hard >= 40 ? gameText('Частично', 'Partly', 'Ішінара') : gameText('Неверно', 'Incorrect', 'Қате')),
     softLabel: r.softLabel, soft: soft + '%',
-    timeLabel: r.timeLabel, time: state.timer + ' сек',
+    timeLabel: r.timeLabel, time: reportTime === null ? '—' : reportTime + gameText(' сек', ' sec', ' сек'),
     grade: gameText('Результат упражнения', 'Exercise result', 'Жаттығу нәтижесі'),
     desc: tier === 'top' ? r.descTop : r.descLow,
-    praise: tier === 'top' ? 'Отличный результат симуляции' : (tier === 'mid' ? 'Хороший результат, есть зоны роста' : 'Симуляция завершена с замечаниями'),
+    praise: assessment.requiresRetry ? gameText('Есть упражнение для повторения', 'An exercise needs more practice', 'Қайталау қажет жаттығу бар') : gameText('Результат учебной попытки', 'Practice attempt result', 'Оқу әрекетінің нәтижесі'),
     badge: gameText('УЧЕБНАЯ СИМУЛЯЦИЯ', 'PRACTICE SCENARIO', 'ОҚУ СИМУЛЯЦИЯСЫ'),
     xp: '⚡ +' + Math.max(100, score * 9) + ' XP',
     competencies: r.competencies(ctx)
@@ -332,7 +358,12 @@ function showScenarioReport(def) {
   const metrics = {
     step_accuracy_percent: accuracy,
     wrong_clicks: state.misclicks,
-    total_time_sec: state.timer
+    total_time_sec: scenarioState.totalTime ?? scenarioNow(),
+    restoration_time_sec: scenarioState.restorationTime,
+    mini_scores: miniScores,
+    guidance_mode: assessment.mode,
+    case_id: scenarioState.caseId,
+    scenario_version: scenarioState.scenarioVersion
   };
   def.decisions.forEach(d => {
     const o = d.options.find(x => x.id === scenarioState.answers[d.key]);
@@ -340,7 +371,7 @@ function showScenarioReport(def) {
     metrics[d.key + '_correct'] = !!o && o.score >= 100;
     metrics[d.key + '_response_sec'] = scenarioState.answerTimes[d.key] || 0;
   });
-  const report = { module: def.id, score, metrics, events: sessionEvents };
+  const report = { module: def.id, score, assessment, metrics, events: [...sessionEvents] };
   postToHost({ type: 'session_complete', ...report });
   requestAiFeedback(report);
 }

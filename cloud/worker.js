@@ -101,8 +101,8 @@ async function route(request, env, url) {
         COALESCE(SUM(json_extract(answers, '$.before') IN ('1','2','3')),0) AS h1_before_le3,
         COALESCE(SUM(json_extract(answers, '$.no_help') = 'Да'),0) AS h2_no_help,
         COALESCE(SUM(json_extract(answers, '$.learned') = 'Да'),0) AS h3_learned,
-        COALESCE(SUM(json_extract(answers, '$.more') = 'Да'),0) AS want_more FROM reviews`),
-      db.prepare('SELECT module, COUNT(*) AS n FROM reviews GROUP BY module')
+        COALESCE(SUM(json_extract(answers, '$.more') = 'Да'),0) AS want_more FROM reviews WHERE publish = 1`),
+      db.prepare('SELECT module, COUNT(*) AS n FROM reviews WHERE publish = 1 GROUP BY module')
     ]);
     return json({ ...totals.results[0], by_module: Object.fromEntries(modules.results.map(r => [r.module, r.n])) });
   }

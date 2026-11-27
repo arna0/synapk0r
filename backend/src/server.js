@@ -82,9 +82,9 @@ export function createApp({ surveyFile = SURVEY_FILE } = {}) {
     res.status(saved.duplicate ? 200 : 201).json({ ok: true, ...saved });
   });
 
-  // Aggregated counts only (no comments or raw rows) for the team and the pitch
+  // Public aggregates include only responses explicitly consented for publication.
   app.get('/api/survey/summary', async (req, res) => {
-    const rows = await surveys.all();
+    const rows = (await surveys.all()).filter(row => row.publish === true);
     const n = rows.length;
     const count = (k, v) => rows.filter(r => (Array.isArray(v) ? v.includes(r.answers[k]) : r.answers[k] === v)).length;
     const byModule = {};
@@ -134,8 +134,12 @@ export function createApp({ surveyFile = SURVEY_FILE } = {}) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  createApp().listen(PORT, () => {
+  const server = createApp().listen(PORT, process.env.HOST || undefined, () => {
     console.log(`SynapKor backend: http://localhost:${PORT}`);
     console.log(`AI feedback: ${aiConfigured() ? 'Claude API enabled' : 'no ANTHROPIC_API_KEY, rule-based fallback'}`);
+  });
+  server.on('error', error => {
+    console.error('[server] Cannot listen:', error.message);
+    process.exitCode = 1;
   });
 }

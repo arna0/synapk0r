@@ -6,6 +6,10 @@ let itDashScreen = null, itTermScreen = null;
 let itDbLed = null, itCableObj = null, itAlarmLight = null, itAlarmDome = null;
 let itRackLeds = [];
 let itIncidentOpen = true;
+let itRun = ITIncident.createRun(ITIncident.CASES[0].id);
+let itLastCaseId = null;
+const itText = values => gameText(...values);
+const itCase = () => ITIncident.getCase(itRun.caseId);
 
 const IT_PORT_POS = { x: 1.53, y: 1.255, z: -1.19 };
 const IT_CABLE_LOOSE = { x: 1.6, y: 0.95, z: -1.12 };
@@ -24,7 +28,7 @@ function drawItDashboard(mode) {
   ctx.font = '800 30px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(ok ? '✓ ALL SYSTEMS OPERATIONAL' : '⚠ ALERT · shop.kz', 22, 33);
+  ctx.fillText(ok ? gameText('✓ ПОКУПКА ПРОВЕРЕНА', '✓ CHECKOUT VERIFIED', '✓ САТЫП АЛУ ТЕКСЕРІЛДІ') : '⚠ ALERT · shop.kz', 22, 33);
 
   // uptime graph
   ctx.strokeStyle = '#334155';
@@ -46,21 +50,21 @@ function drawItDashboard(mode) {
   ctx.stroke();
   ctx.fillStyle = '#94A3B8';
   ctx.font = '500 16px "JetBrains Mono", monospace';
-  ctx.fillText('успешные запросы, % · последние 30 мин', 22, 262);
+  ctx.fillText(gameText('успешные запросы, % · 30 мин', 'successful requests, % · 30 min', 'сәтті сұраулар, % · 30 мин'), 22, 262);
 
   ctx.font = '600 20px "JetBrains Mono", monospace';
   if (mode === 'alert') {
     ctx.fillStyle = '#FCA5A5';
-    ctx.fillText('Сайт недоступен · нажмите [E]', 22, 300);
+    ctx.fillText(gameText('Оплата недоступна · [E]', 'Checkout unavailable · [E]', 'Төлем қолжетімсіз · [E]'), 22, 300);
   } else if (mode === 'details') {
     ctx.fillStyle = '#FCA5A5';
-    ctx.fillText('HTTP 503 · 6 мин · 100% ошибок', 22, 296);
+    ctx.fillText('POST /checkout · HTTP 503', 22, 296);
     ctx.fillStyle = '#FDE68A';
-    ctx.fillText('Подозрение: база данных db-01', 22, 322);
+    ctx.fillText(gameText('Нужна диагностика зависимости', 'Dependency diagnosis needed', 'Тәуелділікті диагностикалау қажет'), 22, 322);
   } else {
     ctx.fillStyle = '#6EE7B7';
-    ctx.fillText('HTTP 200 OK · ответ 84 мс', 22, 296);
-    ctx.fillText('Инцидент #412 закрыт', 22, 322);
+    ctx.fillText('/ready 200 · POST /checkout 201', 22, 296);
+    ctx.fillText(gameText('Тестовый заказ сохранён', 'Test order persisted', 'Сынақ тапсырыс сақталды'), 22, 322);
   }
   tex.needsUpdate = true;
 }
@@ -73,24 +77,10 @@ function drawItTerminal(mode) {
   ctx.font = '600 17px "JetBrains Mono", monospace';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  const lines = {
-    idle: [['#94A3B8', 'oncall@ops:~$ _']],
-    logs: [
-      ['#94A3B8', '$ journalctl -u shop-api -n 5'],
-      ['#E2E8F0', '12:04:51 GET /cart 200'],
-      ['#F87171', '12:05:02 ERROR db-01:5432'],
-      ['#F87171', '  connection refused'],
-      ['#F87171', '12:05:03 HTTP 503 /checkout'],
-      ['#FDE68A', '12:05:03 retry 3/3 failed']
-    ],
-    restart: [
-      ['#94A3B8', '$ sudo systemctl restart shop-api'],
-      ['#94A3B8', '$ systemctl status shop-api'],
-      ['#34D399', '● shop-api: active (running)'],
-      ['#E2E8F0', 'db-01:5432 connected ✓'],
-      ['#34D399', '12:11:40 GET /checkout 200']
-    ]
-  }[mode];
+  const raw = mode === 'logs' ? itCase().logs : mode === 'diagnosis' ? itCase().inspection
+    : mode === 'restart' ? itCase().afterRepair : ['oncall@ops:~$ _'];
+  const lines = raw.flatMap(line => line.match(/.{1,39}/g) || ['']).slice(0, 9)
+    .map(line => [mode === 'restart' ? '#34D399' : '#E2E8F0', line]);
   lines.forEach(([color, text], i) => {
     ctx.fillStyle = color;
     ctx.fillText(text, 14, 14 + i * 26);
@@ -266,8 +256,13 @@ function buildItEnvironment(group) {
   wire.position.set(0, 0.52, 0);
   itCableObj.add(plug, wire);
   addHitbox(itCableObj, 0.12, 0.3, 0.12, 0, 0.1, 0);
-  itCableObj.position.set(IT_CABLE_LOOSE.x, IT_CABLE_LOOSE.y, IT_CABLE_LOOSE.z);
-  itCableObj.rotation.set(0.15, 0, -0.08);
+  const cablePosition = itRun.caseId === 'network-link' ? IT_CABLE_LOOSE : IT_PORT_POS;
+  itCableObj.position.set(cablePosition.x, cablePosition.y, cablePosition.z);
+  itCableObj.rotation.set(...(itRun.caseId === 'network-link' ? [0.15, 0, -0.08] : [0, 0, 0]));
+  if (itRun.caseId !== 'network-link') {
+    itDbLed.material.color.setHex(0x22C55E);
+    itDbLed.material.emissive.setHex(0x22C55E);
+  }
   group.add(itCableObj);
   interactiveObjects.push(itCableObj);
 
@@ -288,160 +283,212 @@ function updateItEnvironment(time) {
   }
 }
 
-registerScenario({
-  id: 'it',
-  questTitle: 'IT · ЗАДАНИЕ 1: ИНЦИДЕНТ — САЙТ НЕДОСТУПЕН',
-  arena: { minX: -3.4, maxX: 3.4, minZ: -0.6, maxZ: 2.6 },
-  spawn: { x: 0, z: 0.9, eye: 1.65, yaw: 0, pitch: -0.2 },
-  labels: {
-    monitorDash: 'Мониторинг',
-    terminal: 'Ноутбук (терминал)',
-    serverDb: 'Сервер db-01',
-    patchCable: 'Сетевой кабель'
-  },
-  labelOffsets: { monitorDash: 0.85, terminal: 0.35, serverDb: 0.16, patchCable: 0.12 },
-  intro: {
-    title: 'Дежурство IT-инженера',
-    goal: 'Вы — дежурный инженер. Интернет-магазин перестал открываться. Найдите причину, почините и убедитесь, что всё работает. Потом исправьте баг в коде и объясните ситуацию руководителю магазина.',
-    plan: [
-      'Разберите инцидент: алерт → логи → сервер → кабель → перезапуск → проверка',
-      'Найдите ошибку в коде и выберите правильное исправление',
-      'Объясните руководителю магазина, что случилось'
-    ],
-    extra: [['1–3', 'Выбор ответа']]
-  },
-  reset() { itIncidentOpen = true; },
-  build: buildItEnvironment,
-  update: updateItEnvironment,
-  steps: [
-    {
-      id: 'monitorDash', name: 'Изучите алерт мониторинга', short: 'Алерт', hint: 'Открыть алерт',
-      how: 'Монитор с красным экраном стоит на столе слева. Наведите прицел и нажмите <b>E</b>.',
-      why: 'Работа дежурного начинается с фактов: что сломалось, с какого момента и насколько серьёзно.',
-      popup: 'ALERT: shop.kz → HTTP 503',
-      run(done) {
-        playTone(660, 'square', 0.12, 0.08);
-        showActionProgressBar('ОТКРЫВАЮ АЛЕРТ...', 900, () => { drawItDashboard('details'); done(); });
-      }
-    },
-    {
-      id: 'terminal', name: 'Откройте логи сервиса', short: 'Логи', hint: 'Открыть логи (journalctl)',
-      how: 'Ноутбук с терминалом стоит на столе правее монитора. Наведите прицел и нажмите <b>E</b>.',
-      why: 'Логи — это журнал событий программы. По ним видно, какая ошибка произошла на самом деле.',
-      popup: 'ERROR: db-01 connection refused',
-      run(done) {
-        showActionProgressBar('journalctl -u shop-api ...', 1200, () => { drawItTerminal('logs'); playTone(220, 'sawtooth', 0.2, 0.08); done(); });
-      }
-    },
-    {
-      id: 'serverDb', name: 'Найдите сервер базы данных db-01', short: 'Сервер', hint: 'Осмотреть db-01',
-      how: 'Серверная стойка справа. У db-01 горит <b>красный</b> индикатор. Подойдите (W), наведите прицел и нажмите <b>E</b>.',
-      why: 'Логи говорят: сайт не может подключиться к базе данных на db-01. Проверяем сам сервер.',
-      popup: 'db-01: LINK DOWN — кабель выпал',
-      run(done) {
-        showActionProgressBar('ДИАГНОСТИКА db-01...', 1000, () => { playTone(300, 'triangle', 0.2, 0.1); done(); });
-      }
-    },
-    {
-      id: 'patchCable', name: 'Подключите сетевой кабель', short: 'Кабель', hint: 'Вставить кабель в порт eth0',
-      how: 'Синий кабель свисает справа от db-01. Наведите на разъём прицел и нажмите <b>E</b>.',
-      why: 'Без сетевого подключения сервер с базой данных недоступен для сайта.',
-      popup: 'LINK UP · 1 Гбит/с',
-      run(done) {
-        tweenObject(itCableObj, { ...IT_PORT_POS, rot: [0, 0, 0] }, 600, () => {
-          playTone(900, 'square', 0.06, 0.12);
-          itDbLed.material.color.setHex(0xFBBF24);
-          itDbLed.material.emissive.setHex(0xF59E0B);
-          runLater(() => {
-            itDbLed.material.color.setHex(0x22C55E);
-            itDbLed.material.emissive.setHex(0x22C55E);
-          }, 700);
-          done();
-        });
-      }
-    },
-    {
-      id: 'terminal', name: 'Перезапустите сервис сайта', short: 'Рестарт', hint: 'systemctl restart shop-api',
-      how: 'Вернитесь к ноутбуку на столе и нажмите <b>E</b>, чтобы перезапустить сервис.',
-      why: 'Пока базы не было, сервис сайта «завис» в ошибке. Перезапуск заставит его подключиться заново.',
-      popup: 'shop-api: active (running)',
-      run(done) {
-        showActionProgressBar('sudo systemctl restart shop-api ...', 1500, () => { drawItTerminal('restart'); done(); });
-      }
-    },
-    {
-      id: 'monitorDash', name: 'Проверьте, что сайт работает', short: 'Проверка', hint: 'Обновить мониторинг',
-      how: 'Посмотрите на монитор мониторинга и нажмите <b>E</b>.',
-      why: 'Инцидент закрыт, только когда это подтверждают метрики, а не «вроде работает».',
-      popup: 'HTTP 200 OK · всё работает ✅',
-      run(done) {
-        showActionProgressBar('ОБНОВЛЯЮ МЕТРИКИ...', 900, () => { drawItDashboard('ok'); itIncidentOpen = false; done(); });
-      }
-    }
-  ],
-  completeBanner: {
-    title: 'САЙТ СНОВА РАБОТАЕТ!',
-    text: 'Инцидент закрыт за один проход: алерт → логи → причина → исправление → проверка.'
-  },
-  decisions: [
-    {
-      key: 'code', kind: 'hard', stepLabel: 'Исправить баг в коде',
-      questTitle: 'IT · ЗАДАНИЕ 2: CODE REVIEW',
-      guideTask: 'Найдите ошибку в коде',
-      guideHow: 'Прочитайте код внизу экрана и выберите правильное исправление (или нажмите <b>1</b>–<b>3</b>).',
-      guideWhy: 'Хороший инженер не прячет ошибку, а устраняет её причину.',
-      prompt: () => `
-        <div class="speech-bubble scn-bubble-info">
-          💬 <strong>Разработчица Дана:</strong> Пока база не работала, отчёт в админке упал с ошибкой
-          <code>ZeroDivisionError</code>. Функция считает средний чек за день. Как исправить?
-        </div>
-        <pre class="scn-code"><span class="k">def</span> average_check(orders):
-    total = sum(order.price <span class="k">for</span> order <span class="k">in</span> orders)
-    <span class="k">return</span> total / len(orders)</pre>`,
-      options: [
-        { id: 'a', label: 'minus_one', score: 0, text: 'Делить на <code>len(orders) - 1</code>, чтобы знаменатель не был нулём' },
-        { id: 'b', label: 'empty_check', score: 100, text: 'Добавить проверку: если заказов нет — вернуть 0 (<code>if not orders: return 0</code>)' },
-        { id: 'c', label: 'silence_error', score: 40, text: 'Обернуть код в <code>try / except: pass</code>, чтобы ошибка не показывалась' }
-      ]
-    },
-    {
-      key: 'comms', kind: 'soft', stepLabel: 'Объяснить заказчику',
-      questTitle: 'IT · ЗАДАНИЕ 3: РАЗГОВОР С ЗАКАЗЧИКОМ',
-      guideTask: 'Ответьте руководителю магазина',
-      guideHow: 'Выберите ответ внизу экрана (или нажмите <b>1</b>–<b>3</b>).',
-      guideWhy: 'Бизнесу важно понять, что случилось и что будет дальше. Простыми словами, без жаргона.',
-      prompt: () => `
-        <div class="speech-bubble">
-          😟 <strong>Руководитель магазина:</strong> «Сайт не работал 20 минут, клиенты не могли оплатить заказы!
-          Что случилось и повторится ли это?»
-        </div>`,
-      options: [
-        { id: 'a', label: 'jargon', score: 50, text: '«На db-01 упал линк eth0, shop-api ловил connection refused, я рестартнул юнит — 503 ушли»' },
-        { id: 'b', label: 'clear_plan', score: 100, text: '«Сайт снова работает. У сервера базы данных отключился сетевой кабель. Закрепим кабели и настроим оповещение, чтобы замечать такое за минуту. Отчёт пришлю сегодня»' },
-        { id: 'c', label: 'blame_shift', score: 10, text: '«Это вопрос к отделу, который отвечает за железо. Я тут ни при чём»' }
-      ]
-    }
-  ],
-  victory: {
-    title: 'Инцидент закрыт!',
-    text: 'Вы нашли причину сбоя, вернули сайт в работу, разобрали баг в коде и объяснили ситуацию заказчику.'
-  },
-  report: {
-    stepsLabel: 'Точность действий при инциденте',
-    hardLabel: 'Исправление бага в коде',
-    softLabel: 'Коммуникация с заказчиком',
-    timeLabel: 'Время восстановления сайта',
-    grades: {
-      top: 'Junior DevOps / инженер поддержки',
-      mid: 'Стажёр IT-поддержки',
-      low: 'Нужно подтянуть основы IT'
-    },
-    descTop: 'Чёткий порядок: алерт → логи → причина → исправление → проверка. Верно исправили код и понятно объяснили сбой бизнесу.',
-    descLow: 'Сайт восстановлен, но есть зоны роста: действовать по плану диагностики, исправлять причину ошибки и говорить с заказчиком простым языком.',
-    competencies: (c) => [
-      c.accuracy >= 90 ? 'Диагностика по порядку: мониторинг → логи → железо, без лишних действий' : 'Зона роста: действовать по плану диагностики, а не наугад',
-      c.answers.code === 'b' ? 'Нашли настоящую причину бага (деление на ноль при пустом списке) и исправили её' : 'Зона роста: устранять причину ошибки, а не прятать её',
-      c.answers.comms === 'b' ? 'Объяснили сбой заказчику простыми словами и предложили план' : 'Зона роста: объяснять техническое простым языком и брать ответственность'
+function itChoice(id, text, correct, feedback) {
+  return { id, text: itText(text), correct, feedback: itText(feedback) };
+}
+
+function itExercise(stage) {
+  const data = itCase();
+  const retry = ['Сопоставьте вывод с фактами, затем попробуйте снова.', 'Compare the conclusion with the evidence, then try again.', 'Қорытындыны деректермен салыстырып, қайта көріңіз.'];
+  const matched = ['Вывод подтверждён наблюдениями.', 'The evidence supports this conclusion.', 'Бақылаулар бұл қорытындыны растайды.'];
+  if (stage === 'triage') return {
+    title: gameText('С чего начать дежурство?', 'What needs attention first?', 'Кезекшілікті неден бастау керек?'),
+    task: gameText('Одновременно пришли три алерта. Выберите первую задачу по текущему влиянию на покупателей.', 'Three alerts arrived together. Choose the first task by its current customer impact.', 'Үш ескерту қатар келді. Сатып алушыларға қазіргі әсеріне қарай бірінші міндетті таңдаңыз.'),
+    trait: 'priority',
+    options: [
+      itChoice('checkout-impact', ['Покупатели не могут оплатить: POST /checkout → 503', 'Customers cannot pay: POST /checkout → 503', 'Сатып алушылар төлей алмайды: POST /checkout → 503'], true, ['Сначала восстанавливаем возможность оплатить заказ.', 'Restore the ability to pay for an order first.', 'Алдымен тапсырысты төлеу мүмкіндігін қалпына келтіреміз.']),
+      itChoice('disk-capacity', ['Диск резервных копий заполнен на 81%; запись продолжается', 'Backup disk is 81% full; backups still run', 'Сақтық көшірме дискі 81% толы; жазу жалғасуда'], false, ['Запас места ещё есть; оплата уже не работает.', 'There is still capacity; checkout is already failing.', 'Дискіде орын бар; төлем қазір істемейді.']),
+      itChoice('certificate', ['Сертификат истекает через 21 день', 'Certificate expires in 21 days', 'Сертификат 21 күннен кейін аяқталады'], false, ['Это плановая задача; текущий сбой мешает покупателям.', 'This can be scheduled; the current outage blocks customers.', 'Бұл жоспарлы жұмыс; қазіргі ақау сатып алушыларға кедергі.'])
     ]
+  };
+  if (stage === 'evidence') return {
+    title: gameText('Найдите значимую запись в логах', 'Find the diagnostic log entry', 'Журналдағы маңызды жазбаны табыңыз'),
+    task: gameText('Какая запись объясняет отказ зависимости? Ответ 503 описывает результат, но сам по себе не называет причину.', 'Which entry explains the dependency failure? HTTP 503 describes the result but does not identify its cause.', 'Қай жазба тәуелділік ақауын түсіндіреді? 503 жауабы нәтижені көрсетеді, себебін атамайды.'),
+    trait: 'analysis',
+    options: data.logs.map((text, index) => ({
+      id: index === data.evidenceIndex ? data.evidenceId : 'log-' + index,
+      text, correct: index === data.evidenceIndex,
+      feedback: itText(index === data.evidenceIndex ? matched : retry)
+    }))
+  };
+  if (stage === 'diagnose') return {
+    title: gameText('Подтвердите первопричину', 'Confirm the root cause', 'Түпкі себебін растаңыз'),
+    task: data.inspection.join('\n'),
+    trait: 'diagnosis',
+    options: [
+      itChoice('disconnected-cable', ['Сетевой кабель db-01 отключён', 'The db-01 network cable is disconnected', 'db-01 желілік кабелі ажыраған'], data.diagnosisId === 'disconnected-cable', data.diagnosisId === 'disconnected-cable' ? matched : retry),
+      itChoice('stopped-database', ['Служба PostgreSQL на доступном сервере остановлена', 'PostgreSQL is stopped on a reachable server', 'Қолжетімді сервердегі PostgreSQL қызметі тоқтаған'], data.diagnosisId === 'stopped-database', data.diagnosisId === 'stopped-database' ? matched : retry),
+      itChoice('wrong-secret', ['Релиз передаёт неверные данные доступа к работающей базе', 'The release sends incorrect credentials to a running database', 'Релиз жұмыс істейтін дерекқорға қате кіру деректерін жібереді'], data.diagnosisId === 'wrong-secret', data.diagnosisId === 'wrong-secret' ? matched : retry)
+    ]
+  };
+  if (stage === 'repair') return {
+    title: gameText('Выберите исправление', 'Choose the repair', 'Түзету әрекетін таңдаңыз'),
+    task: itText(data.cause) + ' ' + gameText('Выберите действие, которое устраняет подтверждённую причину.', 'Choose the action that addresses the confirmed cause.', 'Расталған себепті жоятын әрекетті таңдаңыз.'),
+    trait: 'syntax',
+    options: [
+      itChoice('reconnect-eth0', ['Подключить и закрепить кабель в eth0 db-01', 'Reconnect and secure the cable in db-01 eth0', 'Кабельді db-01 eth0 портына қосып, бекіту'], data.repairId === 'reconnect-eth0', data.repairId === 'reconnect-eth0' ? matched : retry),
+      itChoice('start-postgresql', ['На db-01: sudo systemctl start postgresql', 'On db-01: sudo systemctl start postgresql', 'db-01 серверінде: sudo systemctl start postgresql'], data.repairId === 'start-postgresql', data.repairId === 'start-postgresql' ? matched : retry),
+      itChoice('rollback-config', ['Выполнить согласованный откат shop-api к v2.7 и db-secret-v7', 'Apply the approved shop-api rollback to v2.7 and db-secret-v7', 'shop-api жүйесін бекітілген v2.7 және db-secret-v7 нұсқасына қайтару'], data.repairId === 'rollback-config', data.repairId === 'rollback-config' ? matched : retry),
+      itChoice('restart-blindly', ['Перезапустить shop-api без изменения причины сбоя', 'Restart shop-api without addressing the cause', 'Ақау себебін жоймай shop-api қызметін қайта іске қосу'], false, ['Перезапуск не исправит кабель, остановленную базу или неверный секрет.', 'A restart does not fix a cable, a stopped database or incorrect credentials.', 'Қайта іске қосу кабельді, тоқтаған дерекқорды не қате кіру деректерін түзетпейді.'])
+    ]
+  };
+  return {
+    title: gameText('Докажите восстановление оплаты', 'Prove checkout is restored', 'Төлемнің қалпына келгенін дәлелдеңіз'),
+    task: gameText('Проверьте готовность сервиса и полный путь тестового заказа. Все действия выполняются внутри симуляции.', 'Check service readiness and a complete test-order flow. All actions take place inside the simulation.', 'Қызмет дайындығы мен сынақ тапсырыстың толық жолын тексеріңіз. Барлық әрекет симуляция ішінде орындалады.'),
+    trait: 'verification',
+    checks: [
+      {
+        id: 'health', title: gameText('1. Готовность сервиса', '1. Service readiness', '1. Қызмет дайындығы'),
+        task: gameText('После исправления: GET /ready → 200; database → connected. Какой вывод допустим?', 'After the repair: GET /ready → 200; database → connected. What does this prove?', 'Түзетуден кейін: GET /ready → 200; database → connected. Бұл нені растайды?'),
+        options: [
+          itChoice('ready-200', ['Сервис и база готовы; ещё нужна тестовая покупка', 'Service and database are ready; a test purchase is still needed', 'Қызмет пен дерекқор дайын; сынақ сатып алу әлі қажет'], true, ['Health-check пройден. Теперь проверим пользовательский путь.', 'Health check passed. Now verify the customer flow.', 'Дайындық тексерілді. Енді пайдаланушы жолын тексереміз.']),
+          itChoice('health-enough', ['Можно закрыть инцидент: зелёного индикатора достаточно', 'Close the incident: a green indicator is enough', 'Оқиғаны жабуға болады: жасыл индикатор жеткілікті'], false, ['Готовность процесса не доказывает, что заказы сохраняются.', 'A ready process does not prove orders are persisted.', 'Процестің дайындығы тапсырыстардың сақталуын дәлелдемейді.'])
+        ]
+      },
+      {
+        id: 'checkout', title: gameText('2. Тестовая покупка', '2. Test purchase', '2. Сынақ сатып алу'),
+        task: gameText('Тест: товар → корзина → тестовая оплата → POST /checkout 201 → заказ TEST-42 найден в базе. Успех оплаты: 10/10 тестовых запросов.', 'Test: product → cart → test payment → POST /checkout 201 → order TEST-42 found in the database. Checkout success: 10/10 test requests.', 'Сынақ: тауар → себет → сынақ төлем → POST /checkout 201 → TEST-42 тапсырысы дерекқорда табылды. Төлем сәттілігі: 10/10 сынақ сұрау.'),
+        options: [
+          itChoice('order-confirmed', ['Заказ создан и сохранён; восстановление подтверждено', 'Order created and persisted; recovery is verified', 'Тапсырыс жасалып, сақталды; қалпына келу расталды'], true, ['Оба условия выполнены. Время восстановления зафиксировано.', 'Both checks passed. Restoration time is now recorded.', 'Екі шарт орындалды. Қалпына келу уақыты тіркелді.']),
+          itChoice('homepage-only', ['Достаточно было открыть главную страницу', 'Opening the home page would have been enough', 'Басты бетті ашу жеткілікті еді'], false, ['Главная страница может работать при отказе оплаты. Нужен сохранённый заказ.', 'The home page may work while checkout is broken. A persisted order is required.', 'Төлем істемесе де басты бет ашылуы мүмкін. Сақталған тапсырыс қажет.'])
+        ]
+      }
+    ]
+  };
+}
+
+function itAcceptExercise(exerciseId, result) {
+  const next = ITIncident.completeExercise(itRun, exerciseId, result, Date.now());
+  if (next === itRun) return false;
+  itRun = next;
+  if (exerciseId === 'it.triage') drawItDashboard('details');
+  if (exerciseId === 'it.evidence') drawItTerminal('logs');
+  if (exerciseId === 'it.diagnose') drawItTerminal('diagnosis');
+  if (exerciseId === 'it.repair') {
+    if (itCableObj && itRun.caseId === 'network-link') {
+      itCableObj.position.set(IT_PORT_POS.x, IT_PORT_POS.y, IT_PORT_POS.z);
+      itCableObj.rotation.set(0, 0, 0);
+    }
+    if (itDbLed) {
+      itDbLed.material.color.setHex(0x22C55E);
+      itDbLed.material.emissive.setHex(0x22C55E);
+    }
+    drawItTerminal('restart');
   }
-});
+  if (exerciseId === 'it.verify') {
+    itIncidentOpen = false;
+    drawItDashboard('ok');
+    scenarioState.restorationTime = ITIncident.restorationSeconds(itRun);
+    state.timer = scenarioState.restorationTime;
+    clearInterval(state.timerInterval);
+    document.getElementById('vrTimer').innerText = String(Math.floor(state.timer / 60)).padStart(2, '0') + ':' + String(state.timer % 60).padStart(2, '0');
+    sessionEvents.push({ t: scenarioNow(), action: 'IT_RECOVERY_VERIFIED', ok: true, case_id: itRun.caseId, checks: [...itRun.checks] });
+  }
+  return true;
+}
+
+function createItScenario() {
+  const data = itCase();
+  const interact = gameText('Откройте нужный объект клавишей E или кнопкой действия в подсказке.', 'Open the required object with E or the guide action button.', 'Қажетті затты E пернесімен немесе нұсқаудағы әрекет батырмасымен ашыңыз.');
+  const stages = [
+    ['triage', 'monitorDash', ['Оцените влияние алертов', 'Assess the alerts', 'Ескертулер әсерін бағалаңыз'], ['Алерт', 'Alert', 'Ескерту']],
+    ['evidence', 'terminal', ['Найдите свидетельство в логах', 'Find evidence in the logs', 'Журналдан дәлел табыңыз'], ['Логи', 'Logs', 'Журнал']],
+    ['diagnose', data.diagnosisTarget, ['Проверьте гипотезу по фактам', 'Test the root-cause hypothesis', 'Себеп болжамын тексеріңіз'], ['Причина', 'Cause', 'Себеп']],
+    ['repair', data.repairTarget, ['Устраните подтверждённую причину', 'Repair the confirmed cause', 'Расталған себепті түзетіңіз'], ['Ремонт', 'Repair', 'Түзету']],
+    ['verify', 'monitorDash', ['Проверьте готовность и тестовый заказ', 'Verify readiness and a test order', 'Дайындық пен сынақ тапсырысты тексеріңіз'], ['Проверка', 'Verify', 'Тексеру']]
+  ];
+  return {
+    id: 'it', version: ITIncident.VERSION,
+    questTitle: gameText('IT · ИНЦИДЕНТ #', 'IT · INCIDENT #', 'IT · ОҚИҒА #') + data.number,
+    arena: { minX: -3.4, maxX: 3.4, minZ: -0.6, maxZ: 2.6 },
+    spawn: { x: 0, z: 0.9, eye: 1.65, yaw: 0, pitch: -0.2 },
+    labels: {
+      monitorDash: gameText('Мониторинг', 'Monitoring', 'Мониторинг'),
+      terminal: gameText('Ноутбук (терминал)', 'Laptop (terminal)', 'Ноутбук (терминал)'),
+      serverDb: gameText('Сервер db-01', 'Server db-01', 'db-01 сервері'),
+      patchCable: gameText('Сетевой кабель', 'Network cable', 'Желілік кабель')
+    },
+    labelOffsets: { monitorDash: 0.85, terminal: 0.35, serverDb: 0.16, patchCable: 0.12 },
+    intro: {
+      title: gameText('Дежурство IT-инженера', 'IT engineer on call', 'IT инженерінің кезекшілігі'),
+      goal: gameText('Оплата в магазине shop.kz не работает. Сравните алерты, прочитайте логи, проверьте причину и выберите исправление. Подтвердите восстановление тестовой покупкой.', 'Checkout at shop.kz is failing. Compare alerts, read the logs, verify the cause and choose a repair. Confirm recovery with a test purchase.', 'shop.kz дүкенінде төлем істемейді. Ескертулерді салыстырып, журналды оқыңыз, себебін тексеріп, түзетуді таңдаңыз. Сынақ сатып алумен қалпына келуді растаңыз.'),
+      plan: [
+        gameText('Приоритет → данные → гипотеза → исправление → проверка', 'Priority → evidence → hypothesis → repair → verification', 'Басымдық → дерек → болжам → түзету → тексеру'),
+        gameText('После восстановления: код и ответ заказчику', 'After recovery: code review and customer update', 'Қалпына келген соң: кодты тексеру және тапсырыс берушіге жауап'),
+        gameText('В следующем запуске причина сбоя изменится', 'The next run has a different root cause', 'Келесі айналымда ақау себебі өзгереді')
+      ], extra: [['1–4', gameText('Выбор ответа', 'Choose an answer', 'Жауап таңдау')]]
+    },
+    reset() {
+      try { itLastCaseId = localStorage.getItem('synapkor.lastItCase') || itLastCaseId; } catch (_) {}
+      const selected = ITIncident.nextCase(itLastCaseId);
+      itLastCaseId = selected.id;
+      try { localStorage.setItem('synapkor.lastItCase', selected.id); } catch (_) {}
+      itRun = ITIncident.createRun(selected.id, Date.now());
+      itIncidentOpen = true;
+      Object.assign(SCENARIOS.it, createItScenario());
+      registerScenario(SCENARIOS.it);
+      scenarioState.caseId = selected.id;
+      scenarioState.scenarioVersion = ITIncident.VERSION;
+    },
+    onBegin(now) { itRun = { ...itRun, startedAt: now }; },
+    build: buildItEnvironment, update: updateItEnvironment,
+    exerciseContext(step) { return { caseData: itCase(), state: itRun, stepId: step.stepId, exercise: itExercise(step.stepId) }; },
+    acceptExercise: itAcceptExercise,
+    steps: stages.map(([stage, target, name, short]) => ({
+      id: target, stepId: stage, exerciseId: 'it.' + stage, name: itText(name), short: itText(short), hint: itText(name),
+      how: interact,
+      why: gameText('Вывод должен следовать из наблюдений. Ошибка даёт обратную связь и возможность повторить выбор.', 'Conclusions must follow the evidence. Mistakes give feedback and another attempt.', 'Қорытынды бақылаулардан шығуы керек. Қате кері байланыс пен қайта таңдау мүмкіндігін береді.')
+    })),
+    completeBanner: {
+      title: gameText('ОПЛАТА ВОССТАНОВЛЕНА', 'CHECKOUT RESTORED', 'ТӨЛЕМ ҚАЛПЫНА КЕЛДІ'),
+      text: gameText('Готовность сервиса и сохранение тестового заказа подтверждены. Время восстановления зафиксировано.', 'Service readiness and the persisted test order are verified. Restoration time is recorded.', 'Қызмет дайындығы мен сынақ тапсырыстың сақталуы расталды. Қалпына келу уақыты тіркелді.')
+    },
+    decisions: [
+      {
+        key: 'code', kind: 'hard', stepLabel: gameText('Исправить баг в коде', 'Fix the code defect', 'Кодтағы қатені түзету'),
+        questTitle: 'IT · CODE REVIEW',
+        guideTask: gameText('Обработайте пустой список заказов', 'Handle an empty order list', 'Бос тапсырыстар тізімін өңдеңіз'),
+        guideHow: gameText('Прочитайте код и выберите исправление (1–3).', 'Read the code and choose a fix (1–3).', 'Кодты оқып, түзетуді таңдаңыз (1–3).'),
+        guideWhy: gameText('Исправляем причину ошибки, сохраняя смысл расчёта.', 'Fix the cause while preserving the calculation.', 'Есептің мағынасын сақтап, қате себебін түзетеміз.'),
+        prompt: () => '<div class="speech-bubble scn-bubble-info">' + gameText('Дана, разработчица: «Средний чек падает с ZeroDivisionError, если заказов нет. По требованиям для пустого списка нужно вернуть 0. Как исправить?»', 'Dana, developer: “Average order value throws ZeroDivisionError when there are no orders. The specification requires 0 for an empty list. How should we fix it?”', 'Дана, әзірлеуші: «Тапсырыс болмаса, орташа чек ZeroDivisionError қатесін береді. Талап бойынша бос тізім үшін 0 қайтару керек. Қалай түзетеміз?»') + '</div><pre class="scn-code">def average_check(orders):\n    total = sum(order.price for order in orders)\n    return total / len(orders)</pre>',
+        options: [
+          { id: 'a', label: 'minus_one', score: 0, text: gameText('Делить на len(orders) - 1', 'Divide by len(orders) - 1', 'len(orders) - 1 мәніне бөлу') },
+          { id: 'b', label: 'empty_check', score: 100, text: gameText('До расчёта: if not orders: return 0', 'Before calculating: if not orders: return 0', 'Есептеу алдында: if not orders: return 0') },
+          { id: 'c', label: 'silence_error', score: 40, text: gameText('Скрыть исключение: try / except: pass', 'Hide the exception: try / except: pass', 'Ерекше жағдайды жасыру: try / except: pass') }
+        ]
+      },
+      {
+        key: 'comms', kind: 'soft', stepLabel: gameText('Объяснить заказчику', 'Update the customer', 'Тапсырыс берушіге түсіндіру'),
+        questTitle: gameText('IT · ОТВЕТ ЗАКАЗЧИКУ', 'IT · CUSTOMER UPDATE', 'IT · ТАПСЫРЫС БЕРУШІГЕ ЖАУАП'),
+        guideTask: gameText('Объясните результат и следующий шаг', 'Explain the outcome and next step', 'Нәтиже мен келесі қадамды түсіндіріңіз'),
+        guideHow: gameText('Выберите ответ (1–3).', 'Choose an answer (1–3).', 'Жауап таңдаңыз (1–3).'),
+        guideWhy: gameText('Заказчику нужны проверенный результат, причина и понятный план.', 'The customer needs a verified outcome, a cause and a clear plan.', 'Тапсырыс берушіге расталған нәтиже, себеп және түсінікті жоспар қажет.'),
+        prompt: () => '<div class="speech-bubble">' + gameText('Руководитель магазина: «Покупатели не могли оплатить заказы. Что случилось и что вы проверили?»', 'Store manager: “Customers could not pay for orders. What happened and what did you verify?”', 'Дүкен басшысы: «Сатып алушылар тапсырыстарын төлей алмады. Не болды және нені тексердіңіз?»') + '</div>',
+        options: [
+          { id: 'a', label: 'jargon', score: 50, text: gameText('«Зависимость вернулась, метрики зелёные. Технические детали есть в логах»', '“The dependency is back, metrics are green. Technical details are in the logs.”', '«Тәуелділік қалпына келді, метрикалар жасыл. Техникалық мәлімет журналда бар»') },
+          { id: 'b', label: 'clear_plan', score: 100, text: gameText('Оплата восстановлена; тестовый заказ создан и сохранён. ', 'Checkout is restored; a test order was created and persisted. ', 'Төлем қалпына келді; сынақ тапсырыс жасалып, сақталды. ') + itText(data.cause) + ' ' + itText(data.prevention) },
+          { id: 'c', label: 'blame_shift', score: 10, text: gameText('«Это проблема другой команды; спросите у них»', '“This is another team’s problem; ask them.”', '«Бұл басқа топтың мәселесі; солардан сұраңыз»') }
+        ]
+      }
+    ],
+    victory: {
+      title: gameText('Инцидент разобран', 'Incident exercise completed', 'Оқиға талданды'),
+      text: gameText('Оплата проверена, код разобран, ответ заказчику записан. В отчёте — результаты каждого упражнения.', 'Checkout was verified, code reviewed and the customer response recorded. The report shows each exercise result.', 'Төлем тексерілді, код талданды, тапсырыс берушіге жауап жазылды. Есепте әр жаттығудың нәтижесі бар.')
+    },
+    report: {
+      stepsLabel: gameText('Работа с объектами', 'Scene actions', 'Заттармен жұмыс'),
+      hardLabel: gameText('Исправление кода', 'Code correction', 'Кодты түзету'),
+      softLabel: gameText('Ответ заказчику', 'Customer update', 'Тапсырыс берушіге жауап'),
+      timeLabel: gameText('До проверки восстановления', 'Until recovery verified', 'Қалпына келуді растауға дейін'),
+      descTop: gameText('В этой попытке вы уверенно выполнили практические проверки и решения.', 'You completed the practical checks and decisions successfully in this attempt.', 'Бұл әрекетте практикалық тексерулер мен шешімдерді сәтті орындадыңыз.'),
+      descLow: gameText('Восстановление подтверждено. Отчёт покажет, какие решения стоит повторить без подсказок.', 'Recovery is verified. The report identifies decisions to practise again without guidance.', 'Қалпына келу расталды. Есеп қай шешімдерді нұсқаусыз қайталау керегін көрсетеді.'),
+      competencies: c => [
+        itText(data.title) + ' · ' + ITIncident.VERSION,
+        c.answers.code === 'b' ? gameText('Проверили пустой список перед делением.', 'Checked for an empty list before division.', 'Бөлу алдында бос тізімді тексердіңіз.') : gameText('Повторите обработку пустого списка заказов.', 'Practise handling an empty order list.', 'Бос тапсырыстар тізімін өңдеуді қайталаңыз.'),
+        c.answers.comms === 'b' ? gameText('Связали причину, проверенный результат и профилактику.', 'Connected the cause, verified recovery and prevention.', 'Себепті, расталған нәтижені және алдын алуды байланыстырдыңыз.') : gameText('В ответе заказчику нужны причина, результат и следующий шаг.', 'The customer update needs the cause, outcome and next step.', 'Жауапта себеп, нәтиже және келесі қадам болуы керек.')
+      ]
+    }
+  };
+}
+
+registerScenario(createItScenario());

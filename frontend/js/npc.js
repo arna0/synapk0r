@@ -1,5 +1,4 @@
-// SynapKor — the people in the simulations, played by one scanned 3D man (models/walker.fbx,
-// Renderpeople "Nathan" via rigmodels.com, free for students' personal use).
+// SynapKor — original procedural characters with walking, poses and reactions.
 //
 // Who appears where, only when the story needs them:
 //   Barista: the customer walks up to the counter, watches you make his latte, then complains
@@ -18,70 +17,34 @@ const NPC = {
   seen: { misclicks: 0, slowWarned: false, coughAt: 0 },
 };
 
-const NPC_BONE = (n) => 'rp_nathan_animated_003_walking_' + n;
-
 function npcLoad() {
   if (NPC.loading) return NPC.loading;
-  NPC.loading = new Promise((resolve, reject) => {
-    if (!THREE.FBXLoader) { reject(new Error('FBXLoader missing')); return; }
-    new THREE.FBXLoader().load('models/walker.fbx', (obj) => {
-      obj.traverse((o) => {
-        if (o.isMesh) {
-          o.castShadow = true; o.receiveShadow = true; o.userData.gfxDone = true; o.frustumCulled = false;
-          o.raycast = () => {};   // never blocks clicks on the equipment behind him
-          (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
-            if (m.map) m.map.encoding = THREE.sRGBEncoding;
-            if (m.shininess !== undefined) m.shininess = 8;
-          });
-        }
-      });
-      // in-place walk: keep the hips' height, drop their forward travel
-      obj.animations.forEach((clip) => clip.tracks.forEach((t) => {
-        if (/(hip|root).*\.position$/i.test(t.name)) {
-          for (let i = 0; i < t.values.length; i += 3) { t.values[i] = t.values[0]; t.values[i + 2] = t.values[2]; }
-        }
-      }));
-      // rest pose, height and scale, before any animation runs
-      const rest = new Map();
-      obj.traverse((b) => { if (b.isBone) rest.set(b, { p: b.position.clone(), q: b.quaternion.clone() }); });
-      const box = new THREE.Box3().setFromObject(obj);
-      obj.userData.baseScale = 1.78 / ((box.max.y - box.min.y) || 180);
-      obj.scale.setScalar(obj.userData.baseScale);
-      ['hip', 'spine_02', 'neck', 'head', 'upperarm_l', 'upperarm_r', 'lowerarm_l', 'lowerarm_r',
-        'upperleg_l', 'upperleg_r', 'lowerleg_l', 'lowerleg_r'].forEach((n) => { NPC.bones[n] = obj.getObjectByName(NPC_BONE(n)); });
-      NPC.src = obj;
-      NPC.rest = rest;
-      NPC.mixer = new THREE.AnimationMixer(obj);
-      NPC.walk = obj.animations[0] ? NPC.mixer.clipAction(obj.animations[0]) : null;
-      resolve(obj);
-    }, undefined, reject);
-  });
+  const person = createProceduralPerson();
+  NPC.src = person.root;
+  NPC.bones = person.bones;
+  NPC.rest = new Map(Object.values(person.bones).map(bone => [bone, { p: bone.position.clone(), q: bone.quaternion.clone() }]));
+  NPC.loading = Promise.resolve(person.root);
   return NPC.loading;
 }
 
-// ---------------------------------------------------------------- poses
 function npcRestPose() {
-  NPC.rest.forEach((r, b) => { b.position.copy(r.p); b.quaternion.copy(r.q); });
+  NPC.rest.forEach((rest, bone) => { bone.position.copy(rest.p); bone.quaternion.copy(rest.q); });
 }
 
-// Found by eye on this skeleton: bones run along local X, so Z bends a limb forward
-// and Y swings an arm down from the T-pose.
 function npcApplyPose(pose) {
   NPC.pose = pose;
-  if (NPC.walk) NPC.walk.stop();
   npcRestPose();
-  const B = NPC.bones;
-  B.upperarm_l.rotation.y += 1.25; B.upperarm_r.rotation.y += 1.25;
-  if (pose === 'sit') {
-    B.upperleg_l.rotation.z += 1.5; B.upperleg_r.rotation.z += 1.5;
-    B.lowerleg_l.rotation.z -= 1.5; B.lowerleg_r.rotation.z -= 1.5;
-    B.upperarm_l.rotation.z += 0.35; B.upperarm_r.rotation.z += 0.35;
-    B.lowerarm_l.rotation.z += 1.0; B.lowerarm_r.rotation.z += 1.0;
-  } else {
-    B.upperarm_l.rotation.z += 0.08; B.upperarm_r.rotation.z += 0.08;
-    B.lowerarm_l.rotation.z += 0.25; B.lowerarm_r.rotation.z += 0.25;
+  const bones = NPC.bones;
+  for (const side of ['l', 'r']) {
+    bones['lowerarm_' + side].rotation.x = -0.12;
+    if (pose === 'sit') {
+      bones['upperleg_' + side].rotation.x = -Math.PI / 2;
+      bones['lowerleg_' + side].rotation.x = Math.PI / 2;
+      bones['upperarm_' + side].rotation.x = -0.3;
+      bones['lowerarm_' + side].rotation.x = -0.8;
+    }
   }
-  ['neck', 'spine_02'].forEach((n) => { NPC.bones[n].userData.base = NPC.bones[n].rotation.clone(); });
+  ['neck', 'spine_02'].forEach(name => { bones[name].userData.base = bones[name].rotation.clone(); });
 }
 
 // ---------------------------------------------------------------- show, walk, leave
@@ -197,7 +160,11 @@ function npcTick(delta) {
   if (!active) return;
 
   if (NPC.state === 'walking' && NPC.target) {
-    NPC.mixer.update(dt);
+    const swing = Math.sin(now / 180) * 0.42;
+    NPC.bones.upperleg_l.rotation.x = swing;
+    NPC.bones.upperleg_r.rotation.x = -swing;
+    NPC.bones.upperarm_l.rotation.x = -swing * 0.7;
+    NPC.bones.upperarm_r.rotation.x = swing * 0.7;
     _npcV.subVectors(NPC.target, o.position);
     _npcV.y = 0;
     const d = _npcV.length();
@@ -259,7 +226,7 @@ function npcTick(delta) {
   }
 }
 
-// hide the old block figures once the real person is in the room
+// Hide room placeholders once the animated procedural figure is ready.
 function npcHidePlaceholder(obj) {
   if (!obj) return;
   obj.traverse((c) => { if (c !== obj && c.isMesh) c.visible = false; });
@@ -469,13 +436,14 @@ setInterval(() => {
 const IT_DOOR = [-3.5, -1.9], IT_SPOT = [-0.6, -1.9];
 
 function itManagerLine() {
-  const mins = Math.max(8, Math.round((typeof state !== 'undefined' ? state.timer : 60) / 4));
-  const slips = typeof state !== 'undefined' ? state.misclicks : 0;
-  const mood = Math.max(0.1, Math.min(0.8, 0.8 - mins / 80 - slips * 0.05));
+  const seconds = scenarioState.restorationTime ?? state.timer;
+  const slips = state.misclicks;
+  const mood = Math.max(0.1, Math.min(0.8, 0.8 - seconds / 600 - slips * 0.05));
   NPC.mood = mood;
-  if (mood >= 0.55) return { mood, face: '🙂', text: T(`Сайт лежал ${mins} минут, но вы быстро разобрались. Что это было и повторится ли?`, `The site was down ${mins} minutes, but you were quick. What was it, and will it happen again?`) };
-  if (mood >= 0.3) return { mood, face: '😟', text: T(`Сайт не работал ${mins} минут, клиенты не могли оплатить заказы! Что случилось и повторится ли это?`, `The site was down for ${mins} minutes and customers couldn’t pay! What happened, and will it happen again?`) };
-  return { mood, face: '😠', text: T(`${mins} минут без продаж! Я теряю деньги каждую минуту. Объясните, что происходит?!`, `${mins} minutes without sales! I lose money every minute. Explain what is going on!`) };
+  return { mood, face: mood >= 0.55 ? '🙂' : '😟', text: gameText(
+    'Проверка восстановления заняла ' + seconds + ' сек. Что случилось и как снизить риск повторения?',
+    'Recovery was verified after ' + seconds + ' seconds. What happened, and how can we reduce the risk of recurrence?',
+    'Қалпына келу ' + seconds + ' секундтан кейін тексерілді. Не болды және қайталану қаупін қалай азайтамыз?') };
 }
 
 // =====================================================================================
@@ -584,7 +552,7 @@ if (typeof answerScenarioDecision === 'function') {
   // leaving the game hides whoever is in the room
   const _show = window.showScreen;
   window.showScreen = showScreen = function (id, ...rest) {
-    if (id !== 'gameScreen' && id !== 'resultScreen') npcHide();
+    if (id !== 'gameScreen') npcHide();
     return _show.call(this, id, ...rest);
   };
 })();

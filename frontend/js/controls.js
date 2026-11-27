@@ -77,7 +77,7 @@ function setupFPSControls(container) {
   window.addEventListener('keydown', (e) => {
     if (e.repeat) return;
     const gameActive = document.getElementById('gameScreen').classList.contains('active');
-    if (!gameActive || e.target?.closest?.('input, textarea, select')) return;
+    if (!gameActive || (typeof mgActive !== 'undefined' && mgActive) || e.target?.closest?.('input, textarea, select')) return;
     if (e.target?.closest?.('button') && ['Space', 'Enter'].includes(e.code)) return;
     if (e.code === 'KeyW' || e.code === 'ArrowUp') player.keys.KeyW = true;
     if (e.code === 'KeyS' || e.code === 'ArrowDown') player.keys.KeyS = true;

@@ -28,7 +28,8 @@ test('restarting rooms releases GPU resources and the menu stops rendering', asy
   await page.waitForTimeout(300);
   expect(await page.evaluate(() => window.renderCallsAfterMenu)).toBeLessThanOrEqual(1);
   await page.evaluate(() => startScenario('it'));
-  await expect.poll(() => page.evaluate(() => window.renderCallsAfterMenu)).toBeGreaterThan(1);
+  // The next room compiles fresh shaders on the software WebGL renderer.
+  await expect.poll(() => page.evaluate(() => window.renderCallsAfterMenu), { timeout: 30000 }).toBeGreaterThan(1);
   expect(errors).toEqual([]);
   console.log('GPU allocations across restarts:', JSON.stringify(samples));
 });

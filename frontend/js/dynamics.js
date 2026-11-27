@@ -207,9 +207,9 @@ const INTERRUPTS = {
     who: 'Руководитель магазина звонит:',
     text: '«Сайт до сих пор лежит? Сколько ещё ждать?»',
     options: [
-      { text: '«Причину нашёл, чиню. Напишу через 5 минут»', ok: true },
+      { text: '«Проверяю причину. Дам обновление через 5 минут»', ok: true },
       { text: 'Сбросить звонок и молча продолжить', ok: false },
-      { text: 'Подробно рассказать про логи и eth0', ok: false },
+      { text: 'Подробно пересказать технические журналы', ok: false },
     ],
   },
   doctor: {
@@ -380,9 +380,9 @@ if (typeof EN !== 'undefined') Object.assign(EN, {
   'Засчитано с ошибками': 'Done, with mistakes',
   'Руководитель магазина звонит:': 'The store manager is calling:',
   '«Сайт до сих пор лежит? Сколько ещё ждать?»': '“Is the site still down? How much longer?”',
-  '«Причину нашёл, чиню. Напишу через 5 минут»': '“Found the cause, fixing it. I’ll update you in 5 minutes.”',
+  '«Проверяю причину. Дам обновление через 5 минут»': '“I am investigating. I will update you in 5 minutes.”',
   'Сбросить звонок и молча продолжить': 'Decline the call and carry on',
-  'Подробно рассказать про логи и eth0': 'Explain the logs and eth0 in detail',
+  'Подробно пересказать технические журналы': 'Recite the technical logs in detail',
   'Медсестра заглядывает в кабинет:': 'A nurse looks into the room:',
   '«Доктор, в коридоре пациенту стало плохо!»': '“Doctor, a patient in the corridor has collapsed!”',
   'Попросить вызвать дежурного врача и вернуться к осмотру': 'Ask her to call the doctor on duty and continue the examination',

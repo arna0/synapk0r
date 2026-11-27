@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const answers = { role: '10–11 класс', before: '2', clarity: '5', guide: 'Да', no_help: 'Да', learned: 'Да', report_match: '4', more: 'Да' };
-async function fillSurvey(page, comment) {
+async function fillSurvey(page, comment, publish = true) {
   await page.goto('/?lang=en', { waitUntil: 'domcontentloaded' });
   // Set up the same report card that each completed module renders.
   await page.evaluate(() => {
@@ -11,9 +11,23 @@ async function fillSurvey(page, comment) {
   await expect(page.locator('#surveySubmit')).toBeDisabled();
   for (const [id, value] of Object.entries(answers)) await page.locator(`button.survey-opt[data-q="${id}"][data-v="${value}"]`).click();
   await page.locator('#surveyComment').fill(comment);
-  await expect(page.locator('#surveyCard')).toContainText('published anonymously');
+  await expect(page.locator('#surveyPublish')).not.toBeChecked();
+  if (publish) await page.locator('#surveyPublish').check();
   await page.locator('#surveySubmit').click();
 }
+
+test('feedback is private by default and stays private after an offline retry', async ({ page, request }) => {
+  const comment = 'Private feedback ' + Date.now();
+  await page.route('**/api/survey', route => route.fulfill({ status: 503, body: '{}' }));
+  await fillSurvey(page, comment, false);
+  await expect(page.locator('.survey-thanks')).toContainText('Saved on this device');
+  await page.unroute('**/api/survey');
+  await page.reload();
+  await expect.poll(() => page.evaluate(text => loadSurveyResponses().find(row => row.comment === text)?.synced, comment)).toBe(true);
+  const reviews = await (await request.get('/api/reviews')).json();
+  expect(reviews.reviews.some(row => row.comment === comment)).toBe(false);
+  expect(await page.evaluate(text => loadSurveyResponses().find(row => row.comment === text).publish, comment)).toBe(false);
+});
 
 test.beforeEach(async ({ page }) => {
   await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());

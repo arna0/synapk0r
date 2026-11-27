@@ -1053,12 +1053,12 @@ function checkSafetyCompletion() {
       // Display Victory Modal
       const modal = document.getElementById('victoryModal');
       if (modal) {
-        document.getElementById('victoryTitle').innerText = 'Регламент безопасности успешно выполнен!';
-        document.getElementById('victoryText').innerHTML = `
-          <strong>Оборудование обесточено (0.0V), заблокировано по LOTO, а давление сброшено до 0 бар.</strong><br>
-          Ошибок нарушения ТБ: <span style="color:${safetyState.errors === 0 ? '#10B981' : '#EF4444'}; font-weight:bold;">${safetyState.errors}</span><br>
-          Специалист полностью готов к безопасному ТО агрегатов.
-        `;
+        document.getElementById('victoryTitle').innerText = gameText('Учебная процедура завершена', 'Practice procedure complete', 'Оқу процедурасы аяқталды');
+        document.getElementById('victoryText').textContent = gameText(
+          'Проверки в симуляции выполнены. Откройте отчёт, чтобы разобрать действия и нарушения: ',
+          'The simulated checks are complete. Open the report to review your actions and violations: ',
+          'Симуляция тексерулері аяқталды. Әрекеттер мен бұзушылықтарды талдау үшін есепті ашыңыз: '
+        ) + safetyState.errors;
         modal.style.display = 'flex';
       }
     }, 500);

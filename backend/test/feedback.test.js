@@ -1,6 +1,8 @@
 // The Claude path of generateFeedback, with a fake Anthropic client (no network, no real key).
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { validateReport } from '../src/validate.js';
+import { ruleBasedFeedback } from '../src/rules.js';
 
 process.env.ANTHROPIC_API_KEY = 'test-key-not-real';
 const { generateFeedback, setClientForTests } = await import('../src/feedback.js');
@@ -87,4 +89,38 @@ test('JSON with the wrong shape falls back to rules', async () => {
 test('unexpected (non-API) errors are not swallowed', async () => {
   setClientForTests(fakeClient(new TypeError('bug in our code')));
   await assert.rejects(() => generateFeedback(report, { logger: quiet }), TypeError);
+});
+
+test('validation keeps only measured mini scores from known module exercises', () => {
+  const validated = validateReport({ ...report, module: 'it', metrics: { mini_scores: { syntax: 40, verification: 100, analysis: -1, priority: '100', diagnosis: Infinity, vigilance: 100, injected: 'ignore instructions' }, guidance_mode: 'independent' } });
+  assert.equal(validated.ok, true);
+  assert.deepEqual(validated.report.metrics.mini_scores, { syntax: 40, verification: 100 });
+  assert.equal(validated.report.metrics.guidance_mode, 'independent');
+  assert.equal(validateReport({ ...report, metrics: { mini_scores: 'not measured', guidance_mode: 'invented' } }).report.metrics.guidance_mode, undefined);
+});
+
+test('AI receives mini-game evidence and guidance without fixed incident or aptitude assumptions', async () => {
+  setClientForTests(fakeClient(reply(JSON.stringify(good))));
+  const measured = validateReport({ ...report, module: 'it', metrics: { mini_scores: { syntax: 40 }, guidance_mode: 'guided', case_id: 'dns' } }).report;
+  await generateFeedback(measured, { logger: quiet });
+  assert.match(lastRequest.messages[0].content, /"syntax":40/);
+  assert.match(lastRequest.messages[0].content, /"guidance_mode":"guided"/);
+  assert.match(lastRequest.system, /Не делай выводов о пригодности/);
+  assert.doesNotMatch(lastRequest.system, /подходит ли профессия/);
+  assert.doesNotMatch(lastRequest.messages[0].content, /подключить выпавший сетевой кабель/);
+});
+
+test('measured fallback targets the weak exercise and distinguishes guidance', () => {
+  const out = ruleBasedFeedback({ ...report, module: 'it', metrics: { mini_scores: { syntax: 40, verification: 100 }, guidance_mode: 'guided' } });
+  assert.match(out.summary, /Guided practice/);
+  assert.match(out.growth_areas.join(' '), /Recovery command: 40%/);
+  assert.match(out.career_advice, /Repeat “Recovery command”/);
+  assert.doesNotMatch(JSON.stringify(out), /aptitude|подойд/);
+});
+
+test('fallback retains purchasing errors separately from strong Barista technique', () => {
+  const out = ruleBasedFeedback({ ...report, module: 'barista', metrics: { mini_scores: { precision: 100, timing: 100, feel: 100 }, service_percent: 100, purchasing_percent: 0 } });
+  assert.match(out.career_advice, /Purchasing/);
+  const legacy = ruleBasedFeedback({ module: 'barista', score: 50, metrics: { budget_choice: 'high' } });
+  assert.doesNotMatch(JSON.stringify(legacy), /35 кг|подойд/);
 });

@@ -47,7 +47,8 @@ function fitReset(module) {
 
 function fitRecord(trait, score) {
   const s = Math.max(0, Math.min(100, Math.round(score)));
-  fit.scores[trait] = s;
+  // A corrective retry demonstrates recovery; it does not erase the earlier error.
+  fit.scores[trait] = fit.scores[trait] === undefined ? s : Math.min(fit.scores[trait], s);
   if (typeof sessionEvents !== 'undefined') {
     const t = typeof sessionStartedAt !== 'undefined' ? Math.round((Date.now() - sessionStartedAt) / 100) / 10 : 0;
     sessionEvents.push({ t, action: `MINIGAME_${trait.toUpperCase()}_${s}`, ok: s >= 60 });
@@ -59,21 +60,46 @@ function fitRecord(trait, score) {
 
 // ---------- shared panel ----------
 let mgActive = null;
+let mgSequence = 0;
+const mgReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function mgPanel(title, task) {
   if (mgActive) mgActive.close();
+  const returnFocus = document.activeElement;
+  const activeRun = typeof runNumber === 'number' ? runNumber : 0;
+  if (typeof resetGameInputs === 'function') resetGameInputs();
   if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
   const host = document.getElementById('viewportWrap') || document.body;
   const box = document.createElement('div');
   box.className = 'mg';
   box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-modal', 'true');
+  box.tabIndex = -1;
+  const panelId = `mg-${++mgSequence}`;
+  box.setAttribute('aria-labelledby', `${panelId}-title`);
+  box.setAttribute('aria-describedby', `${panelId}-task`);
   box.innerHTML = `<div class="mg-head"><div class="mg-title"></div><div class="mg-task"></div></div>
     <div class="mg-body"></div><div class="mg-foot"><span class="mg-hint"></span></div>`;
   box.querySelector('.mg-title').textContent = title;
+  box.querySelector('.mg-title').id = `${panelId}-title`;
   box.querySelector('.mg-task').textContent = task;
+  box.querySelector('.mg-task').id = `${panelId}-task`;
+  box.querySelector('.mg-hint').setAttribute('role', 'status');
+  box.querySelector('.mg-hint').setAttribute('aria-live', 'polite');
+  box.querySelector('.mg-hint').setAttribute('aria-atomic', 'true');
   ['click', 'pointerdown', 'mousedown'].forEach((ev) => box.addEventListener(ev, (e) => e.stopPropagation()));
   host.appendChild(box);
   const cleanups = [];
+  const focusables = () => Array.from(box.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]')).filter(el => el.offsetParent !== null);
+  const trapFocus = (e) => {
+    if (e.key !== 'Tab') return;
+    const items = focusables();
+    const first = items[0] || box, last = items[items.length - 1] || box;
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === box || !box.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (document.activeElement === last || !box.contains(document.activeElement) || !items.length)) { e.preventDefault(); first.focus(); }
+  };
+  box.addEventListener('keydown', trapFocus);
+  let closed = false;
   const panel = {
     box,
     body: box.querySelector('.mg-body'),
@@ -84,23 +110,38 @@ function mgPanel(title, task) {
       h.dataset.tone = tone || '';
     },
     onCleanup: (fn) => cleanups.push(fn),
+    isCurrent: () => !closed && (typeof runNumber !== 'number' || runNumber === activeRun),
+    focus: () => (focusables()[0] || box).focus({ preventScroll: true }),
     close: () => {
+      if (closed) return;
+      closed = true;
       cleanups.splice(0).forEach((fn) => fn());
       box.remove();
       if (mgActive === panel) mgActive = null;
+      queueMicrotask(() => {
+        // Scenario callbacks may enable the launcher or open the next dialog.
+        if (mgActive || (typeof runNumber === 'number' && runNumber !== activeRun)) return;
+        // Refresh the launcher synchronously instead of waiting for the throttled
+        // 3D guide update, which can leave it disabled after the dialog closes.
+        if (typeof renderGuide === 'function') renderGuide();
+        const candidates = [returnFocus, document.getElementById('guidedAction'), document.getElementById('guideToggleBtn'), ...document.querySelectorAll('#gameScreen button')];
+        const target = candidates.find(el => el?.isConnected && el.offsetParent !== null && !el.disabled);
+        target?.focus({ preventScroll: true });
+      });
     },
     // show the result for a moment, then close and continue
     finish: (score, trait, verdict, then) => {
-      if (panel.done) return;
+      if (panel.done || !panel.isCurrent()) return;
       panel.done = true;
       fitRecord(trait, score);
       box.classList.add(score >= 85 ? 'is-great' : score >= 60 ? 'is-ok' : 'is-poor');
       panel.hint(verdict, score >= 60 ? 'ok' : 'bad');
       if (typeof playTone === 'function') playTone(score >= 60 ? 880 : 200, score >= 60 ? 'sine' : 'sawtooth', 0.15, 0.08);
-      runLater(() => { panel.close(); if (then) then(); }, score >= 60 ? 1100 : 1700);
+      runLater(() => { if (!panel.isCurrent()) return; panel.close(); if (then) then(); }, score >= 60 ? 1100 : 1700);
     },
   };
   mgActive = panel;
+  queueMicrotask(() => { if (panel.isCurrent()) panel.focus(); });
   return panel;
 }
 
@@ -110,16 +151,23 @@ function mgButton(panel, label, onPress, onRelease) {
   b.className = 'mg-btn';
   b.textContent = label;
   panel.foot.appendChild(b);
-  b.addEventListener('pointerdown', (e) => { e.preventDefault(); onPress && onPress(); });
-  if (onRelease) ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => b.addEventListener(ev, () => onRelease()));
+  if (onRelease) {
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.focus(); if (!panel.done) onPress?.(); });
+    ['pointerup', 'pointerleave', 'pointercancel', 'blur'].forEach((ev) => b.addEventListener(ev, () => onRelease()));
+    b.addEventListener('keydown', (e) => { if (['Space', 'Enter'].includes(e.code)) { e.preventDefault(); if (!e.repeat && !panel.done) onPress?.(); } });
+    b.addEventListener('keyup', (e) => { if (['Space', 'Enter'].includes(e.code)) { e.preventDefault(); onRelease(); } });
+    window.addEventListener('blur', onRelease);
+    panel.onCleanup(() => window.removeEventListener('blur', onRelease));
+  } else b.addEventListener('click', () => { if (!panel.done) onPress?.(); });
   return b;
 }
 
 // E / Space / Enter as press-and-release, captured before the game's own controls
 function mgKeys(panel, onDown, onUp) {
   const codes = ['KeyE', 'Space', 'Enter'];
-  const down = (e) => { if (codes.includes(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat && onDown) onDown(); } };
-  const up = (e) => { if (codes.includes(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); if (onUp) onUp(); } };
+  const handles = (e) => codes.includes(e.code) && !(e.code !== 'KeyE' && e.target?.closest?.('button, input, select, textarea'));
+  const down = (e) => { if (handles(e)) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat && !panel.done && onDown) onDown(); } };
+  const up = (e) => { if (handles(e)) { e.preventDefault(); e.stopImmediatePropagation(); if (onUp) onUp(); } };
   window.addEventListener('keydown', down, true);
   window.addEventListener('keyup', up, true);
   panel.onCleanup(() => { window.removeEventListener('keydown', down, true); window.removeEventListener('keyup', up, true); });
@@ -143,6 +191,7 @@ function mgCanvas(panel, w, h) {
   c.width = w * dpr;
   c.height = h * dpr;
   c.className = 'mg-canvas';
+  c.setAttribute('aria-hidden', 'true');
   c.style.aspectRatio = `${w} / ${h}`;
   panel.body.appendChild(c);
   const ctx = c.getContext('2d');
@@ -355,11 +404,14 @@ function mgVoltage(done) {
   const p = mgPanel(T('Проверка отсутствия напряжения', 'Proving dead'), T('1) Проверьте прибор на эталоне. 2) Замерьте все пары: выберите две клеммы. 3) Снова проверьте прибор.', '1) Check the meter on the proving unit. 2) Test every pair: pick two terminals. 3) Check the meter again.'));
   const terms = ['L1', 'L2', 'L3', 'N', 'PE'];
   const PAIRS = ['L1-L2', 'L2-L3', 'L1-L3', 'L1-PE', 'L2-PE', 'L3-PE'];
-  const live = Math.random() < 0.4 ? 'L3-PE' : null;
+  if (safetyRun.voltageFault === undefined) safetyRun.voltageFault = Math.random() < 0.4;
+  const live = safetyRun.voltageFault ? 'L3-PE' : null;
   const tested = new Set();
   let provedBefore = false, provedAfter = false, first = null;
   const lcd = document.createElement('div');
   lcd.className = 'mg-lcd';
+  lcd.setAttribute('role', 'status');
+  lcd.setAttribute('aria-live', 'polite');
   lcd.textContent = '---.- V';
   p.body.appendChild(lcd);
   const row = document.createElement('div');
@@ -378,15 +430,17 @@ function mgVoltage(done) {
     b.className = 'mg-term';
     b.textContent = name;
     b.onclick = () => {
-      if (!first) { first = name; b.classList.add('is-on'); return; }
+      if (p.done) return;
+      if (!first) { first = name; b.classList.add('is-on'); b.setAttribute('aria-pressed', 'true'); return; }
       row.querySelectorAll('.is-on').forEach((x) => x.classList.remove('is-on'));
+      row.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
       if (first === name) { first = null; return; }
       const pair = [first, name].sort((a, c) => terms.indexOf(a) - terms.indexOf(c)).join('-');
       first = null;
       tested.add(pair);
       provedAfter = false;
       const v = pair === live ? '231.4 V' : '0.0 V';
-      setLcd(v, pair === live ? 'bad' : 'ok');
+      setLcd(`${pair}: ${v}`, pair === live ? 'bad' : 'ok');
       if (typeof playMultimeterBeep === 'function') playMultimeterBeep();
       count.textContent = T(`Пар проверено: ${PAIRS.filter((x) => tested.has(x)).length} из 6`, `Pairs tested: ${PAIRS.filter((x) => tested.has(x)).length} of 6`);
     };
@@ -417,12 +471,46 @@ function mgVoltage(done) {
       : outcome === 'ok'
         ? gameText('Проверка завершена.', 'Check complete.', 'Тексеру аяқталды.')
         : gameText('Проверка не пройдена. Повторите упражнение.', 'Check incomplete or incorrect. Retry the exercise.', 'Тексеру толық емес немесе қате. Жаттығуды қайталаңыз.');
-    p.finish(score, 'thoroughness', text, () => done(outcome));
+    p.finish(score, 'thoroughness', text, () => outcome === 'fault' ? mgEscalateVoltage(() => done('fault')) : done(outcome));
   };
   mgButton(p, T('Напряжения нет', 'It’s dead'), () => verdict('dead'));
   const stopBtn = mgButton(p, T('Есть напряжение — стоп', 'Live — stop'), () => verdict('live'));
   stopBtn.classList.add('is-ghost');
   void prove;
+}
+
+function mgEscalateVoltage(done) {
+  const p = mgPanel(
+    gameText('Остановить и сообщить', 'Stop and escalate', 'Тоқтату және хабарлау'),
+    gameText('На L3–PE обнаружено 231,4 В. Ремонт заблокирован. Выберите безопасное действие.', 'L3–PE measured 231.4 V. Repair is blocked. Choose a safe response.', 'L3–PE: 231,4 В. Жөндеу бұғатталды. Қауіпсіз әрекетті таңдаңыз.')
+  );
+  mgChoices(p, [
+    { text: gameText('Оставить замок, остановить работу и вызвать ответственного', 'Keep the lock, stop work, and notify the supervisor', 'Құлыпты қалдырып, жұмысты тоқтату және жауапты маманды шақыру'), correct: true },
+    { text: gameText('Снять замок и продолжить ремонт', 'Remove the lock and continue the repair', 'Құлыпты алып, жөндеуді жалғастыру'), correct: false },
+  ], (option) => {
+    if (p.done) return;
+    if (!option.correct) {
+      safetyState.errors++;
+      fitRecord('thoroughness', 0);
+      logAction('VIOLATION_LIVE_WORK_ATTEMPT', Date.now(), false);
+      p.hint(gameText('Работа остаётся заблокированной: сначала сообщите об опасности.', 'Work remains blocked: report the hazard first.', 'Жұмыс бұғатталған: алдымен қауіп туралы хабарлаңыз.'), 'bad');
+      return;
+    }
+    logAction('VOLTAGE_FAULT_ESCALATED', Date.now(), true);
+    p.body.replaceChildren();
+    const note = document.createElement('p');
+    note.className = 'mg-note';
+    note.textContent = gameText('Ответственный в симуляции нашёл обратное питание и изолировал источник. Замок остаётся. Нужно заново выполнить полную проверку.', 'The simulated supervisor found the back-feed and isolated its source. The lock stays. A new complete test is required.', 'Симуляциядағы жауапты маман кері қорек көзін оқшаулады. Құлып қалады. Толық тексеруді қайта орындау қажет.');
+    p.body.appendChild(note);
+    mgChoices(p, [{ text: gameText('Принять подтверждение изоляции и повторить проверку', 'Acknowledge isolation and retest', 'Оқшаулауды растау және қайта тексеру') }], () => {
+      safetyRun.voltageFault = false;
+      safetyRun.faultCleared = true;
+      logAction('VOLTAGE_FAULT_ISOLATED_RETEST_REQUIRED', Date.now(), true);
+      p.close();
+      done();
+    });
+    p.focus();
+  });
 }
 
 // Vent the pressure: drag in circles on the handwheel (or hold E). Turning too fast sprays steam.
@@ -498,8 +586,13 @@ function mgColleague(done) {
   ]);
   mgChoices(p, opts, (o) => {
     if (p.done) return;
-    if (!o.ok) { safetyState.errors++; logAction('LOTO_REMOVED_ON_REQUEST', Date.now(), false); }
-    else logAction('LOTO_KEPT_UNDER_PRESSURE', Date.now(), true);
+    if (!o.ok) {
+      safetyState.errors++; logAction('LOTO_REMOVED_ON_REQUEST', Date.now(), false);
+      fitRecord('firmness', 0);
+      p.hint(gameText('Небезопасное решение. Замок оставлен на месте; выберите ответ по процедуре.', 'Unsafe decision. The lock remains in place; choose the response that follows the procedure.', 'Қауіпті шешім. Құлып орнында қалды; рәсімге сай жауапты таңдаңыз.'), 'bad');
+      return;
+    }
+    logAction('LOTO_KEPT_UNDER_PRESSURE', Date.now(), true);
     p.finish(o.ok ? 100 : 0, 'firmness', o.ok ? T('Замок остаётся. Так и работает LOTO', 'The lock stays. That’s how LOTO works') : T('Нарушение: под напряжением окажетесь вы', 'Violation: you would be the one under power'), done);
   });
 }
@@ -507,6 +600,55 @@ function mgColleague(done) {
 // =====================================================================================
 // IT
 // =====================================================================================
+
+// The incident owns the evidence and safe action. The adapter only presents it and
+// requires a correct, explicit response before the scenario can advance.
+function runScenarioExercise(exerciseId, context, done) {
+  const exercise = context.exercise;
+  if (!exercise || !exercise.options && !exercise.checks?.length) throw new Error(`Missing exercise: ${exerciseId}`);
+  const p = mgPanel(exercise.title, exercise.task);
+  const checks = exercise.checks || [exercise];
+  let index = 0, attempts = 0, mistakes = 0;
+  const completed = [];
+  const showCheck = () => {
+    const check = checks[index];
+    p.body.replaceChildren();
+    if (exercise.checks) {
+      const evidence = document.createElement('div');
+      evidence.className = 'mg-evidence';
+      const heading = document.createElement('h3');
+      heading.textContent = `${index + 1}/${checks.length} · ${check.title}`;
+      const task = document.createElement('p');
+      task.textContent = check.task;
+      evidence.append(heading, task);
+      p.body.appendChild(evidence);
+    }
+    mgChoices(p, shuffle(check.options), (option, button) => {
+      if (p.done || !p.isCurrent()) return;
+      attempts++;
+      if (!option.correct) {
+        mistakes++;
+        button.classList.add('is-wrong');
+        p.hint(option.feedback, 'bad');
+        if (typeof sessionEvents !== 'undefined') sessionEvents.push({
+          t: Math.round((Date.now() - sessionStartedAt) / 100) / 10,
+          action: 'EXERCISE_INCORRECT', ok: false,
+          detail: { exerciseId, checkId: check.id || null, choiceId: option.id, attempt: attempts },
+        });
+        return;
+      }
+      completed.push(check.id);
+      p.hint(option.feedback, 'ok');
+      if (++index < checks.length) { showCheck(); p.focus(); return; }
+      const score = Math.max(0, 100 - mistakes * 20);
+      p.finish(score, exercise.trait || 'analysis', option.feedback || gameText('Подтверждено по данным.', 'Confirmed by the evidence.', 'Деректермен расталды.'), () => done({
+        choiceId: option.id, correct: true, attempts, score, checks: completed.filter(Boolean),
+      }));
+    });
+  };
+  showCheck();
+  return p;
+}
 
 // Alert triage: tap alerts from most to least urgent.
 function mgTriage(done) {
@@ -592,7 +734,9 @@ function mgPorts(done) {
     b.type = 'button';
     b.className = 'mg-port' + (i === dead ? ' is-dead' : '');
     b.style.setProperty('--blink', `${rand(0.18, 0.6).toFixed(2)}s`);
-    b.innerHTML = `<span class="mg-led"></span><span class="mg-led mg-led-b"></span><span class="mg-port-name">eth${i}</span>`;
+    const linkState = i === dead ? gameText('Нет связи', 'No link', 'Байланыс жоқ') : gameText('Связь есть', 'Link active', 'Байланыс бар');
+    b.setAttribute('aria-label', `eth${i}: ${linkState}`);
+    b.innerHTML = `<span class="mg-led" aria-hidden="true"></span><span class="mg-led mg-led-b" aria-hidden="true"></span><span class="mg-port-name">eth${i}<small>${linkState}</small></span>`;
     b.onclick = () => {
       if (p.done) return;
       tries++;
@@ -677,11 +821,15 @@ function mgPulse(done) {
   mgKeys(p, tap);
   mgButton(p, T('Удар', 'Beat'), tap);
   const trail = [];
+  mgButton(p, gameText('Разобрать запись пульса без таймера', 'Review the pulse record without a timer', 'Пульс жазбасын таймерсіз талдау'), () => {
+    p.close();
+    mgObservationRecord('pulse', done);
+  });
   mgLoop(p, (dt) => {
     t += dt;
     const phase = ((t % period) + period) % period / period;
     const v = t < 0 ? 0 : Math.exp(-Math.pow((phase - 0.08) * 14, 2)) + 0.35 * Math.exp(-Math.pow((phase - 0.3) * 12, 2));
-    trail.push(v);
+    trail.push(mgReducedMotion() ? 0 : v);
     if (trail.length > w) trail.shift();
     beatsSeen = Math.max(0, Math.floor(t / period) + 1);
     ctx.fillStyle = '#0d1512'; ctx.fillRect(0, 0, w, h);
@@ -713,9 +861,26 @@ function mgBloodPressure(done) {
   };
   mgKeys(p, press);
   mgButton(p, T('Слышу / тишина', 'Heard / gone'), press);
+  mgButton(p, gameText('Разобрать запись без звука и таймера', 'Review the record without sound or a timer', 'Жазбаны дыбыссыз және таймерсіз талдау'), () => {
+    p.close();
+    mgObservationRecord('pressure', done);
+  });
+  const signal = document.createElement('div');
+  signal.className = 'mg-signal';
+  signal.setAttribute('role', 'status');
+  signal.setAttribute('aria-live', 'polite');
+  p.body.appendChild(signal);
+  let lastAudible;
   mgLoop(p, (dt, now) => {
     mm -= dt * 9;
     const audible = mm <= SYS && mm >= DIA;
+    if (audible !== lastAudible) {
+      lastAudible = audible;
+      signal.dataset.active = String(audible);
+      signal.textContent = audible
+        ? gameText('Тоны слышны · визуальный сигнал активен', 'Tones present · visual signal active', 'Тондар бар · көрнекі белгі белсенді')
+        : gameText('Тонов нет · визуальный сигнал отсутствует', 'No tones · visual signal inactive', 'Тондар жоқ · көрнекі белгі белсенді емес');
+    }
     if (audible && now - lastBeat > 625) {
       lastBeat = now; flash = 1;
       if (typeof playTone === 'function') playTone(mm > DIA + 15 ? 95 : 75, 'sine', 0.07, 0.18);
@@ -734,11 +899,32 @@ function mgBloodPressure(done) {
     ctx.fillText(marks[0] ? T(`верхнее: ${marks[0]}`, `systolic: ${marks[0]}`) : T('ждём первый тон…', 'waiting for the first tap…'), 212, 120);
     if (marks[1]) ctx.fillText(T(`нижнее: ${marks[1]}`, `diastolic: ${marks[1]}`), 212, 140);
     // visual cue for players without sound
-    ctx.fillStyle = `rgba(96,165,250,${flash})`; ctx.beginPath(); ctx.arc(400, 70, 16, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `rgba(96,165,250,${mgReducedMotion() ? Number(audible) : flash})`; ctx.beginPath(); ctx.arc(400, 70, 16, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#9aa4b2'; ctx.fillText(T('тон', 'tap'), 388, 104);
     if (mm <= 50) { while (marks.length < 2) marks.push(Math.round(mm)); finish(); return false; }
     if (p.done) return false;
   });
+}
+
+// The same observations are available as a persistent record, so hearing,
+// animation, or response latency is not required to interpret the findings.
+function mgObservationRecord(kind, done) {
+  const pulse = kind === 'pulse';
+  const title = pulse
+    ? gameText('Запись пульса', 'Pulse record', 'Пульс жазбасы')
+    : gameText('Запись измерения давления', 'Blood pressure record', 'Қан қысымы жазбасы');
+  const task = pulse
+    ? gameText('За 15 секунд зарегистрировано 24 равномерных удара. Рассчитайте пульс за минуту.', '24 regular beats were recorded over 15 seconds. Calculate the pulse per minute.', '15 секундта 24 бірқалыпты соққы тіркелді. Минуттық пульсті есептеңіз.')
+    : gameText('Манжета сдувается: при 160 мм рт. ст. тонов нет; при 125 появляются; при 100 сохраняются; при 80 исчезают. Выберите систолическое/диастолическое давление.', 'As the cuff deflates: no tones at 160 mmHg; tones begin at 125, continue at 100, and disappear at 80. Choose the systolic/diastolic reading.', 'Манжета босайды: 160 мм сын. бағ. кезінде тондар жоқ; 125-те басталады; 100-де сақталады; 80-де жоғалады. Систолалық/диастолалық қысымды таңдаңыз.');
+  runScenarioExercise(`doctor.${kind}.record`, { exercise: {
+    title, task, trait: pulse ? 'attention' : 'hearing',
+    options: (pulse ? ['24', '96', '120'] : ['160/100', '125/80', '100/80']).map(value => ({
+      id: value, text: pulse ? `${value} / min` : `${value} mmHg`, correct: value === (pulse ? '96' : '125/80'),
+      feedback: value === (pulse ? '96' : '125/80')
+        ? gameText('Верно: вывод соответствует записи.', 'Correct: the result matches the observation record.', 'Дұрыс: нәтиже жазбаға сәйкес.')
+        : gameText('Сверьте расчёт с записью и попробуйте снова.', 'Compare your answer with the record and try again.', 'Жауапты жазбамен салыстырып, қайталаңыз.'),
+    })),
+  } }, done);
 }
 
 // Auscultation: listen at six points, find the one with crackles (lower right).
@@ -747,19 +933,32 @@ function mgLungs(done) {
   const { c, ctx, w, h } = mgCanvas(p, 460, 200);
   // points on the back: player's view, patient's right is on the right side of the back view
   const pts = [
-    { x: 175, y: 60, n: T('Верх слева', 'Upper left') }, { x: 285, y: 60, n: T('Верх справа', 'Upper right') },
-    { x: 170, y: 105, n: T('Середина слева', 'Middle left') }, { x: 290, y: 105, n: T('Середина справа', 'Middle right') },
-    { x: 172, y: 150, n: T('Низ слева', 'Lower left') }, { x: 288, y: 150, n: T('Низ справа', 'Lower right'), bad: true },
+    { x: 175, y: 60, n: gameText('Верх слева', 'Upper left', 'Жоғарғы сол жақ') }, { x: 285, y: 60, n: gameText('Верх справа', 'Upper right', 'Жоғарғы оң жақ') },
+    { x: 170, y: 105, n: gameText('Середина слева', 'Middle left', 'Ортаңғы сол жақ') }, { x: 290, y: 105, n: gameText('Середина справа', 'Middle right', 'Ортаңғы оң жақ') },
+    { x: 172, y: 150, n: gameText('Низ слева', 'Lower left', 'Төменгі сол жақ') }, { x: 288, y: 150, n: gameText('Низ справа', 'Lower right', 'Төменгі оң жақ'), bad: true },
   ];
   let current = null, heard = new Set(), wave = [];
+  const selectPoint = (hit) => {
+    current = hit; heard.add(hit);
+    if (typeof playTone === 'function') playTone(hit.bad ? 340 : 120, hit.bad ? 'square' : 'sine', 0.05, hit.bad ? 0.25 : 0.3);
+    p.hint(`${hit.n}: ${hit.bad
+      ? gameText('Прерывистые потрескивающие звуки (хрипы)', 'Intermittent crackling sounds (crackles)', 'Үзік сықырлаған дыбыстар (сырыл)')
+      : gameText('Равномерное дыхание, без потрескивания', 'Even breathing, no crackling', 'Бірқалыпты тыныс, сықыр жоқ')}. ${heard.size}/6`, '');
+  };
+  mgChoices(p, pts.map(point => ({ text: point.n, point })), (option, button) => {
+    selectPoint(option.point);
+    p.body.querySelectorAll('[aria-pressed]').forEach(el => el.setAttribute('aria-pressed', 'false'));
+    button.setAttribute('aria-pressed', 'true');
+  }, 'is-grid');
   c.addEventListener('click', (e) => {
     const r = c.getBoundingClientRect();
     const x = (e.clientX - r.left) * (w / r.width), y = (e.clientY - r.top) * (h / r.height);
     const hit = pts.find((q) => Math.hypot(q.x - x, q.y - y) < 22);
-    if (hit) { current = hit; heard.add(hit); if (typeof playTone === 'function') playTone(hit.bad ? 340 : 120, hit.bad ? 'square' : 'sine', 0.05, hit.bad ? 0.25 : 0.3); }
+    if (hit) selectPoint(hit);
   });
   const pick = mgChoices(p, [{ text: T('Хрипы в выбранной точке', 'Crackles at the selected point') }, { text: T('Хрипов нет нигде', 'No crackles anywhere') }], (o, b, i) => {
     if (p.done) return;
+    if (heard.size < pts.length) { p.hint(gameText('Сначала проверьте все шесть точек.', 'Check all six points first.', 'Алдымен алты нүктені тексеріңіз.'), 'bad'); return; }
     const correct = i === 0 && current && current.bad;
     const thorough = heard.size / pts.length;
     const score = (correct ? 70 : 0) + thorough * 30;
@@ -776,7 +975,7 @@ function mgLungs(done) {
       ctx.beginPath(); ctx.arc(q.x, q.y, 11, 0, Math.PI * 2); ctx.fill();
     });
     // sound trace of the current point
-    const v = current ? (Math.sin(now / 260) * 0.5 + 0.5) * 18 + (current.bad && Math.random() < 0.25 ? rand(-14, 14) : 0) : 0;
+    const v = current && !mgReducedMotion() ? (Math.sin(now / 260) * 0.5 + 0.5) * 18 + (current.bad && Math.random() < 0.25 ? rand(-14, 14) : 0) : 0;
     wave.push(v); if (wave.length > 90) wave.shift();
     ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2; ctx.beginPath();
     wave.forEach((y, i) => { const X = 360 + i, Y = 120 - y; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
@@ -797,10 +996,6 @@ const MINIGAME_BY_TITLE = [
   [/^ПОМОЛ/, mgGrind],
   [/^ЭКСТРАКЦИЯ/, mgShot],
   [/^ВЗБИВАНИЕ/, mgSteam],
-  [/^ОТКРЫВАЮ АЛЕРТ/, mgTriage],
-  [/^journalctl/, mgLogs],
-  [/^ДИАГНОСТИКА db-01/, mgPorts],
-  [/systemctl restart/, mgCommand],
   [/^ОБРАБОТКА РУК/, mgHandRub],
   [/SpO₂/, mgPulse],
   [/^ИЗМЕРЕНИЕ ДАВЛЕНИЯ/, mgBloodPressure],

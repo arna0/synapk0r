@@ -66,8 +66,11 @@ test('write limit is durable across worker requests and sets Retry-After', async
 test('health, aggregate summary and reports work', async () => {
   const db = database(); assert.equal((await (await call(db, '/api/health')).json()).storage, 'd1');
   await call(db, '/api/survey', survey());
+  await call(db, '/api/survey', survey({ module: 'doctor', publish: false }));
+  await call(db, '/api/survey', survey({ module: 'it', publish: undefined }));
   const summary = await (await call(db, '/api/survey/summary')).json();
   assert.equal(summary.n, 1); assert.equal(summary.h3_learned, 1); assert.equal(summary.by_module.barista, 1);
+  assert.deepEqual(summary.by_module, { barista: 1 });
   for (const module of ['safety', 'barista', 'it', 'doctor']) {
     const r = await (await call(db, '/api/report', { module, score: 80, metrics: {}, events: [] })).json();
     assert.equal(r.source, 'rules'); assert.ok(r.summary); assert.ok(Array.isArray(r.strengths));
