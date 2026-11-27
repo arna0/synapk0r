@@ -17,6 +17,24 @@ Track focus areas: *career guidance and exploring career paths · skills develop
 ---
 
 
+## Current release — 27 November 2026
+
+[Open the public simulator](https://arna0.github.io/synapk0r/) · [Download the Android APK](https://github.com/arna0/synapk0r/releases/download/android-latest/SynapKor.apk)
+
+Anyone can access the website through the link, without registration or installation.
+
+- Four professions cover Safety engineer, Barista, IT engineer and Doctor, with Russian, Kazakh and English interfaces.
+- Redesigned desktop and phone reports show the profession, attempt outcome, skill evidence, metrics and a specific next step. Practice-needed outcomes use amber styling, and optional feedback opens on demand.
+- Practical exercises contribute to the score. Guided and independent progress are stored separately, with previous results retained in an archive.
+- Three IT incident causes have matching evidence and repairs. Recovery requires both a readiness check and a persisted test order.
+- Live voltage in the Safety exercise requires stopping work, escalation, isolation acknowledgement and a fresh verification.
+- Survey feedback is private by default. Public publication requires a separate opt-in, which is preserved through offline retries.
+- Characters and hands use original procedural geometry. Mini-games support keyboard input, focus management and textual alternatives.
+
+These changes were implemented in [PR #2](https://github.com/arna0/synapk0r/pull/2) and [PR #3](https://github.com/arna0/synapk0r/pull/3). Verification covers all four profession reports on desktop and phones, private-feedback behavior, gameplay scenarios and Android compilation.
+
+The Doctor scenario awaits practising-clinician review. Scores describe a practice attempt; calibration against professionals remains future work. The owners still need to select a source-code license. [Asset provenance and professional-review status](docs/ASSETS_AND_REVIEW.md).
+
 ## Animation and tester reviews
 
 The menu now has pointer-responsive depth, layered motion and reduced-motion support. Tool transfers, hand reaches, valves and gauge response use elapsed time, and leaving a simulation cancels pending transfers. Old room resources are released when restarting or switching professions, with rendering paused in the menu and hidden tabs.
@@ -192,7 +210,7 @@ How it is built:
 
 ### Data and privacy
 - No sign-up and no personal data: no name, email or phone number.
-- The action log and survey answers are anonymous; the survey is stored on the device and, if the server is running, in `backend/data/survey.jsonl` (the file is not committed to git).
+- Survey feedback is submitted privately to the hosted API. Publishing all answers and the comment requires separate consent. Failed uploads remain queued on the device. Local Express development uses a separate `backend/data/survey.jsonl` file excluded from git.
 - The Claude API key is only on the server; input is validated, requests are rate-limited, and security HTTP headers are set.
 
 Architecture cheat sheet and answers to jury questions: [docs/QA.md](docs/QA.md).
@@ -216,7 +234,7 @@ npm test
 ```bash
 python -m http.server 8080 --directory frontend
 ```
-GitHub Pages uses the root `index.html`, which redirects to `frontend/`. There is no backend there, so the AI card shows a rule-based debrief and says so. If the backend is deployed separately, pass its address as a parameter: `frontend/?api=https://your-backend`, after adding that origin to `ALLOWED_API_ORIGINS` in `frontend/js/config.js` (other addresses are ignored, so a crafted link cannot send a player's session somewhere else).
+GitHub Pages uses the root `index.html`, which redirects to `frontend/`. The frontend automatically connects to the hosted reviews and rule-based feedback API. This host has no Claude key configured. For a different backend, pass its address as a parameter: `frontend/?api=https://your-backend`, after adding that origin to `ALLOWED_API_ORIGINS` in `frontend/js/config.js` (other addresses are ignored, so a crafted link cannot send a player's session somewhere else).
 
 **3. Mobile and web app (Flutter 3.22+):**
 ```bash
@@ -241,7 +259,7 @@ For the Android emulator, the local backend address is `http://10.0.2.2:8787`.
   - a subscription for schools and career guidance centres: a teacher dashboard, class reports;
   - a B2B licence for employers: custom scenarios, integration with HR systems.
 - **MVP limitations:**
-  - no accounts: the profession profile and survey are stored only in the student's browser;
+  - no accounts: practice progress is browser-local, while submitted survey feedback is stored by the hosted API;
   - scoring is rule-based and not yet calibrated against real professionals;
   - four modules, all available in the browser and in the Android app; the app uses the same simulator and evidence report for every profession;
   - the "Doctor" scenario is for learning and has not been reviewed by a practising doctor.
