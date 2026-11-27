@@ -272,7 +272,11 @@ function enhanceSoon(module) {
   const run = () => {
     if (enhanceScene(module) || ++tries > 20) {
       // props added a little later (hands, effects) get shadows too
-      runLater(() => enhanceScene(module), 1500);
+      runLater(() => {
+        enhanceScene(module);
+        const room = scene?.getObjectByName(module + 'Environment');
+        if (room) room.userData.enhancementComplete = true;
+      }, 1500);
       return;
     }
     runLater(run, 250);
