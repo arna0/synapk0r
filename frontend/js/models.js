@@ -1,23 +1,9 @@
-// SynapKor — real 3D models in the rooms.
-//  - models/hand.obj: a scanned hand with forearm, used as the first-person hand in every module.
-//  - The people in the rooms (models/walker.fbx) live in npc.js.
-// Loads lazily after the room is ready; if anything fails, the simple shapes stay.
+// Original procedural first-person hand, using the existing reach animation.
+const MODELS = { hand: null };
 
-// ---------------------------------------------------------------- first-person hand
-const MODELS = { hand: null, loadingWalker: null };
-
-// The OBJ is a right hand with forearm, Y-up, fingers along +Y, back of the hand facing +Z,
-// 2.5 units long. Turned so the fingers point forward and the back of the hand faces up.
 async function loadHand() {
   if (MODELS.hand) return MODELS.hand;
-  if (!THREE.OBJLoader) throw new Error('OBJLoader missing');
-  const obj = await new Promise((res, rej) => new THREE.OBJLoader().load('models/hand.obj', res, undefined, rej));
-  const tl = new THREE.TextureLoader();
-  const map = tl.load('models/hand_diffuse.jpg');
-  map.encoding = THREE.sRGBEncoding;
-  const normalMap = tl.load('models/hand_normal.jpg');
-  const mat = new THREE.MeshStandardMaterial({ map, normalMap, color: 0xd9c3b3, roughness: 0.72, metalness: 0 });
-  obj.traverse((o) => { if (o.isMesh) { o.material = mat; o.castShadow = false; o.userData.gfxDone = true; } });
+  const obj = createProceduralHand();
   MODELS.hand = obj;
   return obj;
 }
@@ -48,7 +34,7 @@ async function useRealHand() {
     if (typeof orig !== 'function') return;
     window[name] = function (...args) {
       const r = orig.apply(this, args);
-      setTimeout(useRealHand, 600);
+      runLater(useRealHand, 600);
       return r;
     };
   };

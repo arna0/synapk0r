@@ -1,5 +1,5 @@
 // SynapKor — Post-session survey for validation (docs/VALIDATION.md).
-// Public responses are queued on this device and sent to POST /api/survey.
+// Consented feedback is queued locally. Publication requires a separate opt-in.
 // Shared reviews: testers-opinion.html. Private device summary: index.html?survey=results
 
 const SURVEY_KEY = 'synapkor_survey_v1';
@@ -46,7 +46,7 @@ function showSurvey(report) {
   card.innerHTML = `
     <div class="survey-head">
       <span class="survey-title">Анкета · 1 минута</span>
-      <span class="survey-note">${gameText('По желанию. Ответы и комментарий будут опубликованы анонимно на странице Testers opinion. Не указывайте имя или контакты.', 'Optional. Your answers and comment will be published anonymously on Testers opinion. Please leave out names and contact details.', 'Қатысу ерікті. Жауаптарыңыз бен пікіріңіз Testers opinion бетінде анонимді жарияланады. Атыңыз бен байланыс деректерін жазбаңыз.')}</span>
+      <span class="survey-note">${gameText('По желанию. Ответы отправляются команде проекта приватно. Не указывайте имя или контакты.', 'Optional. Your feedback is sent privately to the project team. Please leave out names and contact details.', 'Қатысу ерікті. Жауаптарыңыз жоба тобына жеке жіберіледі. Атыңыз бен байланыс деректерін жазбаңыз.')}</span>
     </div>
     <div class="survey-list">
       ${SURVEY_QUESTIONS.map(q => `
@@ -57,7 +57,8 @@ function showSurvey(report) {
               `<button type="button" class="survey-opt" data-q="${q.id}" data-v="${o}">${o}</button>`).join('')}
           </div>
         </div>`).join('')}
-      <textarea id="surveyComment" class="survey-comment" rows="2" maxlength="300" placeholder="Что понравилось или мешало? (необязательно)"></textarea>
+      <textarea id="surveyComment" class="survey-comment" rows="2" maxlength="300" aria-label="${gameText('Ваш отзыв', 'Your feedback', 'Пікіріңіз')}" placeholder="Что понравилось или мешало? (необязательно)"></textarea>
+      <label class="survey-note"><input type="checkbox" id="surveyPublish"> ${gameText('Также разрешаю публично показать все мои ответы и комментарий анонимно на странице Testers opinion.', 'Also publish all my answers and comment anonymously on Testers opinion.', 'Барлық жауаптарым мен пікірімді Testers opinion бетінде анонимді жариялауға да келісемін.')}</label>
     </div>
     <button type="button" class="btn-action survey-submit" id="surveySubmit" disabled>Отправить ответы</button>
   `;
@@ -110,7 +111,8 @@ function syncSurveyQueue() {
   if (surveySyncPromise) return surveySyncPromise;
   if (!navigator.onLine) return Promise.resolve();
   surveySyncPromise = (async () => {
-    for (const row of loadSurveyResponses().filter(row => row.id && row.publish === true && !row.synced).slice(0, 10)) {
+    // Legacy private rows had no upload consent. Only newly consented private rows retry.
+    for (const row of loadSurveyResponses().filter(row => row.id && (row.uploadConsent === true || row.publish === true) && !row.synced).slice(0, 10)) {
       try { await sendSurvey(row); markSurveySynced(row.id); }
       catch { break; }
     }
@@ -125,7 +127,8 @@ async function submitSurvey() {
   button.disabled = true;
   const resp = {
     id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2),
-    publish: true, synced: false, at: new Date().toISOString(), ...surveyContext,
+    publish: document.getElementById('surveyPublish')?.checked === true,
+    uploadConsent: true, synced: false, at: new Date().toISOString(), ...surveyContext,
     answers: { ...surveyAnswers },
     comment: (document.getElementById('surveyComment').value || '').trim().slice(0, 300)
   };
@@ -137,10 +140,14 @@ async function submitSurvey() {
     try {
       await sendSurvey(resp);
       markSurveySynced(resp.id);
-      status.textContent = surveyText('Спасибо! Отзыв опубликован.', 'Thank you! Your review is published.', 'Рақмет! Пікіріңіз жарияланды.');
-      const link = document.createElement('a');
-      link.href = opinionPageUrl(); link.textContent = 'Testers opinion →'; link.className = 'testers-link';
-      status.append(document.createElement('br'), link);
+      status.textContent = resp.publish
+        ? surveyText('Спасибо! Отзыв опубликован.', 'Thank you! Your review is published.', 'Рақмет! Пікіріңіз жарияланды.')
+        : surveyText('Спасибо! Ответы сохранены приватно для команды проекта.', 'Thank you! Your feedback was saved privately for the project team.', 'Рақмет! Жауаптарыңыз жоба тобы үшін жеке сақталды.');
+      if (resp.publish) {
+        const link = document.createElement('a');
+        link.href = opinionPageUrl(); link.textContent = 'Testers opinion →'; link.className = 'testers-link';
+        status.append(document.createElement('br'), link);
+      }
     } catch {
       status.textContent = localSaved
         ? surveyText('Сохранено на устройстве. Отправим при подключении или следующем посещении.', 'Saved on this device. We’ll retry when connected or on your next visit.', 'Құрылғыда сақталды. Байланыс орнағанда немесе келесі кіргенде қайта жіберіледі.')

@@ -77,7 +77,8 @@ test('doctor report with correct decisions lists them as strengths', async () =>
   });
   const data = await res.json();
   assert.equal(data.strengths.length, 3);
-  assert.match(data.career_advice, /медицина/i);
+  assert.match(data.career_advice, /повторите учебный осмотр/i);
+  assert.doesNotMatch(data.career_advice, /подойд/i);
 });
 
 test('invalid payloads are rejected with 400', async () => {
@@ -105,7 +106,7 @@ test('web client is served from the same origin', async () => {
   assert.match(await res.text(), /js\/report\.js/);
 });
 
-test('survey answers are stored and summarized', async () => {
+test('private survey answers are stored but omitted from public aggregates', async () => {
   const answers = { role: '10–11 класс', before: '2', clarity: '5', guide: 'Да', no_help: 'Да', learned: 'Да', report_match: '4', more: 'Да' };
   const res = await fetch(`${base}/api/survey`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -118,7 +119,7 @@ test('survey answers are stored and summarized', async () => {
   });
   assert.equal(bad.status, 400);
   const sum = await (await fetch(`${base}/api/survey/summary`)).json();
-  assert.equal(sum.n, 1);
-  assert.equal(sum.h1_before_le3, 1);
-  assert.deepEqual(sum.by_module, { doctor: 1 });
+  assert.equal(sum.n, 0);
+  assert.equal(sum.h1_before_le3, 0);
+  assert.deepEqual(sum.by_module, {});
 });

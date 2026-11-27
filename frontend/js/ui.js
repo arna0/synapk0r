@@ -4,33 +4,15 @@
 function renderHUD() {
   const hud = document.getElementById('hudDockInner') || document.getElementById('hudBottom');
   if (!hud) return;
-  hud.innerHTML = `
-    <div class="steps-bar">
-      ${state.stepsConfig.map((s, idx) => `
-        <div class="step-pill ${idx < state.step ? 'done' : (idx === state.step ? 'active' : '')}">
-          ${idx < state.step ? '✓ ' : (idx + 1) + '. '}${s.name.split(' ')[0]}
-        </div>
-      `).join('')}
-    </div>
-    <div style="background:var(--surface-slate); border:1px solid var(--border-dark); border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <div style="font-size:10px; font-weight:700; color:var(--text-muted-dark); text-transform:uppercase; letter-spacing:0.5px;">ТЕКУЩАЯ ЦЕЛЬ</div>
-        <div style="font-size:13px; font-weight:700; color:var(--text-on-dark);">${state.stepsConfig[state.step] ? state.stepsConfig[state.step].name : 'Готово'}</div>
-      </div>
-      <div style="font-size:12px; color:var(--text-muted-dark); font-weight:500;">${state.stepsConfig[state.step] ? state.stepsConfig[state.step].hint : ''}</div>
-    </div>
-  `;
+  hud.replaceChildren();
+  renderGuide(true);
 }
 
 function renderHUDComplete() {
   const hud = document.getElementById('hudDockInner') || document.getElementById('hudBottom');
   if (!hud) return;
-  hud.innerHTML = `
-    <div style="background:rgba(16,185,129,0.15); border:1px solid var(--emerald); border-radius:12px; padding:14px; text-align:center;">
-      <h3 style="color:var(--emerald); font-size:14px; font-weight:800;">✨ ICED OAT LATTE УСПЕШНО СВАРЕН!</h3>
-      <p style="font-size:12px; color:#E2E8F0; margin-top:4px;">100% соблюдение рецептуры и идеальная последовательность моторики.</p>
-    </div>
-  `;
+  hud.replaceChildren();
+  renderGuide(true);
 }
 
 function handleWindowResize() {

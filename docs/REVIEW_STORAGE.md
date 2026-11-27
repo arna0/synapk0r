@@ -1,8 +1,8 @@
 # Testers opinion
 
-The main-menu link opens `frontend/testers-opinion.html`. Each submitted questionnaire appears with its comment, profession, date, and all eight answers. Responses without a comment also appear. Readers can filter by profession and load every page (20 responses per page). English, Russian and Kazakh labels follow the menu's selected language.
+The main-menu link opens `frontend/testers-opinion.html`. Questionnaires whose authors explicitly opt into publication appear with their comment, profession, date and eight answers. Private responses are excluded. Readers can filter by profession and load every page (20 responses per page). English, Russian and Kazakh labels follow the menu's selected language.
 
-The questionnaire explains that new submissions are published anonymously. Earlier private questionnaires remain in storage and in the existing summary; they are not silently made public. Old responses stored only on another device cannot be retrieved from that device by the website.
+New submissions are private feedback to the project team by default. A separate unchecked checkbox allows anonymous public publication of all answers and the comment. The local queue records upload consent independently of publication consent, preserving the choice through retries. Historical private device-only rows without upload consent stay on that device.
 
 ## Hosted shared storage
 

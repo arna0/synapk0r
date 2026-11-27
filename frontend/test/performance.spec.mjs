@@ -8,9 +8,11 @@ test('restarting rooms releases GPU resources and the menu stops rendering', asy
   await expect(page.locator('#threeCanvas canvas')).toBeVisible();
   const samples = [];
   for (let i = 0; i < 3; i++) {
-    await expect.poll(() => page.evaluate(() => !!scene.getObjectByName('baristaEnvironment')?.getObjectByName('roomDetails'))).toBe(true);
-    // Wait for the one delayed texture pass, so every sample measures the same scene.
-    await page.waitForTimeout(1800);
+    await expect.poll(() => page.evaluate(() => !!scene.getObjectByName('baristaEnvironment')?.getObjectByName('roomDetails')), { timeout: 30000 }).toBe(true);
+    // Compare fully enhanced rooms after their resources have reached the GPU.
+    await expect.poll(() => page.evaluate(() => !!scene.getObjectByName('baristaEnvironment')?.userData.enhancementComplete), { timeout: 30000 }).toBe(true);
+    const frame = await page.evaluate(() => renderer.info.render.frame);
+    await expect.poll(() => page.evaluate(() => renderer.info.render.frame), { timeout: 30000 }).toBeGreaterThan(frame + 1);
     samples.push(await page.evaluate(() => ({ geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures })));
     if (i < 2) {
       await page.evaluate(() => { exitToHome(); startBaristaVR(); });
@@ -28,7 +30,8 @@ test('restarting rooms releases GPU resources and the menu stops rendering', asy
   await page.waitForTimeout(300);
   expect(await page.evaluate(() => window.renderCallsAfterMenu)).toBeLessThanOrEqual(1);
   await page.evaluate(() => startScenario('it'));
-  await expect.poll(() => page.evaluate(() => window.renderCallsAfterMenu)).toBeGreaterThan(1);
+  // The next room compiles fresh shaders on the software WebGL renderer.
+  await expect.poll(() => page.evaluate(() => window.renderCallsAfterMenu), { timeout: 30000 }).toBeGreaterThan(1);
   expect(errors).toEqual([]);
   console.log('GPU allocations across restarts:', JSON.stringify(samples));
 });

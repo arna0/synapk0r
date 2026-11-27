@@ -4,6 +4,7 @@
 import { copyFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = path.join(root, 'frontend');
@@ -21,4 +22,5 @@ function copyDir(from, to) {
 
 rmSync(dest, { recursive: true, force: true });
 copyDir(src, dest);
+execFileSync(process.execPath, [path.join(root, 'scripts/check-assets.mjs')], { stdio: 'inherit' });
 console.log(`Synced ${path.relative(root, src)} -> ${path.relative(root, dest)}`);

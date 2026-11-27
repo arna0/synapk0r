@@ -122,8 +122,9 @@ function renderGuide(force) {
   if (!force && signature === lastGuideSignature) return;
   lastGuideSignature = signature;
 
-  document.getElementById('guideStepCount').innerText =
-    g.idx < g.steps.length ? `Гид · шаг ${g.idx + 1} из ${g.steps.length}` : 'Гид · всё готово';
+  document.getElementById('guideStepCount').innerText = g.idx < g.steps.length
+    ? gameText(`Шаг ${g.idx + 1} из ${g.steps.length}`, `Step ${g.idx + 1} of ${g.steps.length}`, `${g.steps.length} қадамның ${g.idx + 1}-қадамы`)
+    : gameText('Все шаги выполнены', 'All steps complete', 'Барлық қадам орындалды');
   document.getElementById('guideTask').innerText = g.current.task;
   document.getElementById('guideHow').innerHTML = g.current.how;
   const guidedAction = document.getElementById('guidedAction');
@@ -135,10 +136,17 @@ function renderGuide(force) {
   why.innerText = g.current.why;
   why.style.display = g.current.why ? 'block' : 'none';
   const doneCount = g.steps.filter(s => s.done).length;
+  const progress = document.getElementById('guideProgress');
+  progress?.setAttribute('aria-label', gameText('Прогресс смены', 'Run progress', 'Айналым барысы'));
+  progress?.setAttribute('aria-valuemax', g.steps.length);
+  progress?.setAttribute('aria-valuenow', doneCount);
+  progress?.setAttribute('aria-valuetext', gameText(`${doneCount} из ${g.steps.length} выполнено`, `${doneCount} of ${g.steps.length} complete`, `${g.steps.length} қадамның ${doneCount}-і орындалды`));
+  const checklist = document.getElementById('guideChecklistLabel');
+  if (checklist) checklist.textContent = gameText('Все шаги', 'Full checklist', 'Барлық қадам');
   document.getElementById('guideProgressFill').style.width = (doneCount / g.steps.length * 100) + '%';
   document.getElementById('guideSteps').innerHTML = g.steps.map((s, i) => `
-    <li class="${s.done ? 'done' : (i === g.idx ? 'current' : '')}">
-      <span class="gs-dot">${s.done ? '✓' : ''}</span>${s.task}
+    <li class="${s.done ? 'done' : (i === g.idx ? 'current' : '')}" ${i === g.idx ? 'aria-current="step"' : ''}>
+      <span class="gs-dot" aria-hidden="true">${s.done ? '✓' : i + 1}</span>${s.task}${s.done ? `<span class="sr-only"> — ${gameText('выполнено', 'complete', 'орындалды')}</span>` : ''}
     </li>`).join('');
 }
 
@@ -275,8 +283,9 @@ function updateGuideArrow(time) {
     return;
   }
   entry.obj.getWorldPosition(guideArrow.position);
-  guideArrow.position.y += entry.offset - 0.08 + Math.sin(time * 4) * 0.025;
-  guideArrow.rotation.y = time * 1.5;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  guideArrow.position.y += entry.offset - 0.08 + (reduced ? 0 : Math.sin(time * 4) * 0.025);
+  guideArrow.rotation.y = reduced ? 0 : time * 1.5;
   guideArrow.visible = true;
 }
 
@@ -310,6 +319,18 @@ function showIntro(profession) {
   const c = INTRO_CONTENT[profession];
   document.getElementById('introTitle').innerText = c.title;
   document.getElementById('introGoal').innerText = c.goal;
+  document.getElementById('doctorLearningNotice')?.remove();
+  if (profession === 'doctor') {
+    const notice = document.createElement('p');
+    notice.id = 'doctorLearningNotice';
+    notice.className = 'learning-notice';
+    notice.textContent = gameText(
+      'Учебное упражнение без клинической проверки. Оно не подтверждает медицинскую квалификацию и не предназначено для диагностики или лечения реальных пациентов.',
+      'Educational exercise without clinical review. It does not certify medical competence and is not for diagnosing or treating real patients.',
+      'Клиникалық тексеруден өтпеген оқу жаттығуы. Ол медициналық біліктілікті растамайды және нақты науқастарды анықтауға не емдеуге арналмаған.'
+    );
+    document.getElementById('introGoal').after(notice);
+  }
   document.getElementById('introPlan').innerHTML = c.plan.map(p => `<li>${p}</li>`).join('');
   document.getElementById('introExtraKeys').innerHTML = c.extra.map(([k, t]) =>
     `<div class="control-item"><span class="keys"><kbd>${k}</kbd></span>${t}</div>`).join('');
@@ -320,12 +341,15 @@ function showIntro(profession) {
 
 function closeIntro() {
   const overlay = document.getElementById('introOverlay');
-  if (!overlay) return;
+  if (!overlay || !overlay.classList.contains('visible')) return;
   if (document.getElementById('introSkip').checked) {
     try { localStorage.setItem('synapkor_skip_intro_' + overlay.dataset.profession, '1'); } catch (e) {}
   }
   overlay.classList.remove('visible');
   // Time is measured from the moment the player actually starts
+  sessionStartedAt = Date.now();
+  const scenario = typeof getActiveScenario === 'function' ? getActiveScenario() : null;
+  if (scenario && scenario.onBegin) scenario.onBegin(sessionStartedAt);
   state.timer = 0;
   document.getElementById('vrTimer').innerText = '00:00';
 }

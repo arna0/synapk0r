@@ -2,6 +2,12 @@
 // Everything here comes from the browser, so it is treated as untrusted data.
 
 export const MODULES = ['safety', 'barista', 'it', 'doctor'];
+export const MINI_SCORE_KEYS = {
+  safety: ['vigilance', 'thoroughness', 'control', 'firmness'],
+  barista: ['precision', 'timing', 'feel'],
+  it: ['priority', 'analysis', 'diagnosis', 'syntax', 'verification', 'attention'],
+  doctor: ['protocol', 'attention', 'hearing', 'diagnosis']
+};
 
 const MAX_EVENTS = 200;
 const MAX_STRING = 120;
@@ -34,6 +40,16 @@ export function validateReport(body) {
     const v = cleanScalar(value);
     if (v !== undefined && /^[a-z0-9_]{1,40}$/i.test(key)) cleanMetrics[key] = v;
   }
+  delete cleanMetrics.mini_scores;
+  if (metrics.mini_scores && typeof metrics.mini_scores === 'object' && !Array.isArray(metrics.mini_scores)) {
+    const scores = {};
+    for (const key of MINI_SCORE_KEYS[module]) {
+      const value = metrics.mini_scores[key];
+      if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100) scores[key] = Math.round(value);
+    }
+    if (Object.keys(scores).length) cleanMetrics.mini_scores = scores;
+  }
+  if (!['guided', 'independent'].includes(cleanMetrics.guidance_mode)) delete cleanMetrics.guidance_mode;
 
   const cleanEvents = Array.isArray(events)
     ? events.slice(0, MAX_EVENTS)
