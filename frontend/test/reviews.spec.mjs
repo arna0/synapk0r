@@ -8,6 +8,7 @@ async function fillSurvey(page, comment, publish = true) {
     showScreen('resultScreen');
     showSurvey({ module: 'barista', score: 84, metrics: { total_time_sec: 60, wrong_clicks: 1 } });
   });
+  await page.locator('#reportSurveyToggle').click();
   await expect(page.locator('#surveySubmit')).toBeDisabled();
   for (const [id, value] of Object.entries(answers)) await page.locator(`button.survey-opt[data-q="${id}"][data-v="${value}"]`).click();
   await page.locator('#surveyComment').fill(comment);

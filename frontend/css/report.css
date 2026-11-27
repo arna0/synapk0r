@@ -1,0 +1,106 @@
+/* Report layout uses the simulator's existing typefaces and violet identity. */
+#resultScreen { --report-accent:#493399; --report-ink:#201c38; --report-muted:#69667c; --report-line:#e6e2ee; background:#f6f5fa; color:var(--report-ink); }
+#resultScreen .top-bar { background:#fff; border-bottom:1px solid var(--report-line); min-height:64px; padding:16px 32px; }
+#resultScreen .vr-badge { background:#eeeaf9 !important; color:var(--report-accent); border-radius:6px; letter-spacing:.08em; }
+#resultScreen .xp-badge { background:#f3effb; color:#60489d; box-shadow:none; border:1px solid #e8e0f6; font-size:12px; }
+#resultScreen .result-content-wrap { max-width:1200px; padding:40px 32px 64px; gap:28px; }
+.report-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; }
+#reportEyebrow { color:var(--report-accent); font-size:11px; font-weight:800; letter-spacing:.14em; margin:0 0 9px; }
+#reportProfession { font-size:38px; line-height:1.15; font-weight:800; letter-spacing:-1.4px; margin:0; color:var(--report-ink); }
+#reportSubtitle { margin:0 0 3px; max-width:270px; color:var(--report-muted); font-size:14px; line-height:1.6; }
+#resultScreen .result-grid-layout { grid-template-columns:minmax(275px,.85fr) minmax(0,1.65fr); gap:22px; align-items:stretch; }
+#resultScreen .report-card { border:1px solid var(--report-line); border-radius:20px; padding:28px; box-shadow:0 4px 16px -12px #33225330; min-width:0; }
+#resultScreen .report-details { display:contents; }
+#resultScreen .score-summary { grid-column:1; grid-row:1; text-align:left !important; background:linear-gradient(145deg,#302451,#1f1937); color:#fff; border-color:#302451; padding:28px; display:flex; flex-direction:column; }
+#resultScreen .score-summary > div:first-child { align-self:flex-start; background:#ffffff12 !important; border:1px solid #ffffff25 !important; color:#ece5ff !important; padding:6px 11px !important; font-size:11px !important; letter-spacing:.02em; margin-bottom:20px !important; }
+#resultScreen #resPraiseTitle { display:none; }
+#resultScreen .score-circle-clean { width:auto; height:auto; margin:0 0 26px; padding:0 0 24px; border:0; border-bottom:1px solid #ffffff25; border-radius:0; background:none; display:flex; flex-direction:column; align-items:flex-start; box-shadow:none; }
+#resultScreen .score-number { font-size:88px; font-weight:800; line-height:1.1; color:#fff; letter-spacing:-5px; }
+#resultScreen .score-label { color:#c9bfdc; font-size:10px; letter-spacing:.12em; margin-top:8px; }
+#resultScreen #resVerdictGrade { color:#fff !important; font-size:20px !important; line-height:1.35; font-weight:700 !important; margin-bottom:12px !important; }
+#resultScreen #resVerdictDesc { color:#d5cde4 !important; font-size:13px !important; line-height:1.7 !important; margin-bottom:24px !important; }
+#resultScreen .score-summary > div:last-child { margin-top:auto; }
+#resultScreen .score-summary .btn-action { min-height:46px; background:#fff; color:#38265e; border:1px solid #fff; box-shadow:none; border-radius:10px; font-size:13px; }
+#resultScreen .score-summary .btn-action:hover { background:#ede7fb; }
+#resultScreen .score-summary .btn-secondary { min-height:42px; background:transparent; border:1px solid #ffffff30; color:#e4dbf4; border-radius:10px; font-size:13px; }
+#resultScreen[data-outcome="practice"] .score-number { color:#ffd398; }
+#resultScreen .assessment-evidence { grid-column:2; grid-row:1; padding:28px 30px; }
+#resultScreen .assessment-mode { display:none; }
+#assessmentEvidenceTitle { font-size:20px; letter-spacing:-.4px; line-height:1.35; margin:0 0 8px; font-weight:800; }
+#resultScreen .assessment-status { display:inline-block; background:#fff3e0; border:1px solid #f2dcba; color:#865522; padding:6px 10px; border-radius:7px; font-size:11px; font-weight:600; line-height:1.5; margin:0 0 5px; }
+#resultScreen .assessment-columns { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; margin:24px 0 0; }
+#resultScreen .assessment-columns h3 { font-size:12px; font-weight:800; color:#686074; margin:0 0 14px; }
+#resultScreen .assessment-columns ul { list-style:none; padding:0; margin:0; }
+#resultScreen .assessment-columns p { font-size:13px; line-height:1.7; color:var(--report-muted); }
+.evidence-skill { margin:0 0 16px; }
+.evidence-skill > div:first-child { display:flex; gap:12px; justify-content:space-between; align-items:baseline; font-size:12px; line-height:1.45; }
+.evidence-skill strong { font-size:12px; font-variant-numeric:tabular-nums; color:#493399; flex-shrink:0; }
+.evidence-track { height:4px; background:#eeebf4; border-radius:3px; margin-top:8px; overflow:hidden; }
+.evidence-track span { display:block; height:100%; border-radius:3px; background:#8063bf; }
+.evidence-skill[data-level="practice"] strong { color:#a36a2d; }
+.evidence-skill[data-level="practice"] .evidence-track span { background:#cf9856; }
+#resultScreen .assessment-observation { margin:8px 0 0; padding-top:14px; border-top:1px solid var(--report-line); color:var(--report-muted); font-size:12px; line-height:1.65; }
+#resultScreen .assessment-next { margin:18px 0 12px; padding:16px 18px; border:0; border-radius:12px; background:#f2eff9; color:#4d3b72; font-size:13px; line-height:1.65; }
+.assessment-next strong { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px; color:var(--report-accent); }
+#resultScreen .profile-note { font-size:11px; line-height:1.65; color:#777084; }
+#resultScreen .report-metrics { grid-column:1 / -1; padding:22px 28px; }
+#resultScreen .report-metrics > div:first-child { font-size:10px !important; letter-spacing:.1em !important; color:var(--report-muted) !important; margin-bottom:18px !important; }
+#resultScreen .stat-table { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; }
+#resultScreen .stat-row { display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:9px; padding:0 22px; border:0; border-right:1px solid var(--report-line); border-radius:0; background:none; min-width:0; }
+#resultScreen .stat-row:first-child { padding-left:0; }
+#resultScreen .stat-row:last-child { border-right:0; }
+#resultScreen .stat-label { color:var(--report-muted); font-size:11px; line-height:1.5; }
+#resultScreen .stat-val { color:var(--report-ink) !important; font-size:22px; line-height:1.2; font-weight:700; font-variant-numeric:tabular-nums; }
+#resultScreen #aiFeedbackCard { grid-column:1; }
+#resultScreen #careerCard { grid-column:2; }
+#resultScreen .ai-card-head { align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+#resultScreen .ai-card-title, #resultScreen .career-title { font-size:15px; font-weight:800; }
+#resultScreen .ai-card-source { font-size:10px; color:var(--report-muted); }
+#resultScreen .ai-card-body { font-size:13px; line-height:1.8; color:#615a71; }
+#resultScreen .ai-card-body p + p { margin-top:12px; }
+#resultScreen .profile-mode { background:#f7f6fb; border:1px solid #eeebf4; border-radius:10px; padding:12px 14px; margin:8px 0; display:flex; flex-direction:column; gap:5px; font-size:11px; line-height:1.6; }
+#resultScreen .profile-mode strong { color:var(--report-ink); font-size:12px; }
+#resultScreen .career-study summary { cursor:pointer; padding:12px 0 0; font-size:12px; color:var(--report-accent); font-weight:600; }
+.report-feedback { grid-column:1 / -1; background:#fff; border:1px solid var(--report-line); border-radius:16px; overflow:hidden; }
+.report-feedback > summary { cursor:pointer; padding:22px 28px; color:var(--report-accent); font-size:13px; font-weight:600; }
+#resultScreen #surveyCard { border:0; border-top:1px solid var(--report-line); border-radius:0; box-shadow:none; }
+#resultScreen .survey-q { padding:12px 0; border-bottom:1px solid #f0edf5; }
+#resultScreen .survey-q-text { font-size:13px; }
+#resultScreen .survey-opt { padding:9px 13px; min-height:38px; border-radius:8px; }
+#resultScreen .survey-opt.selected { background:var(--report-accent); border-color:var(--report-accent); }
+#resultScreen .survey-note { font-size:12px; line-height:1.7; }
+#resultScreen .survey-comment { padding:12px; min-height:80px; }
+#resultScreen .survey-submit { background:var(--report-accent); border-radius:10px; }
+#resultScreen .survey-submit:disabled { background:#ccc7d8; }
+#resultScreen .report-legacy, #resultScreen #fitProfileCard { display:none !important; }
+#resultScreen .learning-notice { font-size:11px; margin-top:16px; border-radius:6px; }
+#resultScreen :focus-visible { outline:3px solid #ad94ed; outline-offset:4px; }
+@media (max-width:800px) {
+  #resultScreen .result-content-wrap { padding:28px 20px 44px; gap:22px; }
+  #reportProfession { font-size:31px; letter-spacing:-1px; }
+  .report-heading { align-items:flex-start; flex-direction:column; gap:12px; }
+  #reportSubtitle { max-width:none; font-size:13px; }
+  #resultScreen .result-grid-layout { grid-template-columns:1fr; gap:16px; }
+  #resultScreen .score-summary, #resultScreen .assessment-evidence, #resultScreen #aiFeedbackCard, #resultScreen #careerCard { grid-column:1; grid-row:auto; }
+  #resultScreen .score-summary { order:0; }
+  #resultScreen .assessment-evidence { order:1; padding:24px; }
+  #resultScreen .report-metrics { order:2; }
+  #resultScreen #aiFeedbackCard { order:3; }
+  #resultScreen #careerCard { order:4; }
+  #resultScreen .report-feedback { order:5; }
+  #resultScreen .score-number { font-size:76px; }
+  #resultScreen .score-circle-clean { margin-bottom:18px; padding-bottom:18px; }
+  #resultScreen .stat-table { grid-template-columns:repeat(2,minmax(0,1fr)); row-gap:24px; }
+  #resultScreen .stat-row { padding:0 14px; }
+  #resultScreen .stat-row:nth-child(odd) { padding-left:0; }
+  #resultScreen .stat-row:nth-child(even) { border-right:0; }
+}
+@media (max-width:420px) {
+  #resultScreen .top-bar { padding:14px 20px; }
+  #resultScreen .result-content-wrap { padding:24px 14px 36px; }
+  #resultScreen .assessment-columns { grid-template-columns:1fr; gap:12px; }
+  #resultScreen .report-card { padding:24px; }
+}
+@media (prefers-reduced-motion:reduce) { #resultScreen * { animation:none !important; transition:none !important; } }
+#resultScreen .career-chip { color:var(--report-accent); border-color:#e3ddef; background:#fff; }
+#resultScreen .career-chip:hover { background:#f2eff9; border-color:#b7a4dc; }
