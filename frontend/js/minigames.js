@@ -1098,6 +1098,7 @@ function renderFitProfile() {
   const grid = document.querySelector('#resultScreen .result-grid-layout');
   if (!traits || !grid) return;
   document.getElementById('fitProfileCard')?.remove();
+  if (document.getElementById('assessmentEvidence')) return;
   const scored = Object.keys(traits).filter((k) => fit.scores[k] !== undefined);
   if (!scored.length) return;
   const card = document.createElement('div');

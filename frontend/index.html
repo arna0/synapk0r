@@ -12,6 +12,7 @@
   <script>window.THREE || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
   <link rel="stylesheet" href="css/styles.css?v=20261138">
   <link rel="stylesheet" href="css/motion.css?v=3">
+  <link rel="stylesheet" href="css/report.css?v=20261127-report">
 </head>
 <body>
 
@@ -600,9 +601,10 @@
     </div>
 
     <div class="result-content-wrap">
+      <header class="report-heading"><div><p id="reportEyebrow">ИТОГИ СМЕНЫ</p><h1 id="reportProfession">Ваш результат</h1></div><p id="reportSubtitle">Результаты вашей практики</p></header>
       <div class="result-grid-layout">
         <!-- Left Column: Fit Score Card & Actions -->
-        <div class="report-card" style="text-align: center;">
+        <div class="report-card score-summary" style="text-align: center;">
           <div style="display:inline-block; padding:4px 12px; background:var(--emerald-bg); border:1px solid var(--emerald-border); border-radius:20px; font-size:11px; font-weight:700; color:var(--emerald-text); margin-bottom:12px;">
             <span id="resVerdictBadge">ВЕРДИКТ: РЕКОМЕНДОВАН</span>
           </div>
@@ -628,8 +630,8 @@
         </div>
 
         <!-- Right Column: Metrics & Competencies -->
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          <div class="report-card">
+        <div class="report-details">
+          <div class="report-card report-metrics">
             <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
               Метрики эффективности и телеметрии
             </div>
@@ -667,10 +669,10 @@
           <div class="report-card" id="careerCard" style="display:none;"></div>
 
           <!-- Validation survey (js/survey.js) -->
-          <div class="report-card" id="surveyCard" style="display:none;"></div>
+          <details class="report-feedback" id="reportSurvey"><summary id="reportSurveyToggle">Поделиться отзывом · 1 минута</summary><div class="report-card" id="surveyCard" style="display:none;"></div></details>
 
-          <!-- Recommendations -->
-          <div class="report-card">
+          <!-- Legacy host compatibility; evidence is shown in the assessment card. -->
+          <div class="report-card report-legacy" hidden>
             <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">💡 Ключевые подтвержденные компетенции:</div>
             <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;" id="resCompetencies">
               • Соблюдение рабочего давления 9 бар и правильный расчет граммовки (18г)<br>
@@ -686,35 +688,35 @@
 </div>
 
 <!-- App scripts (classic scripts share one global scope; order matters) -->
-<script src="js/config.js?v=20261127-quality"></script>
-<script src="js/session.js?v=20261127-quality"></script>
-<script src="js/assessment.js?v=20261127-quality"></script>
-<script src="js/telemetry.js?v=20261127-quality"></script>
-<script src="js/safety.js?v=20261127-quality"></script>
-<script src="js/audio.js?v=20261127-quality"></script>
-<script src="js/engine.js?v=20261127-quality"></script>
-<script src="js/controls.js?v=20261127-quality"></script>
-<script src="js/guide.js?v=20261127-quality"></script>
-<script src="js/effects.js?v=20261127-quality"></script>
-<script src="js/barista.js?v=20261127-quality"></script>
-<script src="js/report.js?v=20261127-quality"></script>
-<script src="js/survey.js?v=20261127-quality"></script>
-<script src="js/career.js?v=20261127-quality"></script>
-<script src="js/i18n-en.js?v=20261127-quality"></script>
-<script src="js/i18n-en-game.js?v=20261127-quality"></script>
-<script src="js/i18n.js?v=20261127-quality"></script>
-<script src="js/home.js?v=20261127-quality"></script>
-<script src="js/scenario.js?v=20261127-quality"></script>
-<script src="js/incident-data.js?v=20261127-quality"></script>
-<script src="js/it.js?v=20261127-quality"></script>
-<script src="js/doctor.js?v=20261127-quality"></script>
-<script src="js/ui.js?v=20261127-quality"></script>
-<script src="js/dynamics.js?v=20261127-quality"></script>
-<script src="js/minigames.js?v=20261127-quality"></script>
-<script src="js/graphics.js?v=20261127-quality"></script>
-<script src="js/characters.js?v=20261127-quality"></script>
-<script src="js/models.js?v=20261127-quality"></script>
-<script src="js/npc.js?v=20261127-quality"></script>
+<script src="js/config.js?v=20261127-report"></script>
+<script src="js/session.js?v=20261127-report"></script>
+<script src="js/assessment.js?v=20261127-report"></script>
+<script src="js/telemetry.js?v=20261127-report"></script>
+<script src="js/safety.js?v=20261127-report"></script>
+<script src="js/audio.js?v=20261127-report"></script>
+<script src="js/engine.js?v=20261127-report"></script>
+<script src="js/controls.js?v=20261127-report"></script>
+<script src="js/guide.js?v=20261127-report"></script>
+<script src="js/effects.js?v=20261127-report"></script>
+<script src="js/barista.js?v=20261127-report"></script>
+<script src="js/report.js?v=20261127-report"></script>
+<script src="js/survey.js?v=20261127-report"></script>
+<script src="js/career.js?v=20261127-report"></script>
+<script src="js/i18n-en.js?v=20261127-report"></script>
+<script src="js/i18n-en-game.js?v=20261127-report"></script>
+<script src="js/i18n.js?v=20261127-report"></script>
+<script src="js/home.js?v=20261127-report"></script>
+<script src="js/scenario.js?v=20261127-report"></script>
+<script src="js/incident-data.js?v=20261127-report"></script>
+<script src="js/it.js?v=20261127-report"></script>
+<script src="js/doctor.js?v=20261127-report"></script>
+<script src="js/ui.js?v=20261127-report"></script>
+<script src="js/dynamics.js?v=20261127-report"></script>
+<script src="js/minigames.js?v=20261127-report"></script>
+<script src="js/graphics.js?v=20261127-report"></script>
+<script src="js/characters.js?v=20261127-report"></script>
+<script src="js/models.js?v=20261127-report"></script>
+<script src="js/npc.js?v=20261127-report"></script>
 
 </body>
 </html>

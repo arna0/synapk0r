@@ -240,19 +240,31 @@ function renderAssessmentEvidence(report) {
   if (!grid || !report.assessment) return;
   document.getElementById('assessmentEvidence')?.remove();
   const a = report.assessment;
+  const screen = document.getElementById('resultScreen');
+  if (screen) screen.setAttribute('data-outcome', a.requiresRetry ? 'practice' : 'complete');
+  const titles = { safety: ['Инженер по безопасности', 'Safety engineer', 'Қауіпсіздік инженері'], barista: ['Бариста', 'Barista', 'Бариста'], it: ['IT-инженер', 'IT engineer', 'IT инженері'], doctor: ['Врач', 'Doctor', 'Дәрігер'] };
+  const heading = document.getElementById('reportProfession');
+  if (heading) heading.textContent = gameText(...titles[report.module]);
+  const eyebrow = document.getElementById('reportEyebrow');
+  if (eyebrow) eyebrow.textContent = gameText('ИТОГИ СМЕНЫ', 'SESSION REPORT', 'АУЫСЫМ ҚОРЫТЫНДЫСЫ');
+  const subtitle = document.getElementById('reportSubtitle');
+  if (subtitle) subtitle.textContent = gameText('Навыки, решения и следующий шаг.', 'Your skills, decisions and next step.', 'Дағдылар, шешімдер және келесі қадам.');
+  const surveyToggle = document.getElementById('reportSurveyToggle');
+  if (surveyToggle) surveyToggle.textContent = gameText('Помогите улучшить SynapKor · отзыв за 1 минуту', 'Help improve SynapKor · 1-minute feedback', 'SynapKor-ды жақсартыңыз · 1 минуттық пікір');
   const card = document.createElement('section');
   card.id = 'assessmentEvidence';
   card.className = 'report-card assessment-evidence';
   card.setAttribute('aria-labelledby', 'assessmentEvidenceTitle');
-  const row = item => `<li>${escapeHtml(assessmentDescriptor(report.module, item.id).label)}: <strong>${item.score}%</strong></li>`;
+  const strengths = a.strengths.filter(item => ASSESSMENT_SKILLS[report.module].includes(item.id));
+  const row = item => `<li class="evidence-skill" data-level="${item.score >= 80 ? 'strong' : 'practice'}"><div><span>${escapeHtml(assessmentDescriptor(report.module, item.id).label)}:</span> <strong>${item.score}%</strong></div><div class="evidence-track" aria-hidden="true"><span style="width:${item.score}%"></span></div></li>`;
   card.innerHTML = `<p class="assessment-mode">${reportModeText(a.mode)}</p>
     <h2 id="assessmentEvidenceTitle">${gameText('Что показала эта попытка', 'What this attempt showed', 'Бұл әрекет нені көрсетті')}</h2>
     ${a.requiresRetry ? `<p class="assessment-status" role="status">${a.criticalViolations
       ? gameText('Нарушена безопасность — требуется повторная практика', 'Safety violation — further practice required', 'Қауіпсіздік бұзылды — қайта жаттығу қажет')
       : gameText('Есть задания для повторной практики', 'Some tasks need further practice', 'Кейбір тапсырмаларды қайталау қажет')}</p>` : ''}
-    <div class="assessment-columns"><div><h3>${gameText('Что получилось', 'Strengths in this attempt', 'Бұл әрекеттегі жетістіктер')}</h3>${a.strengths.length ? `<ul>${a.strengths.slice(0, 3).map(row).join('')}</ul>` : `<p>${gameText('Пока нет упражнений с результатом 80% или выше.', 'No exercise reached 80% yet.', 'Әзірге 80% не одан жоғары нәтиже жоқ.')}</p>`}</div>
-    <div><h3>${gameText('Что потренировать', 'Needs practice', 'Нені жаттықтыру керек')}</h3>${a.practice.length ? `<ul>${a.practice.slice(0, 3).map(row).join('')}</ul>` : `<p>${gameText('Закрепите результат в самостоятельной попытке.', 'Consolidate the result in an independent attempt.', 'Нәтижені өз бетіңізше әрекетте бекітіңіз.')}</p>`}</div></div>
-    <p>${escapeHtml(reportErrorEvidence(report))}</p>
+    <div class="assessment-columns"><div><h3>${gameText('Что получилось', 'Strengths in this attempt', 'Бұл әрекеттегі жетістіктер')}</h3>${strengths.length ? `<ul>${strengths.map(row).join('')}</ul>` : `<p>${gameText('Пока нет упражнений с результатом 80% или выше.', 'No exercise reached 80% yet.', 'Әзірге 80% не одан жоғары нәтиже жоқ.')}</p>`}</div>
+    <div><h3>${gameText('Что потренировать', 'Needs practice', 'Нені жаттықтыру керек')}</h3>${a.practice.length ? `<ul>${a.practice.map(row).join('')}</ul>` : `<p>${gameText('Закрепите результат в самостоятельной попытке.', 'Consolidate the result in an independent attempt.', 'Нәтижені өз бетіңізше әрекетте бекітіңіз.')}</p>`}</div></div>
+    <p class="assessment-observation">${escapeHtml(reportErrorEvidence(report))}</p>
     <p class="assessment-next"><strong>${gameText('Следующий шаг: ', 'Next step: ', 'Келесі қадам: ')}</strong>${escapeHtml(reportNextStep(report))}</p>
     <p class="profile-note">${gameText('Баллы относятся к этой учебной попытке и не оценивают профессиональную пригодность.', 'Scores describe this practice attempt and do not measure career aptitude.', 'Балдар осы оқу әрекетін сипаттайды және кәсіби жарамдылықты бағаламайды.')}</p>`;
   if (report.module === 'doctor') {
