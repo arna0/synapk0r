@@ -89,3 +89,29 @@ test('storage failure returns a retryable error without internal details', async
   const r = await handleApi(new Request('https://api.example/api/health'), { DB: { withSession() { throw new Error('private database details'); } } });
   assert.equal(r.status, 503); assert.equal((await r.json()).error, 'Service temporarily unavailable');
 });
+
+
+test('device deletion token remains hashed, retry cannot replace it and private feedback can be deleted', async () => {
+ const db=database(), token='ab'.repeat(32), replacement='cd'.repeat(32);
+ const one=survey({delete_token:token}), two=survey({publish:false,delete_token:token});
+ await call(db,'/api/survey',one); await call(db,'/api/survey',{...one,delete_token:replacement}); await call(db,'/api/survey',two);
+ const stored=await db.prepare('SELECT delete_token_hash FROM reviews WHERE id = ?').bind(one.id).first();
+ assert.match(stored.delete_token_hash,/^[a-f0-9]{64}$/); assert.notEqual(stored.delete_token_hash,token);
+ assert.equal(JSON.stringify(await (await call(db,'/api/reviews')).json()).includes(token),false);
+ assert.equal((await call(db,'/api/reviews/'+one.id,{delete_token:replacement},{},'DELETE')).status,401);
+ for(const row of [one,two]) assert.equal((await call(db,'/api/reviews/'+row.id,{delete_token:token},{},'DELETE')).status,200);
+ assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM reviews').first()).n,0);
+ assert.equal((await (await call(db,'/api/reviews/'+one.id,{delete_token:token},{},'DELETE')).json()).deleted,false); db.close();
+});
+test('legacy feedback admin-only, validates tokens and allows anonymous Android origins only', async () => {
+ const db=database(), legacy=survey(); await call(db,'/api/survey',legacy);
+ assert.equal((await call(db,'/api/survey',survey({delete_token:'short'}))).status,400);
+ assert.equal((await call(db,'/api/reviews/'+legacy.id,{delete_token:'ab'.repeat(32)},{},'DELETE')).status,401);
+ for(const origin of ['null','https://appassets.androidplatform.net']) {
+  const r=await call(db,'/api/reviews/'+legacy.id,undefined,{origin},'OPTIONS');
+  assert.equal(r.status,204); assert.equal(r.headers.get('access-control-allow-origin'),origin);
+  assert.match(r.headers.get('access-control-allow-methods'),/DELETE/); assert.match(r.headers.get('access-control-allow-headers'),/Authorization/i);
+  assert.equal((await call(db,'/api/survey',survey(),{origin})).status,201);
+ }
+ assert.equal((await call(db,'/api/survey',survey(),{origin:'http://malicious.example'})).status,403); db.close();
+});

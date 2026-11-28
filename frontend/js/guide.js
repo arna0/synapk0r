@@ -154,7 +154,7 @@ function setGuideVisible(show) {
   guideVisible = show;
   if (show && independentRun) {
     independentRun = false;
-    if (sessionEvents.length) sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'GUIDE_REOPENED', ok: true });
+    if (sessionEvents.length) sessionEvents.push({ t: Math.round((gameNow() - sessionStartedAt) / 100) / 10, action: 'GUIDE_REOPENED', ok: true });
   }
   document.getElementById('guidePanel')?.classList.toggle('visible', show);
   document.getElementById('guideToggleBtn')?.classList.toggle('visible', !show);
@@ -347,7 +347,7 @@ function closeIntro() {
   }
   overlay.classList.remove('visible');
   // Time is measured from the moment the player actually starts
-  sessionStartedAt = Date.now();
+  sessionStartedAt = gameNow();
   const scenario = typeof getActiveScenario === 'function' ? getActiveScenario() : null;
   if (scenario && scenario.onBegin) scenario.onBegin(sessionStartedAt);
   state.timer = 0;

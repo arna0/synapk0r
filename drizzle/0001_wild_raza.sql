@@ -1,0 +1,1 @@
+ALTER TABLE `reviews` ADD `delete_token_hash` text;

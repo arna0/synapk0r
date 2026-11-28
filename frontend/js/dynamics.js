@@ -91,7 +91,7 @@ function showActionProgressBar(title, durationMs, onFinished) {
   let misses = 0;
   let pos = 0;
   let dir = 1;
-  let last = performance.now();
+  let last = gameNow();
   let raf = 0;
   let locked = false;
 
@@ -118,7 +118,9 @@ function showActionProgressBar(title, durationMs, onFinished) {
   };
   placeZone();
 
-  const tick = (now) => {
+  const tick = () => {
+    const now=gameNow();
+    if(isGamePaused()) {last=now;raf=requestAnimationFrame(tick);return;}
     const dt = now - last;
     last = now;
     if (!locked) {
@@ -134,13 +136,13 @@ function showActionProgressBar(title, durationMs, onFinished) {
   const record = (quality) => {
     skillStats[quality]++;
     if (typeof sessionEvents !== 'undefined') {
-      const t = typeof sessionStartedAt !== 'undefined' ? Math.round((Date.now() - sessionStartedAt) / 100) / 10 : 0;
+      const t = typeof sessionStartedAt !== 'undefined' ? Math.round((gameNow() - sessionStartedAt) / 100) / 10 : 0;
       sessionEvents.push({ t, action: `SKILL_${quality.toUpperCase()}`, ok: quality !== 'miss' });
     }
   };
 
   const stop = () => {
-    if (locked) return;
+    if (locked || isGamePaused()) return;
     const inZone = pos >= zoneStart && pos <= zoneStart + zoneWidth;
     if (inZone) {
       locked = true;
@@ -175,6 +177,7 @@ function showActionProgressBar(title, durationMs, onFinished) {
   };
 
   const onKey = (e) => {
+    if (isGamePaused()) return;
     if (['KeyE', 'Space', 'Enter'].includes(e.code)) {
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -272,6 +275,7 @@ function showInterrupt(def) {
     opts.appendChild(b);
   });
   const onKey = (e) => {
+    if (isGamePaused()) return;
     const n = { Digit1: 0, Digit2: 1, Digit3: 2 }[e.code];
     if (n !== undefined && shuffled[n]) { e.stopImmediatePropagation(); finish(shuffled[n], false); }
   };
@@ -279,10 +283,13 @@ function showInterrupt(def) {
   const unregister = onRunEnd(() => window.removeEventListener('keydown', onKey, true));
   host.appendChild(box);
   if (typeof playTone === 'function') playTone(740, 'square', 0.12, 0.06);
-  const started = Date.now();
+  let elapsedMs=0,lastTick=gameNow();
   const fill = box.querySelector('.countdown-fill');
   const timer = runEvery(() => {
-    const left = 1 - (Date.now() - started) / (total * 1000);
+    const now=gameNow();
+    if (gameSettings.untimed) {lastTick=now;fill.style.width='100%';box.classList.toggle('is-urgent',false);return;}
+    elapsedMs+=now-lastTick;lastTick=now;
+    const left = 1 - elapsedMs / (total * 1000);
     fill.style.width = Math.max(0, left * 100) + '%';
     box.classList.toggle('is-urgent', left < 0.3);
     if (left <= 0) finish(null, true);
@@ -336,10 +343,13 @@ startScenarioDecision = function (idx) {
   hud.prepend(bar);
   const fill = bar.querySelector('.countdown-fill');
   const label = bar.querySelector('.decision-timer-text');
-  const started = Date.now();
+  let elapsedMs=0,lastTick=gameNow();
   let late = false;
   decisionTimer = runEvery(() => {
-    const leftSec = total - (Date.now() - started) / 1000;
+    const now=gameNow();
+    if(gameSettings.untimed) {lastTick=now;fill.style.width='100%';bar.classList.toggle('is-urgent',false);label.textContent=gameText('Без ограничения времени','Untimed decision','Шешімге уақыт шектелмейді');return;}
+    elapsedMs+=now-lastTick;lastTick=now;
+    const leftSec = total - elapsedMs/1000;
     fill.style.width = Math.max(0, (leftSec / total) * 100) + '%';
     bar.classList.toggle('is-urgent', leftSec < total * 0.3);
     label.textContent = leftSec > 0 ? `${Math.ceil(leftSec)} с` : 'Время вышло';

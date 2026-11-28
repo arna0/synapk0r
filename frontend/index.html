@@ -12,7 +12,9 @@
   <script>window.THREE || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
   <link rel="stylesheet" href="css/styles.css?v=20261138">
   <link rel="stylesheet" href="css/motion.css?v=3">
-  <link rel="stylesheet" href="css/report.css?v=20261127-report">
+  <link rel="stylesheet" href="css/report.css?v=20261128-quality">
+  <link rel="stylesheet" href="css/progress.css?v=20261128-quality">
+  <link rel="stylesheet" href="css/drills.css?v=20261128-quality">
 </head>
 <body>
 
@@ -241,7 +243,7 @@
               <ul class="module-games" aria-label="Мини-игры"><li>Очередь алертов</li><li>Причина в логах</li><li>Мёртвый порт</li><li>Команда в терминале</li></ul>
               <ul class="module-meta">
                 <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>4–6 минут</li>
-                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>8 шагов</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>7 шагов</li>
                 <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V14M10 20V9M16 20V4"/></svg>Средняя</li>
               </ul>
             </div>
@@ -328,7 +330,11 @@
         </div>
       </section>
 
+      <section class="home-section assignment-banner" id="checkpointBanner" hidden></section>
       <section class="home-section" id="careerProfile" style="display:none;"></section>
+      <section class="home-section" id="learningHub"></section>
+      <section class="home-section" id="privacyTools"></section>
+      <button type="button" class="pause-settings-btn home-settings" data-settings-button onclick="openSettings()">Пауза · настройки</button>
 
       <section class="home-section">
         <div class="section-head"><h2>Как это работает</h2></div>
@@ -392,7 +398,7 @@
           <span style="display:inline-block; width:8px; height:8px; background:var(--emerald); border-radius:50%;" id="vrQuestDot"></span>
           <span id="vrQuestTitle">КВЕСТ 1: ICED OAT LATTE</span>
         </div>
-        <div class="timer-pill" id="vrTimer" aria-label="Elapsed time">00:00</div>
+        <div class="timer-pill" id="vrTimer" aria-label="Прошедшее время">00:00</div>
         <!-- Live Safety Indicators -->
         <div id="safetyHudBar" class="safety-hud-bar" style="display:none;">
           <div class="safety-hud-pill danger" id="pillPower"><span class="status-dot danger" id="dotPower"></span><span id="textPower">ПИТАНИЕ: 380V ON</span></div>
@@ -403,6 +409,7 @@
       </div>
 
       <div class="vr-status-right">
+        <button type="button" class="pause-settings-btn" data-settings-button onclick="openSettings()">Пауза · настройки</button>
         <div class="device-switcher" style="background: rgba(15, 23, 42, 0.88); border-color: var(--border-dark);">
           <button class="device-btn" id="gameBtnModeDesktop" onclick="setDeviceMode('desktop')" style="color:#FFF;">ПК</button>
           <button class="device-btn" id="gameBtnModeMobile" onclick="setDeviceMode('mobile-frame')" style="color:#FFF;">Телефон</button>
@@ -688,35 +695,44 @@
 </div>
 
 <!-- App scripts (classic scripts share one global scope; order matters) -->
-<script src="js/config.js?v=20261127-report"></script>
-<script src="js/session.js?v=20261127-report"></script>
-<script src="js/assessment.js?v=20261127-report"></script>
-<script src="js/telemetry.js?v=20261127-report"></script>
-<script src="js/safety.js?v=20261127-report"></script>
-<script src="js/audio.js?v=20261127-report"></script>
-<script src="js/engine.js?v=20261127-report"></script>
-<script src="js/controls.js?v=20261127-report"></script>
-<script src="js/guide.js?v=20261127-report"></script>
-<script src="js/effects.js?v=20261127-report"></script>
-<script src="js/barista.js?v=20261127-report"></script>
-<script src="js/report.js?v=20261127-report"></script>
-<script src="js/survey.js?v=20261127-report"></script>
-<script src="js/career.js?v=20261127-report"></script>
-<script src="js/i18n-en.js?v=20261127-report"></script>
-<script src="js/i18n-en-game.js?v=20261127-report"></script>
-<script src="js/i18n.js?v=20261127-report"></script>
-<script src="js/home.js?v=20261127-report"></script>
-<script src="js/scenario.js?v=20261127-report"></script>
-<script src="js/incident-data.js?v=20261127-report"></script>
-<script src="js/it.js?v=20261127-report"></script>
-<script src="js/doctor.js?v=20261127-report"></script>
-<script src="js/ui.js?v=20261127-report"></script>
-<script src="js/dynamics.js?v=20261127-report"></script>
-<script src="js/minigames.js?v=20261127-report"></script>
-<script src="js/graphics.js?v=20261127-report"></script>
-<script src="js/characters.js?v=20261127-report"></script>
-<script src="js/models.js?v=20261127-report"></script>
-<script src="js/npc.js?v=20261127-report"></script>
+<dialog id="settingsDialog" aria-labelledby="settingsHeading"></dialog>
+<script src="js/config.js?v=20261128-quality"></script>
+<script src="js/session.js?v=20261128-quality"></script>
+<script src="js/settings.js?v=20261128-quality"></script>
+<script src="js/assessment.js?v=20261128-quality"></script>
+<script src="js/telemetry.js?v=20261128-quality"></script>
+<script src="js/safety.js?v=20261128-quality"></script>
+<script src="js/audio.js?v=20261128-quality"></script>
+<script src="js/engine.js?v=20261128-quality"></script>
+<script src="js/controls.js?v=20261128-quality"></script>
+<script src="js/guide.js?v=20261128-quality"></script>
+<script src="js/effects.js?v=20261128-quality"></script>
+<script src="js/barista.js?v=20261128-quality"></script>
+<script src="js/report.js?v=20261128-quality"></script>
+<script src="js/survey.js?v=20261128-quality"></script>
+<script src="js/learning-store.js?v=20261128-quality"></script>
+<script src="js/privacy.js?v=20261128-quality"></script>
+<script src="js/career.js?v=20261128-quality"></script>
+<script src="js/i18n-en.js?v=20261128-quality"></script>
+<script src="js/i18n-en-game.js?v=20261128-quality"></script>
+<script src="js/i18n.js?v=20261128-quality"></script>
+<script src="js/i18n-kk-game.js?v=20261128-quality"></script>
+<script src="js/i18n-game-extra.js?v=20261128-quality"></script>
+<script src="js/learning-ui.js?v=20261128-quality"></script>
+<script src="js/home.js?v=20261128-quality"></script>
+<script src="js/scenario.js?v=20261128-quality"></script>
+<script src="js/incident-data.js?v=20261128-quality"></script>
+<script src="js/it.js?v=20261128-quality"></script>
+<script src="js/doctor.js?v=20261128-quality"></script>
+<script src="js/ui.js?v=20261128-quality"></script>
+<script src="js/dynamics.js?v=20261128-quality"></script>
+<script src="js/minigames.js?v=20261128-quality"></script>
+<script src="js/graphics.js?v=20261128-quality"></script>
+<script src="js/characters.js?v=20261128-quality"></script>
+<script src="js/models.js?v=20261128-quality"></script>
+<script src="js/npc.js?v=20261128-quality"></script>
+<script src="js/drills.js?v=20261128-quality"></script>
+<script src="js/checkpoint.js?v=20261128-quality"></script>
 
 </body>
 </html>

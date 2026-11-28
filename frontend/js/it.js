@@ -358,7 +358,7 @@ function itExercise(stage) {
 }
 
 function itAcceptExercise(exerciseId, result) {
-  const next = ITIncident.completeExercise(itRun, exerciseId, result, Date.now());
+  const next = ITIncident.completeExercise(itRun, exerciseId, result, gameNow());
   if (next === itRun) return false;
   itRun = next;
   if (exerciseId === 'it.triage') drawItDashboard('details');
@@ -423,7 +423,7 @@ function createItScenario() {
       const selected = ITIncident.nextCase(itLastCaseId);
       itLastCaseId = selected.id;
       try { localStorage.setItem('synapkor.lastItCase', selected.id); } catch (_) {}
-      itRun = ITIncident.createRun(selected.id, Date.now());
+      itRun = ITIncident.createRun(selected.id, gameNow());
       itIncidentOpen = true;
       Object.assign(SCENARIOS.it, createItScenario());
       registerScenario(SCENARIOS.it);

@@ -1,6 +1,7 @@
 // SynapKor — English for everything inside the 3D modules: HUD, guide, step bar, tooltips,
 // decisions, alerts and text drawn on 3D canvases. Looked up by the exact Russian text (see i18n.js).
 Object.assign(EN, {
+  '7 шагов': '7 steps',
   'Взять': 'Take', 'Смолоть': 'Grind', 'Тамп': 'Tamp', 'Сварить': 'Brew', 'Взбить': 'Steam', 'Собрать': 'Assemble',
   // ---------- page & game chrome ----------
   'SynapKor — 3D-симулятор профессий': 'SynapKor — 3D career simulator',

@@ -10,7 +10,7 @@
 // job asks for and how you did, so the player can judge whether the work suits them.
 // Loaded after dynamics.js: it routes showActionProgressBar by title and keeps dynamics' version as a fallback.
 
-const T = (ru, en) => (typeof currentLang !== 'undefined' && currentLang === 'en' ? en : ru);
+const T = (ru, en) => gameText(ru, en ?? translateInLanguage(ru,'en'), translateInLanguage(ru,'kk'));
 
 // ---------- fit profile ----------
 const FIT_TRAITS = () => ({
@@ -46,11 +46,12 @@ function fitReset(module) {
 }
 
 function fitRecord(trait, score) {
+  if (typeof recordPracticeScore === 'function' && recordPracticeScore(trait,score)) return;
   const s = Math.max(0, Math.min(100, Math.round(score)));
   // A corrective retry demonstrates recovery; it does not erase the earlier error.
   fit.scores[trait] = fit.scores[trait] === undefined ? s : Math.min(fit.scores[trait], s);
   if (typeof sessionEvents !== 'undefined') {
-    const t = typeof sessionStartedAt !== 'undefined' ? Math.round((Date.now() - sessionStartedAt) / 100) / 10 : 0;
+    const t = typeof sessionStartedAt !== 'undefined' ? Math.round((gameNow() - sessionStartedAt) / 100) / 10 : 0;
     sessionEvents.push({ t, action: `MINIGAME_${trait.toUpperCase()}_${s}`, ok: s >= 60 });
   }
   if (s >= 85) adapt.up(0.08);
@@ -69,7 +70,7 @@ function mgPanel(title, task) {
   const activeRun = typeof runNumber === 'number' ? runNumber : 0;
   if (typeof resetGameInputs === 'function') resetGameInputs();
   if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
-  const host = document.getElementById('viewportWrap') || document.body;
+  const host = (typeof practiceDrillHost === 'function' && practiceDrillHost()) || document.getElementById('viewportWrap') || document.body;
   const box = document.createElement('div');
   box.className = 'mg';
   box.setAttribute('role', 'dialog');
@@ -98,7 +99,7 @@ function mgPanel(title, task) {
     if (e.shiftKey && (document.activeElement === first || document.activeElement === box || !box.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && (document.activeElement === last || !box.contains(document.activeElement) || !items.length)) { e.preventDefault(); first.focus(); }
   };
-  box.addEventListener('keydown', trapFocus);
+  if (!(typeof practiceDrillHost === 'function' && practiceDrillHost())) box.addEventListener('keydown', trapFocus);
   let closed = false;
   const panel = {
     box,
@@ -123,6 +124,7 @@ function mgPanel(title, task) {
         if (mgActive || (typeof runNumber === 'number' && runNumber !== activeRun)) return;
         // Refresh the launcher synchronously instead of waiting for the throttled
         // 3D guide update, which can leave it disabled after the dialog closes.
+        if (typeof practiceDrillHost === 'function' && practiceDrillHost()) return;
         if (typeof renderGuide === 'function') renderGuide();
         const candidates = [returnFocus, document.getElementById('guidedAction'), document.getElementById('guideToggleBtn'), ...document.querySelectorAll('#gameScreen button')];
         const target = candidates.find(el => el?.isConnected && el.offsetParent !== null && !el.disabled);
@@ -166,7 +168,7 @@ function mgButton(panel, label, onPress, onRelease) {
 function mgKeys(panel, onDown, onUp) {
   const codes = ['KeyE', 'Space', 'Enter'];
   const handles = (e) => codes.includes(e.code) && !(e.code !== 'KeyE' && e.target?.closest?.('button, input, select, textarea'));
-  const down = (e) => { if (handles(e)) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat && !panel.done && onDown) onDown(); } };
+  const down = (e) => { if (isGamePaused()) return; if (handles(e)) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat && !panel.done && onDown) onDown(); } };
   const up = (e) => { if (handles(e)) { e.preventDefault(); e.stopImmediatePropagation(); if (onUp) onUp(); } };
   window.addEventListener('keydown', down, true);
   window.addEventListener('keyup', up, true);
@@ -175,8 +177,10 @@ function mgKeys(panel, onDown, onUp) {
 
 function mgLoop(panel, fn) {
   let raf = 0;
-  let last = performance.now();
-  const tick = (now) => {
+  let last = gameNow();
+  const tick = () => {
+    const now=gameNow();
+    if(isGamePaused()) {last=now;raf=requestAnimationFrame(tick);return;}
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     if (fn(dt, now) !== false) raf = requestAnimationFrame(tick);
@@ -388,9 +392,11 @@ function mgHazardScan(done) {
     else { wrong++; b.classList.add('is-wrong'); }
   }, 'is-grid');
   p.body.prepend(bar);
-  const total = 20 / Math.min(1.3, adapt.level), start = performance.now();
+  const total = 20 / Math.min(1.3, adapt.level);
+  let elapsedMs=0,lastTick=gameNow();
   mgLoop(p, (dt, now) => {
-    const left = 1 - (now - start) / (total * 1000);
+    if(!gameSettings.untimed)elapsedMs+=now-lastTick;lastTick=now;
+    const left = gameSettings.untimed ? 1 : 1 - elapsedMs / (total * 1000);
     bar.firstChild.style.width = Math.max(0, left * 100) + '%';
     bar.classList.toggle('is-urgent', left < 0.3);
     if (left <= 0) { end(); return false; }
@@ -631,7 +637,7 @@ function runScenarioExercise(exerciseId, context, done) {
         button.classList.add('is-wrong');
         p.hint(option.feedback, 'bad');
         if (typeof sessionEvents !== 'undefined') sessionEvents.push({
-          t: Math.round((Date.now() - sessionStartedAt) / 100) / 10,
+          t: Math.round((gameNow() - sessionStartedAt) / 100) / 10,
           action: 'EXERCISE_INCORRECT', ok: false,
           detail: { exerciseId, checkId: check.id || null, choiceId: option.id, attempt: attempts },
         });

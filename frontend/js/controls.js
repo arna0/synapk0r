@@ -27,7 +27,7 @@ function setupFPSControls(container) {
     if (e.target && e.target.closest && e.target.closest(UI_OVERLAY_SELECTOR)) return;
     const victoryModal = document.getElementById('victoryModal');
     if (victoryModal && victoryModal.style.display === 'flex') return;
-    if (isIntroVisible()) return;
+    if (isIntroVisible() || isGamePaused()) return;
     if (!document.pointerLockElement && totalDragDistance <= 12) {
       const target = directGameTarget(e.clientX, e.clientY, viewportWrap);
       if (target) { interactWithGameObject(target.name); return; }
@@ -57,10 +57,10 @@ function setupFPSControls(container) {
   // Mouse movement when pointer locked
   document.addEventListener('mousemove', (e) => {
     const isLocked = (document.pointerLockElement === viewportWrap || document.mozPointerLockElement === viewportWrap || document.webkitPointerLockElement === viewportWrap);
-    if (isLocked) {
+    if (isLocked && !isGamePaused()) {
       const movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
       const movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
-      const lookSens = 0.0022;
+      const lookSens = 0.0022 * gameSettings.sensitivity;
 
       player.yaw += movementX * lookSens;
       player.pitch -= movementY * lookSens;
@@ -75,7 +75,8 @@ function setupFPSControls(container) {
 
   // Keyboard support (WASD + Arrow Keys + Shift Sprint + E/Space Interact)
   window.addEventListener('keydown', (e) => {
-    if (e.repeat) return;
+    if (e.code === 'KeyP' && !e.repeat && document.getElementById('gameScreen').classList.contains('active') && !e.target?.closest?.('input,textarea,select')) {e.preventDefault();openSettings();return;}
+    if (e.repeat || isGamePaused()) return;
     const gameActive = document.getElementById('gameScreen').classList.contains('active');
     if (!gameActive || (typeof mgActive !== 'undefined' && mgActive) || e.target?.closest?.('input, textarea, select')) return;
     if (e.target?.closest?.('button') && ['Space', 'Enter'].includes(e.code)) return;
@@ -132,14 +133,14 @@ function setupFPSControls(container) {
 
   window.addEventListener('mousemove', (e) => {
     const isLocked = (document.pointerLockElement === viewportWrap || document.mozPointerLockElement === viewportWrap || document.webkitPointerLockElement === viewportWrap);
-    if (isDragging && !isLocked) {
+    if (isDragging && !isLocked && !isGamePaused()) {
       const deltaX = e.clientX - previousMouseX;
       const deltaY = e.clientY - previousMouseY;
       previousMouseX = e.clientX;
       previousMouseY = e.clientY;
       totalDragDistance += Math.abs(deltaX) + Math.abs(deltaY);
 
-      const lookSens = 0.0035;
+      const lookSens = 0.0035 * gameSettings.sensitivity;
       player.yaw += deltaX * lookSens;
       player.pitch -= deltaY * lookSens;
       player.pitch = THREE.MathUtils.clamp(player.pitch, player.minPitch, player.maxPitch);
@@ -316,6 +317,7 @@ function directGameTarget(x, y, viewport) {
 }
 
 function interactWithGameObject(name) {
+  if (isGamePaused()) return;
   if (isActionInProgress || isIntroVisible() ||
       document.getElementById('victoryModal')?.style.display === 'flex' ||
       !document.getElementById('gameScreen')?.classList.contains('active')) return false;
@@ -330,6 +332,7 @@ function triggerCenterInteraction() {
 }
 
 function interactWithGuideTarget() {
+  if (isGamePaused()) return;
   const target = getGuideTargetName();
   if (!target || !interactiveObjects.some(object => object.name === target)) return;
   if (interactWithGameObject(target)) {

@@ -150,7 +150,7 @@ test('Barista remake records actual improvement while retaining the original ass
   const ctx = vm.createContext({
     state: { quest: 2, conflictChoice: '', quest2StartedAt: Date.now() },
     fit: { scores: { timing: 40 } }, sessionEvents: events, sessionStartedAt: Date.now(),
-    playSuccessChime() {}, customerObj: null,
+    playSuccessChime() {}, customerObj: null, gameNow: Date.now,
     mgShot(done) { events.push({ action: 'MINIGAME_TIMING_100', ok: true }); done(); }
   });
   vm.runInContext(source('barista'), ctx);

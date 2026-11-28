@@ -87,14 +87,25 @@ function opinionPageUrl() {
   return url.href;
 }
 
-async function sendSurvey(resp) {
+const activeSurveyUploads = new Map();
+function createSurveyDeletionToken() {
+  const bytes = new Uint8Array(32); crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+}
+async function sendSurvey(resp, allowUnstored = false) {
+  const saved = loadSurveyResponses().find(row => row.id === resp.id);
+  if ((!saved && !allowUnstored) || saved?.deletionPending) throw new Error('Upload cancelled');
   const base = getApiBase();
   if (base === null) throw new Error('No backend');
-  const res = await fetch(base + '/api/survey', {
+  const upload = fetch(base + '/api/survey', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(resp), signal: AbortSignal.timeout(8000)
   });
-  if (!res.ok || (await res.json()).ok !== true) throw new Error('Survey upload failed');
+  activeSurveyUploads.set(resp.id, upload);
+  try {
+    const res = await upload;
+    if (!res.ok || (await res.json()).ok !== true) throw new Error('Survey upload failed');
+  } finally { if (activeSurveyUploads.get(resp.id) === upload) activeSurveyUploads.delete(resp.id); }
 }
 
 function markSurveySynced(id) {
@@ -112,7 +123,7 @@ function syncSurveyQueue() {
   if (!navigator.onLine) return Promise.resolve();
   surveySyncPromise = (async () => {
     // Legacy private rows had no upload consent. Only newly consented private rows retry.
-    for (const row of loadSurveyResponses().filter(row => row.id && (row.uploadConsent === true || row.publish === true) && !row.synced).slice(0, 10)) {
+    for (const row of loadSurveyResponses().filter(row => row.id && (row.uploadConsent === true || row.publish === true) && !row.synced && !row.deletionPending).slice(0, 10)) {
       try { await sendSurvey(row); markSurveySynced(row.id); }
       catch { break; }
     }
@@ -125,7 +136,11 @@ async function submitSurvey() {
   const button = document.getElementById('surveySubmit');
   if (!surveyContext || !button || button.disabled || SURVEY_QUESTIONS.some(q => surveyAnswers[q.id] === undefined)) return;
   button.disabled = true;
+  let deleteToken;
+  try { deleteToken = createSurveyDeletionToken(); }
+  catch { button.disabled = false; return; }
   const resp = {
+    delete_token: deleteToken,
     id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2),
     publish: document.getElementById('surveyPublish')?.checked === true,
     uploadConsent: true, synced: false, at: new Date().toISOString(), ...surveyContext,
@@ -138,11 +153,16 @@ async function submitSurvey() {
   const upload = async () => {
     status.textContent = surveyText('Сохраняем отзыв…', 'Saving your review…', 'Пікір сақталуда…');
     try {
-      await sendSurvey(resp);
+      await sendSurvey(resp, !localSaved);
       markSurveySynced(resp.id);
       status.textContent = resp.publish
         ? surveyText('Спасибо! Отзыв опубликован.', 'Thank you! Your review is published.', 'Рақмет! Пікіріңіз жарияланды.')
         : surveyText('Спасибо! Ответы сохранены приватно для команды проекта.', 'Thank you! Your feedback was saved privately for the project team.', 'Рақмет! Жауаптарыңыз жоба тобы үшін жеке сақталды.');
+      if (typeof downloadSurveyReceipts === 'function') {
+        const receipt = document.createElement('button'); receipt.type = 'button'; receipt.className = 'btn-secondary';
+        receipt.textContent = surveyText('Скачать квитанцию удаления', 'Download deletion receipt', 'Жою түбіртегін жүктеу');
+        receipt.onclick = () => downloadSurveyReceipts([resp]); status.append(document.createElement('br'), receipt);
+      }
       if (resp.publish) {
         const link = document.createElement('a');
         link.href = opinionPageUrl(); link.textContent = 'Testers opinion →'; link.className = 'testers-link';
