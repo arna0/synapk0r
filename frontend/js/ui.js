@@ -164,8 +164,9 @@ function startBaristaVR() {
   showIntro('barista');
 
   clearInterval(state.timerInterval);
-  state.timerInterval = setInterval(() => {
-    state.timer++;
+  state.timerInterval = runEvery(() => {
+    if (isIntroVisible()) return;
+    state.timer = Math.floor((gameNow()-sessionStartedAt)/1000);
     const m = String(Math.floor(state.timer / 60)).padStart(2, '0');
     const s = String(state.timer % 60).padStart(2, '0');
     document.getElementById('vrTimer').innerText = `${m}:${s}`;
@@ -207,6 +208,7 @@ function exitToHome() {
   if (multimeterHud) multimeterHud.style.display = 'none';
   showScreen('homeScreen');
   if (typeof renderCareerProfile === 'function') renderCareerProfile();
+  if (typeof renderCheckpointBanner === 'function') renderCheckpointBanner();
 }
 
 // Initial responsive check on load
@@ -216,6 +218,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   // Deep link used by host apps: index.html?module=barista | safety | it | doctor
   const module = new URLSearchParams(location.search).get('module');
+  if (Object.hasOwn(CAREER_LABELS,module) && new URLSearchParams(location.search).has('mode')) {startAssignedRun();return;}
   if (module === 'barista') startBaristaVR();
   else if (module === 'safety') startSafetyVR();
   else if (SCENARIOS[module]) startScenario(module);

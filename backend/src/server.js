@@ -1,6 +1,7 @@
 // SynapKor backend: REST API for AI feedback + static hosting of the web client (../frontend).
 
 import express from 'express';
+import { canDeleteReview } from './review-auth.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSurveyStore } from './surveys.js';
@@ -11,7 +12,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const FRONTEND_DIR = path.resolve(here, '../../frontend');
 const PORT = Number(process.env.PORT) || 8787;
 const SURVEY_FILE = process.env.SURVEY_FILE || path.resolve(here, '../data/survey.jsonl');
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '*').split(',').map(s => s.trim());
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://arna0.github.io,http://localhost:8787,http://127.0.0.1:8787').split(',').map(s => s.trim());
 
 // Simple per-IP limit so a public demo can't burn the API budget
 const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN) || 20;
@@ -47,13 +48,15 @@ export function createApp({ surveyFile = SURVEY_FILE } = {}) {
   // CORS for the Flutter web build / GitHub Pages client
   app.use('/api', (req, res, next) => {
     const origin = req.headers.origin;
+    const allowed = !origin || origin === 'null' || origin === 'https://appassets.androidplatform.net' || origin === req.protocol + '://' + req.get('host') || ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin);
+    if (!allowed) return res.status(403).json({ error: 'Origin not allowed' });
     if (ALLOWED_ORIGINS.includes('*')) res.setHeader('Access-Control-Allow-Origin', '*');
-    else if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    else if (origin && allowed) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Vary', 'Origin');
     }
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
   });
@@ -80,6 +83,14 @@ export function createApp({ surveyFile = SURVEY_FILE } = {}) {
     if (!result.ok) return res.status(400).json({ error: result.error });
     const saved = await surveys.add(result.survey);
     res.status(saved.duplicate ? 200 : 201).json({ ok: true, ...saved });
+  });
+
+  app.delete('/api/reviews/:id', async (req, res) => {
+    if (!/^[a-zA-Z0-9_-]{16,80}$/.test(req.params.id)) return res.status(400).json({error:'Invalid review id'});
+    if (rateLimited(req.ip)) return res.status(429).json({error:'Too many requests, try again in a minute'});
+    const removed=await surveys.remove(req.params.id,row=>canDeleteReview(row,req.body?.delete_token,req.get('authorization'),process.env.REVIEW_ADMIN_TOKEN));
+    if (!removed.authorized) return res.status(401).json({error:'Unauthorized'});
+    res.setHeader('Cache-Control','no-store'); res.json({ok:true,deleted:removed.deleted});
   });
 
   // Public aggregates include only responses explicitly consented for publication.

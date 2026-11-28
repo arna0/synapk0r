@@ -76,3 +76,23 @@ test('invalid submission IDs and incomplete survey answers are rejected', async 
   assert.equal((await post(base, { ...payload(), answers: {} })).status, 400);
   assert.equal((await (await fetch(base + '/api/reviews')).json()).total, 0);
 }));
+
+
+test('deletion is durable, protects tokens and retry cannot replace ownership', async () => fixture(async ({file,start}) => {
+ const base=await start(), token='ab'.repeat(32), replacement='cd'.repeat(32);
+ const one={...payload(),delete_token:token}, two={...payload('submission-other000'),publish:false,delete_token:token};
+ await post(base,one); await post(base,two); await post(base,{...one,delete_token:replacement});
+ assert.equal((await post(base,{...payload(),delete_token:'short'})).status,400);
+ const remove=(id,value)=>fetch(base+'/api/reviews/'+id,{method:'DELETE',headers:{'content-type':'application/json'},body:JSON.stringify({delete_token:value})});
+ assert.equal((await remove(one.id,replacement)).status,401);
+ for(const row of [one,two]) assert.equal((await remove(row.id,token)).status,200);
+ assert.equal((await createSurveyStore(file).all()).length,0);
+ assert.equal((await readFile(file,'utf8')).includes(token),false);
+}));
+test('serialized removal preserves concurrent additions and legacy rows need admin', async () => fixture(async ({file,start}) => {
+ const store=createSurveyStore(file); await store.add(validateSurvey(payload()).survey);
+ await Promise.all([store.remove(payload().id,()=>true),...Array.from({length:6},(_,i)=>store.add(validateSurvey(payload('concurrent-'+String(i).padStart(8,'0'))).survey))]);
+ assert.equal((await createSurveyStore(file).all()).length,6);
+ const base=await start();
+ assert.equal((await fetch(base+'/api/reviews/concurrent-00000000',{method:'DELETE',headers:{'content-type':'application/json'},body:JSON.stringify({delete_token:'ab'.repeat(32)})})).status,401);
+}));

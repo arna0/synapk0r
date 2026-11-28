@@ -49,7 +49,7 @@ function getActiveScenario() {
 }
 
 function scenarioNow() {
-  return Math.round((Date.now() - sessionStartedAt) / 100) / 10;
+  return Math.round((gameNow() - sessionStartedAt) / 100) / 10;
 }
 
 // Removes the 3D rooms of all scenario modules (called by every module start).
@@ -84,7 +84,7 @@ function startScenario(id) {
   state.timer = 0;
   state.misclicks = 0;
   resetSessionEvents();
-  Object.assign(scenarioState, { phase: 'steps', step: 0, decision: 0, answers: {}, answerTimes: {}, phaseStartedAt: Date.now(), restorationTime: null, totalTime: null, caseId: id + '-standard', scenarioVersion: def.version || id + '-1' });
+  Object.assign(scenarioState, { phase: 'steps', step: 0, decision: 0, answers: {}, answerTimes: {}, phaseStartedAt: gameNow(), restorationTime: null, totalTime: null, caseId: id + '-standard', scenarioVersion: def.version || id + '-1' });
   if (def.reset) def.reset();
 
   document.getElementById('vrQuestTitle').innerText = def.questTitle;
@@ -116,6 +116,7 @@ function startScenario(id) {
       group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
       scene.add(group);
       rebuildObjectLabels();
+      if (typeof restoreCheckpointScene === 'function') restoreCheckpointScene();
     }
     renderScenarioHUD();
     handleWindowResize();
@@ -127,7 +128,8 @@ function startScenario(id) {
 
   clearInterval(state.timerInterval);
   state.timerInterval = runEvery(() => {
-    state.timer++;
+    if (isIntroVisible()) return;
+    state.timer=Math.floor((gameNow()-sessionStartedAt)/1000);
     const m = String(Math.floor(state.timer / 60)).padStart(2, '0');
     const s = String(state.timer % 60).padStart(2, '0');
     document.getElementById('vrTimer').innerText = `${m}:${s}`;
@@ -171,6 +173,7 @@ function handleScenarioClick(name) {
     sessionEvents.push({ t: scenarioNow(), action: `STEP_DONE_${step.stepId || step.id}_${startingStep + 1}`, ok: true, exercise_id: step.exerciseId || null, case_id: scenarioState.caseId, scenario_version: scenarioState.scenarioVersion });
     if (step.popup) showComboPopup(step.popup);
     scenarioState.step++;
+    if (typeof saveScenarioCheckpoint === 'function') saveScenarioCheckpoint();
     runLater(() => { isActionInProgress = false; }, 250);
     if (scenarioState.step >= def.steps.length) {
       renderScenarioStepsComplete();
@@ -234,15 +237,17 @@ function startScenarioDecision(idx) {
   isActionInProgress = false;
   scenarioState.phase = 'decision';
   scenarioState.decision = idx;
-  scenarioState.phaseStartedAt = Date.now();
+  scenarioState.phaseStartedAt = gameNow();
+  if (typeof saveScenarioCheckpoint === 'function') saveScenarioCheckpoint();
   document.getElementById('vrQuestTitle').innerText = d.questTitle;
   playTone(420, 'triangle', 0.25, 0.1);
 
   const hud = document.getElementById('hudDockInner');
+  scenarioState.optionOrder = shuffle(d.options);
   hud.innerHTML = `
     ${d.prompt()}
     <div>
-      ${d.options.map((o, i) => `
+      ${scenarioState.optionOrder.map((o, i) => `
         <button type="button" class="dialog-option release-choice" onclick="answerScenarioDecision('${o.id}')">
           <div class="dialog-tag">${i + 1}</div>
           <span>${o.text}</span>
@@ -257,7 +262,7 @@ function answerScenarioDecision(optionId) {
   const opt = d.options.find(o => o.id === optionId);
   if (!opt) return;
   scenarioState.answers[d.key] = opt.id;
-  scenarioState.answerTimes[d.key] = Math.round((Date.now() - scenarioState.phaseStartedAt) / 100) / 10;
+  scenarioState.answerTimes[d.key] = Math.round((gameNow() - scenarioState.phaseStartedAt) / 100) / 10;
   sessionEvents.push({ t: scenarioNow(), action: `DECISION_${d.key.toUpperCase()}_${opt.label}`, ok: opt.score >= 100 });
   playSuccessChime();
 
@@ -274,13 +279,14 @@ function handleScenarioKey(code) {
   if (!def || scenarioState.phase !== 'decision') return;
   const n = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3 }[code];
   const d = def.decisions[scenarioState.decision];
-  if (n !== undefined && d.options[n]) answerScenarioDecision(d.options[n].id);
+  if (n !== undefined && scenarioState.optionOrder?.[n]) answerScenarioDecision(scenarioState.optionOrder[n].id);
 }
 
 function finishScenario() {
   const def = getActiveScenario();
   scenarioState.phase = 'done';
   scenarioState.totalTime = scenarioNow();
+  if (typeof clearScenarioCheckpoint === 'function') clearScenarioCheckpoint();
   clearInterval(state.timerInterval);
   const assessment = scenarioAssessment({ module: def.id, miniScores: typeof fit !== 'undefined' ? fit.scores : {}, accuracy: Math.max(0, 100 - state.misclicks * 5), hard: scenarioDecisionPercent(def, 'hard'), soft: scenarioDecisionPercent(def, 'soft'), events: sessionEvents, independent: independentRun });
   if (!assessment.requiresRetry) playVictoryFanfare();

@@ -43,12 +43,14 @@ function postToHost(message) {
 }
 
 // Ordered action log of the current session (sent to the backend for AI feedback)
+let sessionIdentifier='';
 let sessionEvents = [];
-let sessionStartedAt = Date.now();
+let sessionStartedAt = gameNow();
 
 function resetSessionEvents() {
+  sessionIdentifier=typeof crypto.randomUUID==='function'?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
   sessionEvents = [];
-  sessionStartedAt = Date.now();
+  sessionStartedAt = gameNow();
 }
 
 // ================= SAFETY ACTION LOG =================
@@ -67,7 +69,7 @@ function logAction(actionId, timestamp, isCorrectOrder) {
     }
   };
 
-  sessionEvents.push({ t: Math.round((ts - sessionStartedAt) / 100) / 10, action: actionId, ok: isCorrectOrder });
+  sessionEvents.push({ t: Math.round((gameNow() - sessionStartedAt) / 100) / 10, action: actionId, ok: isCorrectOrder });
   postToHost({ type: 'action', ...payload });
 
   // Update in-game telemetry console

@@ -29,6 +29,11 @@ test('three IT incidents require different repairs and verified checkout; weak r
     await page.goto('/?lang=en&module=it', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Got it, start' }).click();
     await expect.poll(() => page.evaluate(() => scenarioState.caseId)).toBe(caseId);
+    // A new room compiles shaders on software WebGL. Wait for enhancement and
+    // GPU frames before measuring the response to the first interaction.
+    await page.waitForFunction(()=>!!scene?.getObjectByName('itEnvironment')?.userData.enhancementComplete,undefined,{timeout:30000});
+    const frame=await page.evaluate(()=>renderer.info.render.frame);
+    await expect.poll(()=>page.evaluate(()=>renderer.info.render.frame),{timeout:30000}).toBeGreaterThan(frame+1);
     if (index === 0) {
       await expect(page.locator('#threeCanvas canvas')).toBeVisible();
       await page.screenshot({ path: testInfo.outputPath('it-initial-play.png'), fullPage: true });

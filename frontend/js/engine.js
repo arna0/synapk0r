@@ -187,7 +187,7 @@ function initThreeFPS() {
     frame = 0;
     const delta = Math.min(clock.getDelta(), 0.08);
     const time = clock.getElapsedTime();
-    if (document.hidden || !document.getElementById('gameScreen')?.classList.contains('active')) return;
+    if (document.hidden || isGamePaused() || !document.getElementById('gameScreen')?.classList.contains('active')) return;
     scheduleFrame();
     frameTotal += delta;
     if (++frameSamples === 180) {

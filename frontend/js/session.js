@@ -1,6 +1,15 @@
+// The active clock freezes during both manual and background pauses.
+let gamePausedAt = null, gamePausedTotal = 0;
+function gameNow() { return (gamePausedAt ?? Date.now()) - gamePausedTotal; }
+function isGamePaused() { return gamePausedAt !== null; }
+function pauseGameClock(paused) {
+  if(paused && gamePausedAt===null) gamePausedAt=Date.now();
+  else if(!paused && gamePausedAt!==null) {gamePausedTotal+=Date.now()-gamePausedAt;gamePausedAt=null;}
+}
 // Cancel asynchronous gameplay work when a new run starts or the player leaves.
 let runNumber = 0;
 let independentRun = false;
+let untimedUsed = false;
 let baristaReplay = false;
 const runTimers = new Set();
 const runCleanups = new Set();
@@ -11,23 +20,24 @@ function onRunEnd(cleanup) {
 }
 
 function runLater(callback, delay) {
-  const timer = setTimeout(() => {
-    runTimers.delete(timer);
-    callback();
-  }, delay);
-  runTimers.add(timer);
-  return timer;
+  const deadline=gameNow()+Math.max(0,delay);
+  const timer=setInterval(()=>{
+    if(isGamePaused() || gameNow()<deadline)return;
+    clearInterval(timer);runTimers.delete(timer);callback();
+  },Math.max(1,Math.min(delay,50)));
+  runTimers.add(timer);return timer;
 }
-
-function runEvery(callback, delay) {
-  const timer = setInterval(callback, delay);
-  runTimers.add(timer);
-  return timer;
+function runEvery(callback,delay) {
+  const timer=setInterval(()=>{if(!isGamePaused())callback();},delay);
+  runTimers.add(timer);return timer;
 }
 
 function endGameRun() {
+  pauseGameClock(false);
+  if (typeof closeSettings === 'function') closeSettings();
   runNumber++;
   independentRun = false;
+  untimedUsed = typeof gameSettings!=='undefined' && gameSettings.untimed;
   baristaReplay = false;
   guideVisible = true;
   for (const timer of runTimers) {
@@ -52,7 +62,10 @@ function endGameRun() {
   document.querySelectorAll('.quick-action, .interrupt-card').forEach(element => element.remove());
 }
 
+const gameTextVariants = new Map();
 function gameText(ru, en, kk) {
+  const entry={ru,en,kk};
+  for(const value of [ru,en,kk]) if(typeof value==='string')gameTextVariants.set(value,entry);
   const lang = typeof getLanguage === 'function' ? getLanguage() : 'ru';
   return lang === 'en' ? en : lang === 'kk' ? kk : ru;
 }

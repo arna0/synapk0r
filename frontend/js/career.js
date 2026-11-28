@@ -56,7 +56,7 @@ function careerRecord(value, legacy = false) {
 }
 
 function normalizeCareerProfile(value, legacy = false) {
-  const profile = { version: 2, professions: {} };
+  const profile = { version: 2, professions: {}, attempts: [] };
   if (!value || typeof value !== 'object' || Array.isArray(value)) return profile;
   const source = legacy ? value : value.version === 2 && value.professions;
   if (!source || typeof source !== 'object' || Array.isArray(source)) return profile;
@@ -75,6 +75,7 @@ function normalizeCareerProfile(value, legacy = false) {
     }
     if (Object.keys(result).length) profile.professions[module] = result;
   }
+  if (!legacy && typeof normalizeAttempts === 'function') profile.attempts = normalizeAttempts(value.attempts);
   return profile;
 }
 
@@ -89,17 +90,18 @@ function loadCareerProfile() {
   } catch { return { version: 2, professions: {} }; }
 }
 
-function saveCareerResult(module, score, mode = 'guided', sessionId) {
+function saveCareerResult(module, score, mode = 'guided', sessionId, evidence = {}) {
   if (!Object.hasOwn(CAREER_LABELS, module) || !careerScore(score) || !['guided', 'independent'].includes(mode)) return false;
   try {
     const p = loadCareerProfile();
     const entry = p.professions[module] || {};
     const prev = entry[mode];
-    if (sessionId && prev?.lastSession === sessionId) return false;
+    if (sessionId && (prev?.lastSession === sessionId || p.attempts?.some(a => a.id === sessionId))) return false;
     const at = new Date().toISOString();
     entry[mode] = { first: prev ? prev.first : Math.round(score), last: Math.round(score), runs: Math.min(1000000, (prev?.runs || 0) + 1), firstAt: prev?.firstAt || at, lastAt: at };
     if (typeof sessionId === 'string' && sessionId.length <= 120) entry[mode].lastSession = sessionId;
     p.professions[module] = entry;
+    if (typeof normalizeAttempts === 'function') p.attempts = normalizeAttempts([...(p.attempts || []), {...evidence,id:sessionId || module+':'+at,module,mode,score,at}]);
     localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
     return true;
   } catch { return false; }
@@ -156,10 +158,10 @@ function careerStudyContent(module) {
 function careerProgressMarkup(entry) {
   return ['guided', 'independent'].map(mode => {
     const r = entry?.[mode];
-    return `<div class="profile-mode"><strong>${careerModeLabel(mode)}</strong><span>${r
-      ? gameText(`Первая: ${r.first}% · последняя: ${r.last}% · попыток: ${r.runs}`, `First: ${r.first}% · latest: ${r.last}% · attempts: ${r.runs}`, `Алғашқы: ${r.first}% · соңғы: ${r.last}% · әрекет саны: ${r.runs}`)
-      : gameText('Пока нет попыток', 'No attempts yet', 'Әзірге әрекет жоқ')}</span></div>`;
-  }).join('') + (entry?.legacy ? `<p class="profile-note">${gameText(
+    return `<div class="profile-mode"><strong>${careerModeLabel(mode)}</strong>${r
+      ? `<dl class="profile-stats"><div><dt>${gameText('Первая', 'First', 'Алғашқы')}</dt><dd>${r.first}%</dd></div><div><dt>${gameText('Последняя', 'Latest', 'Соңғы')}</dt><dd>${r.last}%</dd></div><div><dt>${gameText('Попытки', 'Attempts', 'Әрекеттер')}</dt><dd>${r.runs}</dd></div></dl>`
+      : `<p class="profile-empty">${gameText('Пока нет попыток', 'No attempts yet', 'Әзірге әрекет жоқ')}</p>`}</div>`;
+  }).join('') + (entry?.legacy ? `<p class="profile-note profile-archive">${gameText(
     `Архив прежней версии: ${entry.legacy.runs} попыток, последняя ${entry.legacy.last}%. Режим и первый результат неизвестны; баллы прежней версии не сравниваются с новыми.`,
     `Previous version archive: ${entry.legacy.runs} attempts, latest ${entry.legacy.last}%. Mode and first result are unknown; old scores are not compared with new scores.`,
     `Алдыңғы нұсқа мұрағаты: ${entry.legacy.runs} әрекет, соңғысы ${entry.legacy.last}%. Режим мен алғашқы нәтиже белгісіз; ескі балдар жаңаларымен салыстырылмайды.`
@@ -167,13 +169,20 @@ function careerProgressMarkup(entry) {
 }
 
 // Report screen: "where to study in Kazakhstan" for this profession
-function showCareerBlock(report) {
+function showCareerBlock(report, persist = true) {
   const card = document.getElementById('careerCard');
   if (!card || !Object.hasOwn(CAREER_KZ, report.module)) return;
   const c = careerStudyContent(report.module);
   const mode = report.assessment?.mode || 'guided';
-  const sessionId = typeof sessionStartedAt !== 'undefined' ? `${report.module}:${sessionStartedAt}` : undefined;
-  saveCareerResult(report.module, report.score, mode, sessionId);
+  const sessionId = typeof sessionIdentifier !== 'undefined' && sessionIdentifier ? sessionIdentifier : typeof sessionStartedAt !== 'undefined' ? `${report.module}:${sessionStartedAt}` : undefined;
+  if (persist) saveCareerResult(report.module, report.score, mode, sessionId, {
+    skills:Object.fromEntries((report.assessment?.components || []).map(s=>[s.id,s.score])),
+    caseId:report.metrics?.case_id || (report.module==='barista' && typeof baristaReplay!=='undefined' && baristaReplay ? 'barista-repeat' : report.module+'-standard'),
+    scenarioVersion:report.metrics?.scenario_version || report.module+'-1',scoringVersion:report.assessment?.version,
+    guidedActions:report.assessment?.guidedActions || 0,durationSec:report.metrics?.total_time_sec,
+    untimed:typeof gameSettings!=='undefined' && (gameSettings.untimed || untimedUsed),
+    assignment:typeof currentAssignment==='function' ? currentAssignment().code : ''
+  });
   const profile = loadCareerProfile();
   const tried = Object.keys(profile.professions);
   const next = Object.keys(CAREER_KZ).filter(m => !tried.includes(m));
@@ -201,7 +210,8 @@ function showCareerBlock(report) {
 function renderCareerProfile() {
   const box = document.getElementById('careerProfile');
   if (!box) return;
-  const p = loadCareerProfile().professions;
+  const saved = loadCareerProfile();
+  const p = saved.professions;
   const done = Object.keys(CAREER_LABELS).filter(m => p[m]).map(m => [m, p[m]]);
   if (!done.length) { box.style.display = 'none'; return; }
   const missing = Object.keys(CAREER_LABELS).filter(m => !p[m]);
@@ -212,10 +222,11 @@ function renderCareerProfile() {
       <span class="section-note">${gameText(`Исследовано профессий: ${done.length} из 4`, `Professions explored: ${done.length} of 4`, `Зерттелген кәсіптер: 4 ішінен ${done.length}`)}</span>
     </div>
     <div class="profile-rows">
-      ${done.map(([m, r]) => `<section class="profile-profession"><h3 class="profile-name">${careerLabel(m)}</h3>${careerProgressMarkup(r)}</section>`).join('')}
+      ${done.map(([m, r]) => `<section class="profile-profession"><h3 class="profile-name">${careerLabel(m)}</h3>${careerProgressMarkup(r)}${typeof learningHistoryMarkup === 'function' ? learningHistoryMarkup(m,saved.attempts) : ''}</section>`).join('')}
     </div>
     <p class="profile-note">${gameText('Сравнивайте свои попытки в одной профессии и одном режиме. Это результаты упражнений, а не рейтинг способностей.', 'Compare your attempts within one profession and one mode. These are exercise results, not an aptitude ranking.', 'Бір кәсіп пен бір режимдегі әрекеттеріңізді салыстырыңыз. Бұл қабілет рейтингі емес, жаттығу нәтижелері.')}</p>
     ${missing.length ? `<div class="career-next">${gameText('Попробуйте ещё:', 'Explore next:', 'Тағы байқап көріңіз:')} ${missing.map(m => `<button type="button" class="career-chip" onclick="${CAREER_START[m]}">${careerLabel(m)}</button>`).join(' ')}</div>` : ''}
+    ${typeof learningToolsMarkup === 'function' ? learningToolsMarkup() : ''}
   `;
 }
 

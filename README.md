@@ -17,7 +17,20 @@ Track focus areas: *career guidance and exploring career paths · skills develop
 ---
 
 
-## Current release — 27 November 2026
+## Learning quality update — 28 November 2026
+
+- Readable attempt cards and complete RU/EN/KK game dictionaries; saved progress refreshes when switching language.
+- Detailed history for the latest 120 completed shifts, retaining lifetime counts. JSON backup/merge and spreadsheet-safe CSV export preserve mode, skills, case, scoring version and assistance.
+- Local classroom assignment links and multi-file result collection work without student accounts or server upload. Scores remain client-reported practice evidence.
+- Targeted drills practise a weak practical skill without changing the original assessment. IT drills vary the incident case. Final decision positions are shuffled.
+- Pause/settings stop active timers and exercises; hidden tabs pause automatically. Master sound, camera sensitivity and untimed decisions are available.
+- IT and Doctor resume from completed-stage checkpoints. An interrupted mini-game restarts; Safety and Barista currently require a new shift after a reload.
+- Android release builds configure the hosted API. Offline exercises and local reports remain available.
+- New feedback receipts support token-based deletion. The owner has a moderation page; publication still requires separate opt-in. [Operations and recovery](docs/OPERATIONS.md).
+
+[Classroom and validation protocol](docs/VALIDATION_PROTOCOL.md) describes the next real pilot. Practitioner review, stronger learning evidence, a source licence and verified assessment credentials remain pending.
+
+## Report redesign — 27 November 2026
 
 [Open the public simulator](https://arna0.github.io/synapk0r/) · [Download the Android APK](https://github.com/arna0/synapk0r/releases/download/android-latest/SynapKor.apk)
 

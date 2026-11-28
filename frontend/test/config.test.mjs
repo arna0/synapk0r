@@ -15,3 +15,12 @@ test('local and mobile retain their existing API behavior', () => {
   assert.equal(resolve('file:///assets/index.html', 'https://custom.example/'), 'https://custom.example');
 });
 test('arbitrary query parameters cannot send reviews to a third party', () => assert.equal(resolve('https://arna0.github.io/synapk0r/?api=https://untrusted.example'), 'https://synapkor-api.epictitan2048.chatgpt.site'));
+
+test('Android release configures the same production API as Pages', () => {
+  const dart=readFileSync(new URL('../../mobile/lib/config.dart',import.meta.url),'utf8');
+  const workflow=readFileSync(new URL('../../.github/workflows/android.yml',import.meta.url),'utf8');
+  const endpoint=resolve('https://arna0.github.io/synapk0r/frontend/');
+  assert.ok(dart.includes("defaultValue: '"+endpoint+"'"));
+  assert.ok(workflow.includes('--dart-define=API_BASE_URL='+endpoint+' >'));
+  assert.equal(resolve('file:///android_asset/flutter_assets/assets/sim/index.html',endpoint),endpoint);
+});

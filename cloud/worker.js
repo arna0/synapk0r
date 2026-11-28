@@ -1,3 +1,4 @@
+import { canDeleteReview, hashSecret } from '../backend/src/review-auth.js';
 import { MODULES, validateReport, validateSurvey } from '../backend/src/validate.js';
 import { ruleBasedFeedback } from '../backend/src/rules.js';
 
@@ -44,11 +45,11 @@ async function allowWrite(request, db, limit) {
 export async function handleApi(request, env) {
   const url = new URL(request.url);
   const origin = request.headers.get('origin');
-  if (origin && origin !== url.origin && origin !== SITE && !LOCAL.includes(origin)) return json({ error: 'Origin not allowed' }, 403);
+  if (origin && origin !== url.origin && origin !== SITE && origin !== 'null' && origin !== 'https://appassets.androidplatform.net' && !LOCAL.includes(origin)) return json({ error: 'Origin not allowed' }, 403);
   const cors = {
     ...(origin ? { 'Access-Control-Allow-Origin': origin } : {}),
-    'Vary': 'Origin', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '600'
+    'Vary': 'Origin', 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Max-Age': '600'
   };
   let response;
   try {
@@ -68,9 +69,12 @@ async function route(request, env, url) {
   const db = env.DB.withSession('first-primary');
   // Moderation secret is configured in the host, never shipped to browsers.
   if (request.method === 'DELETE' && url.pathname.startsWith('/api/reviews/')) {
-    if (!env.REVIEW_ADMIN_TOKEN || request.headers.get('authorization') !== `Bearer ${env.REVIEW_ADMIN_TOKEN}`) return json({ error: 'Unauthorized' }, 401);
     const id = url.pathname.slice('/api/reviews/'.length);
     if (!/^[a-zA-Z0-9_-]{16,80}$/.test(id)) return json({ error: 'Invalid review id' }, 400);
+    const body=request.body ? await readBody(request) : {};
+    const row=await db.prepare('SELECT delete_token_hash FROM reviews WHERE id = ?').bind(id).first();
+    if (!await canDeleteReview(row,body.delete_token,request.headers.get('authorization'),env.REVIEW_ADMIN_TOKEN)) return json({error:'Unauthorized'},401);
+    if (!await allowWrite(request,db,Number(env.RATE_LIMIT_PER_MIN)||20)) return json({error:'Too many requests. Try again in a minute.'},429,{'Retry-After':'60'});
     const removed = await db.prepare('DELETE FROM reviews WHERE id = ?').bind(id).run();
     return json({ ok: true, deleted: removed.meta.changes > 0 });
   }
@@ -113,9 +117,9 @@ async function route(request, env, url) {
     if (!await allowWrite(request, db, Number(env.RATE_LIMIT_PER_MIN) || 20)) return json({ error: 'Too many requests. Try again in a minute.' }, 429, { 'Retry-After': '60' });
     if (result.report) return json({ source: 'rules', ...ruleBasedFeedback(result.report) });
     const s = result.survey; const id = s.id || crypto.randomUUID();
-    const saved = await db.prepare(`INSERT INTO reviews (id, at, module, publish, answers, comment, score, time_sec, errors)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`)
-      .bind(id, s.at, s.module, s.publish ? 1 : 0, JSON.stringify(s.answers), s.comment, s.score, s.time_sec, s.errors).run();
+    const saved = await db.prepare(`INSERT INTO reviews (id, at, module, publish, answers, comment, score, time_sec, errors, delete_token_hash)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`)
+      .bind(id, s.at, s.module, s.publish ? 1 : 0, JSON.stringify(s.answers), s.comment, s.score, s.time_sec, s.errors, s.delete_token ? await hashSecret(s.delete_token) : null).run();
     const duplicate = saved.meta.changes === 0;
     return json({ ok: true, id, duplicate }, duplicate ? 200 : 201);
   }

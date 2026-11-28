@@ -1,7 +1,7 @@
 // SynapKor — Russian / Kazakh / English interface switch (home, intro, report, career path, survey).
 // Russian is the source language. Kazakh (KK) and English (EN, in i18n-en.js) strings are looked up by the exact Russian text,
 // so modules keep writing Russian and the translation is applied to what appears on screen.
-// In-game guide and HUD stay in Russian for now. ?lang=kk or ?lang=en opens that version directly.
+// In-game text uses the same dictionaries and explicit three-language copy. ?lang=kk or ?lang=en opens that version directly.
 
 const I18N_KEY = 'synapkor_lang';
 const I18N_ROOTS = ['#homeScreen', '#introOverlay', '#resultScreen', '#victoryModal', '#gameScreen'];
@@ -277,8 +277,21 @@ if (typeof CanvasRenderingContext2D !== 'undefined') {
   };
 }
 const originalText = new WeakMap();
+const originalAttributes = new WeakMap();
 
+const translationIndex = new Map();
+function refreshTranslationIndex() {
+  translationIndex.clear();
+  for(const ru of new Set([...Object.keys(EN),...Object.keys(KK)])) {
+    const entry={ru,en:EN[ru]||ru,kk:KK[ru]||ru};
+    for(const value of Object.values(entry)) if(!translationIndex.has(value))translationIndex.set(value,entry);
+  }
+}
 function translateString(ru) {
+  const trimmedValue=ru.trim();
+  if(!translationIndex.size)refreshTranslationIndex();
+  const registered=(typeof gameTextVariants!=='undefined' && gameTextVariants.get(trimmedValue)) || translationIndex.get(trimmedValue);
+  if(registered && typeof registered[currentLang]==='string')return ru.replace(trimmedValue,registered[currentLang]);
   const dict = DICTS[currentLang];
   if (!dict) return null;
   const trimmed = ru.trim();
@@ -302,19 +315,9 @@ function translateNode(node) {
     const saved = originalText.get(node);
     // if the page changed this text since we translated it, treat the new value as Russian
     const source = saved && node.nodeValue === saved.out ? saved.ru : node.nodeValue;
-    if (currentLang !== 'ru') {
-      const out = translateString(source);
-      if (out !== null && out !== node.nodeValue) {
-        originalText.set(node, { ru: source, out });
-        node.nodeValue = out;
-      } else if (out === null && saved && node.nodeValue === saved.out) {
-        node.nodeValue = saved.ru;
-        originalText.delete(node);
-      }
-    } else if (saved && node.nodeValue === saved.out) {
-      node.nodeValue = saved.ru;
-      originalText.delete(node);
-    }
+    const out=translateString(source);
+    if(out!==null && out!==node.nodeValue) {originalText.set(node,{ru:source,out});node.nodeValue=out;}
+    else if(out===null && saved && node.nodeValue===saved.out) {node.nodeValue=saved.ru;originalText.delete(node);}
     return;
   }
   if (node.nodeType !== Node.ELEMENT_NODE || node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
@@ -328,6 +331,14 @@ function translateNode(node) {
     const dict = DICTS[currentLang];
     node.placeholder = dict && dict[ru] ? dict[ru] : ru;
   }
+  const attributes=originalAttributes.get(node)||{};
+  for(const name of ['aria-label','aria-description','alt']) {
+    const value=node.getAttribute(name);if(!value)continue;
+    const saved=attributes[name];const source=saved&&value===saved.out?saved.ru:value;
+    const out=translateString(source)??source;
+    if(out!==value) {attributes[name]={ru:source,out};node.setAttribute(name,out);}
+  }
+  originalAttributes.set(node,attributes);
   node.childNodes.forEach(translateNode);
 }
 
@@ -337,9 +348,13 @@ function translateRoots() {
 
 function setLanguage(lang) {
   currentLang = LANGS.includes(lang) ? lang : 'ru';
+  refreshTranslationIndex();
+  if(typeof SCENARIOS!=='undefined' && typeof currentProfession!=='undefined' && currentProfession==='it' && typeof createItScenario==='function') {Object.assign(SCENARIOS.it,createItScenario());registerScenario(SCENARIOS.it);}
   try { localStorage.setItem(I18N_KEY, currentLang); } catch (e) {}
   document.documentElement.lang = currentLang;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
+  if (typeof renderCareerProfile === 'function') renderCareerProfile();
+  window.dispatchEvent(new CustomEvent('synapkor:language'));
   translateRoots();
   const html = document.documentElement;
   if (!html.dataset.ruTitle) html.dataset.ruTitle = document.title;
@@ -367,3 +382,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
 window.setLanguage = setLanguage;
 window.getLanguage = getLanguage;
+window.addEventListener('synapkor:language',()=>{
+  if(typeof currentProfession==='undefined' || !document.getElementById('gameScreen')?.classList.contains('active'))return;
+  if(typeof renderGuide==='function')renderGuide(true);
+  if(currentProfession==='it' && typeof scenarioState!=='undefined') {
+    drawItDashboard(itRun.restoredAt!==null?'ok':scenarioState.step>0?'details':'alert');
+    if(scenarioState.step>=2)drawItTerminal(scenarioState.step>=4?'restart':scenarioState.step>=3?'diagnosis':'logs');
+  }
+  if(currentProfession==='doctor') {drawDocCard(scenarioState.step>=1);drawDocVitals();}
+});
+
+function translateInLanguage(source,lang) {
+  const previous=currentLang;currentLang=lang;
+  try{return translateString(source)??source;}finally{currentLang=previous;}
+}

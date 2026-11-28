@@ -47,7 +47,7 @@ test('each case requires its own cause and repair followed by both restoration c
 test('scenario callbacks cannot advance a replacement run or complete a step twice', () => {
   const completions = [];
   const context = vm.createContext({
-    window: {}, document: { getElementById: () => null },
+    window: {}, gameNow: Date.now, document: { getElementById: () => null },
     currentProfession: 'it', runNumber: 1, isActionInProgress: false,
     state: { misclicks: 0 }, sessionStartedAt: Date.now(), sessionEvents: [],
     animateHandPunch: callback => callback(),
@@ -82,7 +82,7 @@ test('reading the briefing is excluded from session and IT restoration time', ()
   const overlay = { dataset: { profession: 'it' }, classList: { contains: name => classes.has(name), remove: name => classes.delete(name) } };
   const timer = { innerText: '' };
   const context = vm.createContext({
-    Date: { now: () => now }, sessionStartedAt: 0, state: { timer: 90 },
+    Date: { now: () => now }, gameNow:()=>now, sessionStartedAt: 0, state: { timer: 90 },
     gameText: (ru, en) => en,
     registerScenario: definition => { definitions[definition.id] = definition; },
     getActiveScenario: () => definitions.it,

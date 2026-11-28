@@ -27,7 +27,7 @@ function startTransformerHum() {
     transformerOsc1.connect(filter);
     transformerOsc2.connect(filter);
     filter.connect(transformerHumGain);
-    transformerHumGain.connect(ctx.destination);
+    transformerHumGain.connect(getAudioOutput());
 
     transformerOsc1.start();
     transformerOsc2.start();
@@ -1144,8 +1144,9 @@ function startSafetyVR() {
 
   clearInterval(state.timerInterval);
   state.timer = 0;
-  state.timerInterval = setInterval(() => {
-    state.timer++;
+  state.timerInterval = runEvery(() => {
+    if (isIntroVisible()) return;
+    state.timer = Math.floor((gameNow()-sessionStartedAt)/1000);
     const m = String(Math.floor(state.timer / 60)).padStart(2, '0');
     const s = String(state.timer % 60).padStart(2, '0');
     document.getElementById('vrTimer').innerText = `${m}:${s}`;

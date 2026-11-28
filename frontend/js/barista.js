@@ -14,7 +14,7 @@ function handleFPSObjectClick(name) {
       });
     } else {
       state.misclicks++;
-      sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: `WRONG_OBJECT_${name}_EXPECTED_${currentTarget ? currentTarget.id : 'none'}`, ok: false });
+      sessionEvents.push({ t: Math.round((gameNow() - sessionStartedAt) / 100) / 10, action: `WRONG_OBJECT_${name}_EXPECTED_${currentTarget ? currentTarget.id : 'none'}`, ok: false });
       playTone(160, 'sawtooth', 0.25, 0.12);
       if (currentTarget) {
         showGuideToast(`Сейчас нужен другой предмет: «${OBJECT_LABELS[currentTarget.id]}» — ${currentTarget.name.toLowerCase()}`);
@@ -93,7 +93,7 @@ function executeStepAction(stepIdx, onComplete) {
 
 function advanceStep() {
   const done = state.stepsConfig[state.step];
-  if (done) sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: `STEP_DONE_${done.id}`, ok: true });
+  if (done) sessionEvents.push({ t: Math.round((gameNow() - sessionStartedAt) / 100) / 10, action: `STEP_DONE_${done.id}`, ok: true });
   state.step++;
   renderHUD();
 }
@@ -109,7 +109,7 @@ function renderQuestSuccess() {
 // ================= QUEST 2: SOFT SKILLS =================
 function startQuest2Conflict() {
   state.quest = 2;
-  state.quest2StartedAt = Date.now();
+  state.quest2StartedAt = gameNow();
   document.getElementById('vrQuestTitle').innerText = 'КВЕСТ 2: КОНФЛИКТ С ГОСТЕМ';
   if (customerObj) customerObj.visible = true;
 
@@ -157,8 +157,8 @@ function startQuest2Conflict() {
 function handleConflictAnswer(opt) {
   if (state.quest !== 2 || state.conflictChoice) return;
   state.conflictChoice = opt;
-  sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'CUSTOMER_DECISION_' + opt, ok: opt === 'B' });
-  state.conflictResponseSec = Math.round((Date.now() - state.quest2StartedAt) / 100) / 10;
+  sessionEvents.push({ t: Math.round((gameNow() - sessionStartedAt) / 100) / 10, action: 'CUSTOMER_DECISION_' + opt, ok: opt === 'B' });
+  state.conflictResponseSec = Math.round((gameNow() - state.quest2StartedAt) / 100) / 10;
   playSuccessChime();
   if (customerObj) customerObj.visible = false;
   if (opt === 'B' && (fit.scores.timing ?? 0) < 85) {
@@ -170,7 +170,7 @@ function handleConflictAnswer(opt) {
       // The assessment retains earlier mistakes; recovery uses this attempt's own score.
       const attempt = sessionEvents.slice(remakeEventStart).reverse().find(event => /^MINIGAME_TIMING_\d+$/.test(event.action));
       const after = attempt ? Number(attempt.action.split('_').pop()) : before;
-      sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'BARISTA_REMAKE', ok: after > before, before_score: before, after_score: after });
+      sessionEvents.push({ t: Math.round((gameNow() - sessionStartedAt) / 100) / 10, action: 'BARISTA_REMAKE', ok: after > before, before_score: before, after_score: after });
       startQuest3Management();
     });
     return;
@@ -204,6 +204,6 @@ function startQuest3Management() {
 function handleBudgetAnswer(opt) {
   if (state.quest !== 3 || state.budgetChoice) return;
   state.budgetChoice = opt;
-  sessionEvents.push({ t: Math.round((Date.now() - sessionStartedAt) / 100) / 10, action: 'PURCHASE_DECISION_' + opt.toUpperCase(), ok: opt === 'optimal' });
+  sessionEvents.push({ t: Math.round((gameNow() - sessionStartedAt) / 100) / 10, action: 'PURCHASE_DECISION_' + opt.toUpperCase(), ok: opt === 'optimal' });
   triggerEpicVictory();
 }

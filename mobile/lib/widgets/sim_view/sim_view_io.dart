@@ -53,6 +53,7 @@ class _SimViewState extends State<SimView> {
             final api = widget.apiBaseUrl.isEmpty ? '' : 'window.SYNAPKOR_API_BASE = ${jsonEncode(widget.apiBaseUrl)};';
             // barista and safety have their own entry points; it and doctor run on the scenario engine
             _controller?.runJavaScript('$api '
+                'if (window.syncSurveyQueue) syncSurveyQueue(); '
                 'if ($module === "barista" && window.startBaristaVR) startBaristaVR(); '
                 'else if ($module === "safety" && window.startSafetyVR) startSafetyVR(); '
                 'else if (window.startScenario) startScenario($module);');

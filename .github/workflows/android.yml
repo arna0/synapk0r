@@ -52,7 +52,7 @@ jobs:
       - name: Build APK
         working-directory: mobile
         run: |
-          code=0; flutter build apk --release --dart-define=API_BASE_URL= > build.txt 2>&1 || code=$?
+          code=0; flutter build apk --release --dart-define=API_BASE_URL=https://synapkor-api.epictitan2048.chatgpt.site > build.txt 2>&1 || code=$?
           tail -n 60 build.txt
           grep -E "(error|Error):" build.txt | head -20 | while read -r l; do echo "::error::$l"; done
           exit $code
@@ -65,4 +65,4 @@ jobs:
           gh release delete android-latest --cleanup-tag --yes || true
           gh release create android-latest SynapKor.apk --prerelease --target "$GITHUB_SHA" \
             --title "Android app (latest build)" \
-            --notes "Built automatically from commit $GITHUB_SHA. All four professions. Install the APK on an Android phone (allow installs from your browser). AI debrief needs a running backend; without it the app shows the rule-based report."
+            --notes "Built automatically from commit $GITHUB_SHA. All four professions. Install the APK on an Android phone (allow installs from your browser). Hosted feedback is configured. Offline exercises and local reports remain available; submitted feedback retries when connected."

@@ -36,9 +36,14 @@ for (const [module, title] of Object.entries(modules)) {
     }
     await page.setViewportSize({width:390,height:844});
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    const score = await page.locator('.score-summary').boundingBox();
-    const evidence = await page.locator('#assessmentEvidence').boundingBox();
-    expect(evidence.y).toBeGreaterThan(score.y+score.height-1);
+    // Read both rectangles in one layout snapshot: mobile scroll anchoring can
+    // move the viewport between two separate protocol calls after resizing.
+    const gap=await page.evaluate(()=>{
+      const score=document.querySelector('.score-summary').getBoundingClientRect();
+      const evidence=document.getElementById('assessmentEvidence').getBoundingClientRect();
+      return evidence.top-score.bottom;
+    });
+    expect(gap).toBeGreaterThanOrEqual(0);
     await page.screenshot({path:testInfo.outputPath(`${module}-phone.png`),fullPage:true});
     await page.locator('#reportSurveyToggle').click();
     await expect(page.locator('#surveyPublish')).not.toBeChecked();

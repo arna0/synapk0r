@@ -1,3 +1,4 @@
+import { validDeleteToken } from './review-auth.js';
 // Validation of the report payload sent by the web client.
 // Everything here comes from the browser, so it is treated as untrusted data.
 
@@ -93,10 +94,12 @@ export function validateSurvey(body) {
   if (body.id !== undefined && (typeof body.id !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(body.id))) {
     return { ok: false, error: 'Invalid submission id' };
   }
+  if (body.delete_token !== undefined && !validDeleteToken(body.delete_token)) return { ok: false, error: 'Invalid deletion token' };
   return {
     ok: true,
     survey: {
       ...(body.id ? { id: body.id } : {}),
+      ...(body.delete_token ? { delete_token: body.delete_token } : {}),
       publish: body.publish === true,
       at: new Date().toISOString(),
       module: body.module,

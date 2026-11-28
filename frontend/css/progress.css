@@ -1,0 +1,62 @@
+/* Shared attempt cards: home and report use the same readable structure. */
+#careerProfile { gap:20px; }
+#careerProfile .section-head { flex-wrap:wrap; gap:8px 20px; }
+.profile-rows { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; background:transparent; border:0; padding:0; }
+.profile-profession { min-width:0; border:1px solid #e4e0ed; border-radius:16px; background:#fff; padding:22px; }
+.profile-profession h3 { font-size:17px; line-height:1.4; margin:0 0 16px; }
+.profile-mode, #resultScreen .profile-mode { display:flex; flex-direction:column; gap:12px; padding:14px 16px; margin:10px 0; border:1px solid #eae7f1; border-radius:12px; background:#f8f7fb; color:#40394d; font-weight:400; }
+.profile-mode strong { display:block; font-size:13px; line-height:1.5; font-weight:700; }
+.profile-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:0; }
+.profile-stats div { min-width:0; }
+.profile-stats dt { color:#6b6378; font-size:11px; line-height:1.5; overflow-wrap:anywhere; }
+.profile-stats dd { color:#241b35; font-size:21px; line-height:1.5; font-weight:700; font-variant-numeric:tabular-nums; margin:3px 0 0; }
+.profile-empty { font-size:12px; line-height:1.6; color:#6b6378; margin:0; }
+.profile-note { display:block; margin:0; line-height:1.7; }
+.profile-archive { margin:14px 0 0; padding-top:12px; border-top:1px solid #eeebf3; font-size:12px; }
+.profile-tools { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.profile-tools button, .profile-tools label { font:inherit; font-size:12px; padding:10px 14px; border:1px solid #d7d0e3; border-radius:9px; background:#fff; color:#4c2c83; cursor:pointer; }
+.profile-tools button:hover, .profile-tools label:hover { background:#f3eff9; }
+.profile-tools button:focus-visible, .profile-tools label:focus-within { outline:3px solid #9b7ccb; outline-offset:3px; }
+.profile-status { font-size:12px; line-height:1.6; color:#574b69; }
+.attempt-history { margin-top:16px; }
+.attempt-history summary { font-size:13px; cursor:pointer; color:#593e81; padding:8px 0; }
+.attempt-list { list-style:none; margin:8px 0 0; padding:0; }
+.attempt-list li { border-top:1px solid #eeebf3; padding:12px 0; font-size:12px; line-height:1.7; }
+.attempt-list time { display:block; color:#746b7e; }
+@media(max-width:640px) { .profile-rows { grid-template-columns:1fr; } .profile-profession { padding:18px; } #careerProfile .section-head h2 { font-size:21px; } }
+@media(prefers-reduced-motion:reduce) { .profile-mode { scroll-behavior:auto; } }
+
+#learningHub { gap:18px; }
+.profile-tools label { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.profile-tools input[type=file] { width:170px; font-size:11px; max-width:100%; }
+.classroom-tools { padding:20px; background:#fff; border:1px solid #e4e0ed; border-radius:16px; }
+.classroom-tools summary { cursor:pointer; font-size:14px; font-weight:700; color:#302440; margin-bottom:12px; }
+.assignment-form { display:flex; gap:14px; flex-wrap:wrap; align-items:end; margin:20px 0; }
+.assignment-form label { display:flex; flex-direction:column; gap:8px; font-size:12px; color:#544d62; }
+.assignment-form select,.assignment-form input,#assignmentLink { padding:10px; border:1px solid #d8d2e1; border-radius:8px; background:#fff; color:#302440; font:inherit; max-width:100%; }
+.assignment-form .check-option { flex-direction:row; align-items:center; padding:10px 0; }
+#assignmentLink { width:100%; font-size:12px; margin-bottom:16px; }
+.assignment-banner { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:20px; border:1px solid #cbbadd; border-radius:12px; background:#f4eff9; font-size:14px; }
+
+#settingsDialog { width:min(480px,calc(100% - 32px)); max-height:85dvh; overflow:auto; padding:28px; border:1px solid #ded5e9; border-radius:20px; background:#fff; color:#2a2137; box-shadow:0 24px 80px #14082755; }
+#settingsDialog::backdrop { background:#170f2bb5; backdrop-filter:blur(5px); }
+#settingsDialog h2 { font-size:22px; line-height:1.4; margin:0 0 14px; }
+#settingsDialog p { font-size:13px; line-height:1.7; color:#695c77; margin:14px 0; }
+.setting-row { display:flex; gap:18px; justify-content:space-between; align-items:center; padding:16px 0; border-bottom:1px solid #eee8f5; font-size:14px; }
+.setting-row input[type=checkbox] { width:20px;height:20px; accent-color:#7c4bb0; }
+.setting-row input[type=range] { width:130px; max-width:45%; accent-color:#7c4bb0; }
+.settings-languages { display:flex; gap:10px; margin:16px 0; }
+.settings-languages button,.pause-settings-btn { border:1px solid #dcd3e9; border-radius:9px; padding:10px 14px; background:#fff; color:#503077; font:inherit; font-size:12px; cursor:pointer; }
+.settings-languages [aria-pressed=true] { background:#65418e; color:#fff; }
+.pause-settings-btn { pointer-events:auto; }
+.home-settings { margin:0 0 24px;align-self:start; }
+@media(max-width:640px) { .vr-status-right { flex-wrap:wrap; } .pause-settings-btn { padding:9px;font-size:11px; } }
+
+#checkpointBanner[hidden] { display:none !important; }
+
+#privacyTools { gap:16px; }
+#privacyTools h2 { font-size:20px; line-height:1.4; }
+#privacyTools p { font-size:13px; line-height:1.7; color:#64576d; }
+#privacyTools button { font:inherit; font-size:12px; padding:10px 14px; background:#fff; border:1px solid #dcd3e8; border-radius:8px; color:#54367b; cursor:pointer; }
+#privacyTools ul { padding:0; margin:0; list-style:none; }
+#privacyTools li { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; border-top:1px solid #e5dfeb; padding:14px 0; font-size:12px; }

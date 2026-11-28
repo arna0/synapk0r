@@ -1,7 +1,15 @@
 // SynapKor — Procedural WebAudio sound effects.
 
 // ================= WEBAUDIO PROCEDURAL SOUND SYNTHESIS =================
-let audioCtx = null;
+let audioCtx = null, masterAudioGain = null;
+function getAudioOutput() {
+  const ctx=getAudioContext();
+  if(!masterAudioGain) {masterAudioGain=ctx.createGain();masterAudioGain.connect(ctx.destination);}
+  updateAudioSettings();return masterAudioGain;
+}
+function updateAudioSettings() {
+  if(masterAudioGain)masterAudioGain.gain.value=(gameSettings.muted||isGamePaused())?0:1;
+}
 function getAudioContext() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
@@ -18,7 +26,7 @@ function playTone(freq, type, duration, gainVal = 0.1) {
     gain.gain.setValueAtTime(gainVal, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(getAudioOutput());
     osc.start();
     osc.stop(ctx.currentTime + duration);
   } catch(e){}
@@ -44,7 +52,7 @@ function playNoise(duration, filterFreq, gainVal = 0.1) {
 
     noise.connect(filter);
     filter.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(getAudioOutput());
     noise.start();
   } catch(e){}
 }

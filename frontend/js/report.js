@@ -175,6 +175,7 @@ function showAIReportScreen() {
 }
 
 // ================= AI FEEDBACK (backend -> Claude) =================
+let currentReport = null;
 let aiRequestSeq = 0;
 let feedbackRequest = null;
 
@@ -264,6 +265,7 @@ function renderAssessmentEvidence(report) {
       : gameText('Есть задания для повторной практики', 'Some tasks need further practice', 'Кейбір тапсырмаларды қайталау қажет')}</p>` : ''}
     <div class="assessment-columns"><div><h3>${gameText('Что получилось', 'Strengths in this attempt', 'Бұл әрекеттегі жетістіктер')}</h3>${strengths.length ? `<ul>${strengths.map(row).join('')}</ul>` : `<p>${gameText('Пока нет упражнений с результатом 80% или выше.', 'No exercise reached 80% yet.', 'Әзірге 80% не одан жоғары нәтиже жоқ.')}</p>`}</div>
     <div><h3>${gameText('Что потренировать', 'Needs practice', 'Нені жаттықтыру керек')}</h3>${a.practice.length ? `<ul>${a.practice.map(row).join('')}</ul>` : `<p>${gameText('Закрепите результат в самостоятельной попытке.', 'Consolidate the result in an independent attempt.', 'Нәтижені өз бетіңізше әрекетте бекітіңіз.')}</p>`}</div></div>
+    ${typeof drillAvailable === 'function' ? '<div class="report-drill-actions">'+a.practice.filter(item=>drillAvailable(report.module,item.id)).slice(0,3).map(item=>`<button type="button" class="practice-drill-launch" onclick="startPracticeDrill('${report.module}','${item.id}')">${gameText('Тренировать','Practise','Жаттығу')}: ${escapeHtml(assessmentDescriptor(report.module,item.id).label)}</button>`).join('')+'</div>' : ''}
     <p class="assessment-observation">${escapeHtml(reportErrorEvidence(report))}</p>
     <p class="assessment-next"><strong>${gameText('Следующий шаг: ', 'Next step: ', 'Келесі қадам: ')}</strong>${escapeHtml(reportNextStep(report))}</p>
     <p class="profile-note">${gameText('Баллы относятся к этой учебной попытке и не оценивают профессиональную пригодность.', 'Scores describe this practice attempt and do not measure career aptitude.', 'Балдар осы оқу әрекетін сипаттайды және кәсіби жарамдылықты бағаламайды.')}</p>`;
@@ -310,6 +312,7 @@ function showLocalDebrief(card, source, body, report) {
 }
 
 async function requestAiFeedback(report) {
+  currentReport = report;
   if (!report.assessment) report.assessment = scenarioAssessment({ module: report.module, miniScores: report.metrics?.mini_scores || {}, accuracy: report.metrics?.step_accuracy_percent, events: report.events, independent: typeof independentRun !== 'undefined' && independentRun });
   renderAssessmentEvidence(report);
   if (typeof showCareerBlock === 'function') showCareerBlock(report);
