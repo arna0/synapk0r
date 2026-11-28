@@ -21,6 +21,7 @@ test('IT resumes repaired scenes, changes active language, and freezes verified 
  await page.getByRole('button',{name:'Жалғастыру',exact:true}).click();
  await page.evaluate(()=>{itRun=ITIncident.completeExercise(itRun,'it.verify',{correct:true,checks:['health','checkout'],score:100},gameNow());scenarioState.step=5;scenarioState.phase='decision';saveScenarioCheckpoint();});
  await page.goto('/?lang=en',{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Continue shift'}).click();
+ await page.waitForFunction(()=>pendingCheckpoint===null && !!scenarioState.group?.parent,undefined,{timeout:30000});
  await expect.poll(()=>page.evaluate(()=>scenarioState.phase==='decision'&&scenarioState.restorationTime!==null)).toBe(true);
  const time=await page.locator('#vrTimer').innerText();await page.waitForTimeout(1100);await expect(page.locator('#vrTimer')).toHaveText(time);expect(await page.evaluate(()=>itIncidentOpen)).toBe(false);
 });
