@@ -30,7 +30,7 @@ Track focus areas: *career guidance and exploring career paths · skills develop
 
 [Classroom and validation protocol](docs/VALIDATION_PROTOCOL.md) describes the next real pilot. Practitioner review, stronger learning evidence, a source licence and verified assessment credentials remain pending.
 
-## Current release — 27 November 2026
+## Report redesign — 27 November 2026
 
 [Open the public simulator](https://arna0.github.io/synapk0r/) · [Download the Android APK](https://github.com/arna0/synapk0r/releases/download/android-latest/SynapKor.apk)
 
